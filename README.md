@@ -1,1 +1,0 @@
-[Vercel](bayodmscreen.vercel.app/)
