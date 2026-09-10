@@ -1,0 +1,8 @@
+{
+  "name": "NDMScreen",
+  "description": "Herramienta web para Dungeon Masters de D&D 5e. Gestión de party, NPCs, iniciativa, mapas y tiendas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

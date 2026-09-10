@@ -1,0 +1,49 @@
+name: Desplegar en GitHub Pages
+
+on:
+  # Se activará automáticamente cada vez que envíes código a la rama main
+  push:
+    branches: ['main', 'master']
+
+# Permisos necesarios para que el autómata pueda publicar
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el grimorio (Checkout)
+        uses: actions/checkout@v4
+
+      - name: Preparar NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Conjurar la build
+        run: npm run build
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: Subir artefacto mágico
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: Desplegar
+        id: deployment
+        uses: actions/deploy-pages@v4
