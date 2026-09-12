@@ -22,6 +22,74 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'motion/react';
 
+function isInteractiveElement(element) {
+  if (!element) return false;
+  
+  const interactiveElements = [
+    'button',
+    'input',
+    'textarea',
+    'select',
+    'option',
+    'a'
+  ];
+
+  if (element.tagName && interactiveElements.includes(element.tagName.toLowerCase())) {
+    return true;
+  }
+  
+  if (element.isContentEditable) return true;
+
+  let parent = element.parentElement;
+  let depth = 0;
+  while (parent && depth < 4) {
+    if (parent.tagName && interactiveElements.includes(parent.tagName.toLowerCase())) {
+      return true;
+    }
+    if (parent.isContentEditable) return true;
+    if (parent.getAttribute('data-no-dnd') === 'true') return true;
+    parent = parent.parentElement;
+    depth++;
+  }
+
+  return element.getAttribute('data-no-dnd') === 'true';
+}
+
+
+
+class SmartTouchSensor extends TouchSensor {
+  static activators = [
+    {
+      eventName: 'onTouchStart',
+      handler: ({ nativeEvent: event }) => {
+        if (isInteractiveElement(event.target)) {
+          return false;
+        }
+        return true;
+      },
+    },
+  ];
+}
+
+class SmartPointerSensor extends PointerSensor {
+  static activators = [
+    {
+      eventName: 'onPointerDown',
+      handler: ({ nativeEvent: event }) => {
+        if (
+          !event.isPrimary ||
+          event.button !== 0 ||
+          isInteractiveElement(event.target)
+        ) {
+          return false;
+        }
+        return true;
+      },
+    },
+  ];
+}
+
+
 interface SortableGridProps<T extends { id: string }> {
   items: T[];
   onReorder: (items: T[]) => void;
@@ -38,19 +106,16 @@ export function SortableGrid<T extends { id: string }>({
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(SmartPointerSensor, {
       activationConstraint: {
         distance: 8,
       },
     }),
-    useSensor(TouchSensor, {
+    useSensor(SmartTouchSensor, {
       activationConstraint: {
         delay: 250,
         tolerance: 5,
       }
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
