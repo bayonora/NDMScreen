@@ -12,7 +12,8 @@ import { cn, compressImage } from "../lib/utils";
 import { v4 as uuidv4 } from "uuid";
 
 export function ViewQuests() {
-  const { quests, uiState } = useStore();
+  const quests = useStore((state) => state.quests);
+  const uiState = useStore((state) => state.uiState);
   const highlightedQuestId = uiState?.highlightedQuestId;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingImport, setPendingImport] = useState<any>(null);
@@ -221,7 +222,7 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
   onDeleteQuest: (q: Quest) => void,
   highlightedQuestId?: string
 }) {
-  const { quests } = useStore();
+  const quests = useStore((state) => state.quests);
   const children = quests.filter(q => q.parentId === quest.id).sort((a,b) => a.createdAt - b.createdAt);
   const [expanded, setExpanded] = useState(true);
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -519,7 +520,7 @@ function DetailModal({
 }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const { quests } = useStore();
+  const quests = useStore((state) => state.quests);
 
   React.useEffect(() => {
      if (state.mode === "add") {

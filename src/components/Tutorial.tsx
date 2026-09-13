@@ -6,7 +6,7 @@ import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function WelcomeModal() {
-  const { uiState } = useStore();
+  const uiState = useStore((state) => state.uiState);
   const [isOpen, setIsOpen] = useState(!uiState.hasSeenWelcome);
 
   const handleClose = () => {

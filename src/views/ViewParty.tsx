@@ -15,7 +15,10 @@ import { readFileAsDataURL } from "../lib/utils";
 import { ImportModal } from "../components/ImportModal";
 
 export function ViewParty() {
-  const { players, npcs: allNpcs, creatures: allCreatures, uiState } = useStore();
+  const players = useStore((state) => state.players);
+  const allNpcs = useStore((state) => state.npcs);
+  const allCreatures = useStore((state) => state.creatures);
+  const uiState = useStore((state) => state.uiState);
   const creatures = (allCreatures || []).filter(c => !c.isTemp);
   const npcs = allNpcs.filter(n => !n.isTemp);
   const tab = uiState?.partyTab || "players";

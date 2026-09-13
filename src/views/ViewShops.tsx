@@ -13,7 +13,7 @@ import { ImageCropperModal } from "../components/ImageCropperModal";
 import { readFileAsDataURL } from "../lib/utils";
 
 export function ViewShops() {
-  const { shops } = useStore();
+  const shops = useStore((state) => state.shops);
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editShopData, setEditShopData] = useState<Shop | null>(null);

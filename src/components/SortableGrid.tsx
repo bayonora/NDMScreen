@@ -60,22 +60,22 @@ function isInteractiveElement(element) {
 class SmartTouchSensor extends TouchSensor {
   static activators = [
     {
-      eventName: 'onTouchStart',
-      handler: ({ nativeEvent: event }) => {
+      eventName: 'onTouchStart' as const,
+      handler: ({ nativeEvent: event }: any) => {
         if (isInteractiveElement(event.target)) {
           return false;
         }
         return true;
       },
     },
-  ];
+  ] as any;
 }
 
 class SmartPointerSensor extends PointerSensor {
   static activators = [
     {
-      eventName: 'onPointerDown',
-      handler: ({ nativeEvent: event }) => {
+      eventName: 'onPointerDown' as const,
+      handler: ({ nativeEvent: event }: any) => {
         if (
           !event.isPrimary ||
           event.button !== 0 ||
@@ -86,7 +86,7 @@ class SmartPointerSensor extends PointerSensor {
         return true;
       },
     },
-  ];
+  ] as any;
 }
 
 

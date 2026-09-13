@@ -31,7 +31,7 @@ type Tab = "party" | "initiative" | "quests" | "maps" | "shops" | "notes" | "ite
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("party");
 
-  const { uiState } = useStore();
+  const uiState = useStore((state) => state.uiState);
   const theme = uiState?.theme || 'clasico';
   React.useEffect(() => {
     console.log('Current theme:', theme);

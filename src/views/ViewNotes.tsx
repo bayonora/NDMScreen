@@ -20,7 +20,8 @@ const COLORS = [
 ];
 
 export function ViewNotes() {
-  const { notes, uiState } = useStore();
+  const notes = useStore((state) => state.notes);
+  const uiState = useStore((state) => state.uiState);
   const editingNote = uiState?.draftNote || null;
   const setEditingNote = (note: Partial<Note> | null) => actions.updateUI({ draftNote: note });
   const [deleteId, setDeleteId] = useState<string | null>(null);

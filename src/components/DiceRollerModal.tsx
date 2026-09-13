@@ -94,7 +94,7 @@ export function DiceRollerModal({ isOpen, onClose }: { isOpen: boolean, onClose:
                   "h-14 rounded-sm border font-bold text-lg flex items-center justify-center transition-all px-1 cursor-text overflow-hidden",
                   selectedDie === customDie && String(customDie) !== ""
                     ? "bg-dm-accent text-dm-bg-darker border-dm-accent shadow-[0_0_15px_rgba(193,160,99,0.4)] scale-105" 
-                    : "bg-dm-bg border-dashed border-[#5a4a40] text-dm-muted focus-within:border-solid focus-within:border-dm-accent focus-within:text-dm-accent shadow-inner"
+                    : "bg-dm-bg border-dashed border-dm-border text-dm-muted focus-within:border-solid focus-within:border-dm-accent focus-within:text-dm-accent shadow-inner"
                 )}
                 onClick={() => {
                    if (customDie) setSelectedDie(customDie as number);

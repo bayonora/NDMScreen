@@ -259,7 +259,7 @@ export function ViewGrimoire() {
                   </div>
 
                   {/* Description */}
-                  <div className="text-sm text-[#b8b0a5] leading-relaxed">
+                  <div className="text-sm text-dm-text-muted leading-relaxed">
                     <p className="line-clamp-2">
                       {spell.desc?.join(" ").replace(/\*/g, "")}
                     </p>

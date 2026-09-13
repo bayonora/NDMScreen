@@ -11,7 +11,9 @@ import { MathInput } from "../components/MathInput";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 
 export function ViewInitiative() {
-  const { combatants, graveyard, uiState } = useStore();
+  const combatants = useStore((state) => state.combatants);
+  const graveyard = useStore((state) => state.graveyard);
+  const uiState = useStore((state) => state.uiState);
   
   const isCombatActive = uiState?.combatActive || false;
   const activeCombatantId = uiState?.activeCombatantId || null;
@@ -187,7 +189,7 @@ export function ViewInitiative() {
                             <button 
                               key={s.id}
                               onClick={() => setStatusModal({ open: true, combatantId: c.id, effect: s })}
-                              className="px-2 py-0.5 bg-dm-danger/20 text-[#ff8f8a] text-[11px] uppercase tracking-wider rounded-sm border border-dm-danger/50 cursor-pointer hover:bg-dm-danger/40 truncate max-w-[150px] font-bold"
+                              className="px-2 py-0.5 bg-dm-danger/20 text-dm-danger text-[11px] uppercase tracking-wider rounded-sm border border-dm-danger/50 cursor-pointer hover:bg-dm-danger/40 truncate max-w-[150px] font-bold"
                               title={s.description}
                             >
                               {s.name}{s.duration ? ` (${s.duration})` : ""}
@@ -302,7 +304,10 @@ export function ViewInitiative() {
 }
 
 function AddCombatantModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  const { players, npcs, creatures, combatants } = useStore();
+  const players = useStore((state) => state.players);
+  const npcs = useStore((state) => state.npcs);
+  const creatures = useStore((state) => state.creatures);
+  const combatants = useStore((state) => state.combatants);
   const [mode, setMode] = useState<"existing" | "temp">("existing");
   const [selectedId, setSelectedId] = useState("");
   const [initiative, setInitiative] = useState("");
@@ -449,7 +454,7 @@ const PREDEFINED_STATUSES = [
 ];
 
 function StatusModal({ isOpen, onClose, combatantId, effect }: { isOpen: boolean, onClose: () => void, combatantId: string, effect?: StatusEffect }) {
-  const { combatants } = useStore();
+  const combatants = useStore((state) => state.combatants);
   const [name, setName] = useState(effect?.name || "");
   const [desc, setDesc] = useState(effect?.description || "");
   const [duration, setDuration] = useState(effect?.duration !== undefined ? String(effect.duration) : "0");
@@ -552,7 +557,7 @@ function StatusModal({ isOpen, onClose, combatantId, effect }: { isOpen: boolean
 }
 
 function GraveyardModal({ isOpen, onClose, onViewChar }: { isOpen: boolean, onClose: () => void, onViewChar: (char: any) => void }) {
-  const { graveyard } = useStore();
+  const graveyard = useStore((state) => state.graveyard);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   return (

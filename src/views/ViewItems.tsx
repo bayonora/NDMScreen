@@ -24,7 +24,8 @@ const LOOT_COLORS = [
 ];
 
 export function ViewItems() {
-  const { customItems, lootTables } = useStore();
+  const customItems = useStore((state) => state.customItems);
+  const lootTables = useStore((state) => state.lootTables);
   const [pendingImport, setPendingImport] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"items" | "loot">("items");
   const [editingItem, setEditingItem] = useState<CustomItem | null>(null);

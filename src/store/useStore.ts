@@ -214,12 +214,26 @@ class Store {
 
 export const store = new Store();
 
-export function useStore() {
-  const [state, setState] = useState(store.getState());
+export function useStore<T = StoreState>(selector: (state: StoreState) => T = (state: StoreState) => state as unknown as T): T {
+  const [state, setState] = useState(() => selector(store.getState()));
 
   useEffect(() => {
-    return store.subscribe(() => setState(store.getState()));
-  }, []);
+    let currentState = selector(store.getState());
+    const unsubscribe = store.subscribe(() => {
+      const nextState = selector(store.getState());
+      if (currentState !== nextState) {
+        currentState = nextState;
+        setState(nextState);
+      }
+    });
+    // Check in case state changed between render and effect
+    const nextState = selector(store.getState());
+    if (currentState !== nextState) {
+      currentState = nextState;
+      setState(nextState);
+    }
+    return unsubscribe;
+  }, []); // Not using selector in deps to avoid infinite loops if selector is passed inline, we assume it's stable or we can rely on fast equality.
 
   return state;
 }

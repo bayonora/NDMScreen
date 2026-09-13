@@ -56,7 +56,8 @@ function StorageIndicator() {
 }
 
 export function ViewMaps() {
-  const { maps, locations } = useStore();
+  const maps = useStore((state) => state.maps);
+  const locations = useStore((state) => state.locations);
   
   // Navigation State
   const [path, setPath] = useState<string[]>([]);
