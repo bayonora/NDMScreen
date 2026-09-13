@@ -56,6 +56,13 @@ export function ViewParty() {
     }
   };
 
+  const handleConvertToNPC = (c: Character) => {
+    if (c.type === "creature") {
+      actions.addNPC({ ...c, name: `${c.name} (Aliado)` } as any);
+      alert(`${c.name} se ha copiado como NPC Aliado.`);
+    }
+  };
+
   const handleDelete = (id: string) => {
     setDeleteId(id);
   };
@@ -223,7 +230,7 @@ export function ViewParty() {
                   className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 items-start w-full"
                   items={creatures || []}
                   onReorder={(newCreatures) => actions.reorderCreatures(newCreatures)}
-                  renderItem={(c) => <StatBlock character={c} onEdit={handleEdit} onDelete={handleDelete} onDuplicate={handleDuplicate} />}
+                  renderItem={(c) => <StatBlock character={c} onEdit={handleEdit} onDelete={handleDelete} onDuplicate={handleDuplicate} onConvertToNPC={handleConvertToNPC} />}
                 />
               )}
             </motion.div>

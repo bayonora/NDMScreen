@@ -16,10 +16,11 @@ interface StatBlockProps {
   onDelete?: (id: string) => void;
   onDuplicate?: (c: Character) => void;
   onConvertToCreature?: (c: Character) => void;
+  onConvertToNPC?: (c: Character) => void;
   hideCollapse?: boolean;
 }
 
-export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelete, onDuplicate, onConvertToCreature, hideCollapse }) => {
+export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelete, onDuplicate, onConvertToCreature, onConvertToNPC, hideCollapse }) => {
 
   const borderColor = character.type === "player" ? "border-l-dm-accent" : character.type === "npc" ? "border-l-slate-400" : "border-l-dm-danger";
   const titleColor = character.type === "player" ? "text-dm-accent" : character.type === "npc" ? "text-slate-400" : "text-dm-danger";
@@ -98,6 +99,11 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
         {character.type === "npc" && onConvertToCreature && (
           <button onClick={() => onConvertToCreature(character)} className="p-1 text-dm-border hover:text-dm-danger transition-colors" title="Convertir a Criatura Enemiga">
             <Swords size={16} />
+          </button>
+        )}
+        {character.type === "creature" && onConvertToNPC && (
+          <button onClick={() => onConvertToNPC(character)} className="p-1 text-dm-border hover:text-dm-accent transition-colors" title="Convertir a NPC Aliado">
+            <UserCheck size={16} />
           </button>
         )}
         {onDuplicate && (
