@@ -13,7 +13,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-1 w-full">
         {label && (
-          <label htmlFor={inputId} className="text-[10px] font-bold text-[#c1a063] uppercase tracking-widest">
+          <label htmlFor={inputId} className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">
             {label}
           </label>
         )}
@@ -21,7 +21,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           id={inputId}
           ref={ref}
           className={cn(
-            "flex h-10 w-full bg-[#1e1a17] border border-[#3a302a] px-3 py-2 text-sm text-[#f5f2ed] placeholder:text-[#8b7355] placeholder:italic focus:outline-none focus:border-[#c1a063] disabled:cursor-not-allowed disabled:opacity-50",
+            "flex h-10 w-full bg-dm-bg border border-dm-border px-3 py-2 text-sm text-dm-text-bright placeholder:text-dm-muted placeholder:italic focus:outline-none focus:border-dm-accent disabled:cursor-not-allowed disabled:opacity-50",
             className
           )}
           {...props}
@@ -107,7 +107,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
     return (
       <div className="flex flex-col gap-1 w-full relative">
         {label && (
-          <label htmlFor={inputId} className="text-[10px] font-bold text-[#c1a063] uppercase tracking-widest">
+          <label htmlFor={inputId} className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">
             {label}
           </label>
         )}
@@ -115,7 +115,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
           id={inputId}
           ref={setRefs}
           className={cn(
-            "flex min-h-[80px] w-full bg-[#1e1a17] border border-[#3a302a] px-3 py-2 text-sm text-[#f5f2ed] placeholder:text-[#8b7355] placeholder:italic focus:outline-none focus:border-[#c1a063] disabled:cursor-not-allowed disabled:opacity-50 resize-y",
+            "flex min-h-[80px] w-full bg-dm-bg border border-dm-border px-3 py-2 text-sm text-dm-text-bright placeholder:text-dm-muted placeholder:italic focus:outline-none focus:border-dm-accent disabled:cursor-not-allowed disabled:opacity-50 resize-y",
             className
           )}
           {...props}
@@ -126,17 +126,17 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
         />
         {menuPos && (
           <div 
-            className="fixed z-[9999] bg-[#161311] border border-[#c1a063] shadow-lg rounded-sm py-1 flex flex-col w-40 text-sm overflow-hidden"
+            className="fixed z-[9999] bg-dm-bg-darker border border-dm-accent shadow-lg rounded-sm py-1 flex flex-col w-40 text-sm overflow-hidden"
             style={{ top: menuPos.y, left: menuPos.x }}
             onClick={(e) => e.stopPropagation()}
           >
-            <button type="button" onClick={() => applyFormat('**')} className="text-left px-4 py-2 hover:bg-[#3a302a] text-[#e6e2da] hover:text-[#c1a063] transition-colors"><strong className="font-bold">Negrita</strong> (**)</button>
-            <button type="button" onClick={() => applyFormat('*')} className="text-left px-4 py-2 hover:bg-[#3a302a] text-[#e6e2da] hover:text-[#c1a063] transition-colors"><em className="italic">Cursiva</em> (*)</button>
-            <button type="button" onClick={() => applyFormat('~~')} className="text-left px-4 py-2 hover:bg-[#3a302a] text-[#e6e2da] hover:text-[#c1a063] transition-colors"><span className="line-through">Tachado</span> (~~)</button>
-            <div className="h-px bg-[#3a302a] w-full my-1"></div>
-            <button type="button" onClick={() => applyFormat('# ', '')} className="text-left px-4 py-2 hover:bg-[#3a302a] text-[#e6e2da] hover:text-[#c1a063] transition-colors">Título (#)</button>
-            <button type="button" onClick={() => applyFormat('- ', '')} className="text-left px-4 py-2 hover:bg-[#3a302a] text-[#e6e2da] hover:text-[#c1a063] transition-colors">Lista (-)</button>
-            <button type="button" onClick={() => applyFormat('> ', '')} className="text-left px-4 py-2 hover:bg-[#3a302a] text-[#e6e2da] hover:text-[#c1a063] transition-colors">Cita (&gt;)</button>
+            <button type="button" onClick={() => applyFormat('**')} className="text-left px-4 py-2 hover:bg-dm-border text-dm-text hover:text-dm-accent transition-colors"><strong className="font-bold">Negrita</strong> (**)</button>
+            <button type="button" onClick={() => applyFormat('*')} className="text-left px-4 py-2 hover:bg-dm-border text-dm-text hover:text-dm-accent transition-colors"><em className="italic">Cursiva</em> (*)</button>
+            <button type="button" onClick={() => applyFormat('~~')} className="text-left px-4 py-2 hover:bg-dm-border text-dm-text hover:text-dm-accent transition-colors"><span className="line-through">Tachado</span> (~~)</button>
+            <div className="h-px bg-dm-border w-full my-1"></div>
+            <button type="button" onClick={() => applyFormat('# ', '')} className="text-left px-4 py-2 hover:bg-dm-border text-dm-text hover:text-dm-accent transition-colors">Título (#)</button>
+            <button type="button" onClick={() => applyFormat('- ', '')} className="text-left px-4 py-2 hover:bg-dm-border text-dm-text hover:text-dm-accent transition-colors">Lista (-)</button>
+            <button type="button" onClick={() => applyFormat('> ', '')} className="text-left px-4 py-2 hover:bg-dm-border text-dm-text hover:text-dm-accent transition-colors">Cita (&gt;)</button>
           </div>
         )}
       </div>
@@ -152,13 +152,13 @@ export const Button = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttrib
         className={cn(
           "inline-flex items-center justify-center transition-all focus:outline-none disabled:opacity-50 disabled:pointer-events-none text-xs uppercase tracking-widest cursor-pointer shadow-sm rounded-none border active:scale-95",
           {
-            "bg-[#c1a063] border-[#c1a063] text-[#0f0d0c] hover:bg-[#d4b57a] font-bold": variant === "primary",
+            "bg-dm-accent border-dm-accent text-dm-bg-darker hover:bg-dm-accent-hover font-bold": variant === "primary",
             "px-2 py-1 text-[10px]": size === "sm",
             "px-4 py-2": size === "md",
             "px-6 py-3 text-sm": size === "lg",
-            "bg-[#1a1614] border-[#3a302a] text-[#8b7355] hover:text-[#c1a063] hover:border-[#c1a063] hover:bg-[#2a2420]": variant === "secondary",
-            "bg-[#8a211b] border-[#8a211b] text-white hover:bg-[#a52a23] hover:border-[#a52a23] font-bold": variant === "danger",
-            "bg-transparent border-transparent text-[#8b7355] hover:bg-[#1a1614] hover:text-[#c1a063] hover:border-[#3a302a] px-4 py-2 shadow-none": variant === "ghost",
+            "bg-dm-bg-hover border-dm-border text-dm-muted hover:text-dm-accent hover:border-dm-accent hover:bg-[#2a2420]": variant === "secondary",
+            "bg-dm-danger border-dm-danger text-white hover:bg-dm-danger-hover hover:border-dm-danger-hover font-bold": variant === "danger",
+            "bg-transparent border-transparent text-dm-muted hover:bg-dm-bg-hover hover:text-dm-accent hover:border-dm-border px-4 py-2 shadow-none": variant === "ghost",
           },
           className
         )}

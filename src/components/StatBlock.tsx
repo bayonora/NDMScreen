@@ -21,8 +21,8 @@ interface StatBlockProps {
 
 export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelete, onDuplicate, onConvertToCreature, hideCollapse }) => {
 
-  const borderColor = character.type === "player" ? "border-l-[#c1a063]" : character.type === "npc" ? "border-l-slate-400" : "border-l-[#8a211b]";
-  const titleColor = character.type === "player" ? "text-[#c1a063]" : character.type === "npc" ? "text-slate-400" : "text-[#8a211b]";
+  const borderColor = character.type === "player" ? "border-l-dm-accent" : character.type === "npc" ? "border-l-slate-400" : "border-l-dm-danger";
+  const titleColor = character.type === "player" ? "text-dm-accent" : character.type === "npc" ? "text-slate-400" : "text-dm-danger";
   const isPlayer = character.type === "player";
   const p = character as Player;
   const n = character as NPC;
@@ -75,7 +75,7 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
 
 
   return (
-    <div className={`bg-[#1e1a17] border border-[#3a302a] border-l-4 ${borderColor} rounded-sm p-4 text-[#e6e2da] font-serif shadow-lg flex flex-col relative w-full overflow-hidden`}>
+    <div className={`bg-dm-bg border border-dm-border border-l-4 ${borderColor} rounded-sm p-4 text-dm-text font-serif shadow-lg flex flex-col relative w-full overflow-hidden`}>
             {character.image && (
         <div 
           className="absolute top-0 right-0 bottom-0 w-[60%] opacity-20 pointer-events-none mix-blend-screen"
@@ -91,32 +91,32 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
       )}
       <div className="absolute top-2 right-2 flex gap-1 z-10">
         {character.image && (
-          <button onClick={() => setIsImageViewerOpen(true)} className="p-1 text-[#3a302a] hover:text-[#c1a063] transition-colors" title="Ver Retrato">
+          <button onClick={() => setIsImageViewerOpen(true)} className="p-1 text-dm-border hover:text-dm-accent transition-colors" title="Ver Retrato">
             <Maximize2 size={16} />
           </button>
         )}
         {character.type === "npc" && onConvertToCreature && (
-          <button onClick={() => onConvertToCreature(character)} className="p-1 text-[#3a302a] hover:text-[#8a211b] transition-colors" title="Convertir a Criatura Enemiga">
+          <button onClick={() => onConvertToCreature(character)} className="p-1 text-dm-border hover:text-dm-danger transition-colors" title="Convertir a Criatura Enemiga">
             <Swords size={16} />
           </button>
         )}
         {onDuplicate && (
-          <button onClick={() => onDuplicate(character)} className="p-1 text-[#3a302a] hover:text-[#c1a063] transition-colors" title="Duplicar">
+          <button onClick={() => onDuplicate(character)} className="p-1 text-dm-border hover:text-dm-accent transition-colors" title="Duplicar">
             <Copy size={16} />
           </button>
         )}
         {onDelete && (
-          <button onClick={() => onDelete(character.id)} className="p-1 text-[#3a302a] hover:text-[#8a211b] transition-colors" title="Borrar">
+          <button onClick={() => onDelete(character.id)} className="p-1 text-dm-border hover:text-dm-danger transition-colors" title="Borrar">
             <Trash2 size={16} />
           </button>
         )}
         {onEdit && (
-          <button onClick={() => onEdit(character)} className="p-1 text-[#3a302a] hover:text-[#c1a063] transition-colors" title="Editar">
+          <button onClick={() => onEdit(character)} className="p-1 text-dm-border hover:text-dm-accent transition-colors" title="Editar">
             <Edit2 size={16} />
           </button>
         )}
         {!hideCollapse && (
-          <button onClick={() => actions.toggleCharacterCollapse(character.id)} className="p-1 text-[#3a302a] hover:text-[#c1a063] transition-colors" title={isCollapsed ? "Expandir" : "Colapsar"}>
+          <button onClick={() => actions.toggleCharacterCollapse(character.id)} className="p-1 text-dm-border hover:text-dm-accent transition-colors" title={isCollapsed ? "Expandir" : "Colapsar"}>
             {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
           </button>
         )}
@@ -131,19 +131,19 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
         {isPlayer ? `${p.race} • ${p.classAndLevel}` : `${n.race || ""} ${n.cr ? `• CR ${n.cr}` : ""}`.trim()}
       </p>
 
-      <div className="w-full h-px bg-[#3a302a] my-2" />
+      <div className="w-full h-px bg-dm-border my-2" />
       {!isCollapsed && (<>
 
       <div className="space-y-1 text-sm">
         <div>
-          <strong className="text-[#c1a063]">Clase de Armadura</strong> {character.ac}
+          <strong className="text-dm-accent">Clase de Armadura</strong> {character.ac}
         </div>
         <div>
-          <strong className="text-[#c1a063]">Puntos de Vida</strong> {character.hpMax}
+          <strong className="text-dm-accent">Puntos de Vida</strong> {character.hpMax}
         </div>
       </div>
 
-      <div className="w-full h-px bg-[#3a302a] my-2" />
+      <div className="w-full h-px bg-dm-border my-2" />
 
       <div className="grid grid-cols-6 gap-2 text-center my-2 text-[11px] uppercase opacity-80">
         <Stat name="FUE" val={character.stats.STR} />
@@ -154,38 +154,38 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
         <Stat name="CAR" val={character.stats.CHA} />
       </div>
 
-      <div className="w-full h-px bg-[#3a302a] my-2" />
+      <div className="w-full h-px bg-dm-border my-2" />
 
       <div className="space-y-1 text-sm opacity-90">
         {!isPlayer && n.skills && (
           <div>
-            <strong className="text-[#c1a063]">Habilidades</strong> {n.skills}
+            <strong className="text-dm-accent">Habilidades</strong> {n.skills}
           </div>
         )}
         {!isPlayer && n.senses && (
           <div>
-            <strong className="text-[#c1a063]">Sentidos</strong> {n.senses}
+            <strong className="text-dm-accent">Sentidos</strong> {n.senses}
           </div>
         )}
         {isPlayer && (
           <div>
-            <strong className="text-[#c1a063]">Percepción Pasiva</strong> {p.passivePerception}
+            <strong className="text-dm-accent">Percepción Pasiva</strong> {p.passivePerception}
           </div>
         )}
         {!isPlayer && n.languages && (
           <div>
-            <strong className="text-[#c1a063]">Idiomas</strong> {n.languages}
+            <strong className="text-dm-accent">Idiomas</strong> {n.languages}
           </div>
         )}
         {!isPlayer && n.cr && (
           <div>
-            <strong className="text-[#c1a063]">Desafío</strong> {n.cr}
+            <strong className="text-dm-accent">Desafío</strong> {n.cr}
           </div>
         )}
       </div>
 
       {!isPlayer && (n.specialTraits || n.actions) && (
-        <div className="w-full h-px bg-[#3a302a] my-2" />
+        <div className="w-full h-px bg-dm-border my-2" />
       )}
 
       {!isPlayer && n.specialTraits && (
@@ -196,7 +196,7 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
 
       {!isPlayer && n.actions && (
         <>
-          <h2 className="text-lg font-bold text-[#c1a063] mt-4 mb-2 border-b border-[#3a302a]">Acciones</h2>
+          <h2 className="text-lg font-bold text-dm-accent mt-4 mb-2 border-b border-dm-border">Acciones</h2>
           <div className="text-sm whitespace-pre-wrap opacity-90">
             {n.actions}
           </div>
@@ -204,19 +204,19 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
       )}
 
       {/* TAGS SECTION */}
-      <div className="mt-4 pt-2 border-t border-[#3a302a] flex flex-wrap gap-2 items-center">
+      <div className="mt-4 pt-2 border-t border-dm-border flex flex-wrap gap-2 items-center">
         {tags.map((tag: any) => (
           <button 
             key={tag.id}
             onClick={() => setViewTag({ open: true, tag })}
-            className="px-2 py-0.5 rounded text-xs bg-[#2a2420] border border-[#c1a063] text-[#c1a063] hover:bg-[#c1a063] hover:text-[#1e1a17] transition-colors"
+            className="px-2 py-0.5 rounded text-xs bg-dm-bg-hover border border-dm-accent text-dm-accent hover:bg-dm-accent hover:text-dm-bg transition-colors"
           >
             {tag.name}
           </button>
         ))}
         <button 
           onClick={() => setTagModal({ open: true, name: "", description: "" })}
-          className="w-6 h-6 rounded-full flex items-center justify-center bg-[#2a2420] border border-[#3a302a] text-[#8b7355] hover:border-[#c1a063] hover:text-[#c1a063] transition-colors"
+          className="w-6 h-6 rounded-full flex items-center justify-center bg-dm-bg-hover border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent transition-colors"
           title="Añadir Tag"
         >
           <Plus size={14} />
@@ -227,16 +227,16 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
       {viewTag && viewTag.open && (
         <Modal isOpen={viewTag.open} onClose={() => setViewTag(null)} title={viewTag.tag.name}>
           <div className="flex flex-col gap-4">
-             <div className="text-sm whitespace-pre-wrap text-[#e6e2da] min-h-[50px]">
+             <div className="text-sm whitespace-pre-wrap text-dm-text min-h-[50px]">
                {viewTag.tag.description || <span className="opacity-50 italic">Sin descripción.</span>}
              </div>
-             <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[#3a302a]">
+             <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-dm-border">
                 <Button type="button" variant="secondary" onClick={() => {
                    setTagModal({ open: true, tagId: viewTag.tag.id, name: viewTag.tag.name, description: viewTag.tag.description });
                 }}>
                   Editar
                 </Button>
-                <Button type="button" className="bg-[#8a211b] hover:bg-[#a52a22] text-white" onClick={() => handleDeleteTag(viewTag.tag.id)}>
+                <Button type="button" className="bg-dm-danger hover:bg-dm-danger-hover text-white" onClick={() => handleDeleteTag(viewTag.tag.id)}>
                   Borrar
                 </Button>
              </div>
@@ -250,7 +250,7 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
          <form onSubmit={handleSaveTag} className="flex flex-col gap-4">
             <Input label="Nombre del Tag" value={tagModal.name} onChange={e => setTagModal({...tagModal, name: e.target.value})} required placeholder="Ej. Maldito" />
             <Textarea label="Descripción" value={tagModal.description} onChange={e => setTagModal({...tagModal, description: e.target.value})} placeholder="Detalles de este tag..." rows={4} />
-            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[#3a302a]">
+            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-dm-border">
               <Button type="button" variant="ghost" onClick={() => setTagModal({ open: false, name: "", description: "" })}>Cancelar</Button>
               <Button type="submit">Guardar</Button>
             </div>
@@ -271,8 +271,8 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
 
 function Stat({ name, val }: { name: string; val: number }) {
   return (
-    <div className="flex flex-col items-center bg-[#2a2420] p-1 rounded-sm border border-[#3a302a]">
-      <div className="font-bold text-[#c1a063]">{name}</div>
+    <div className="flex flex-col items-center bg-dm-bg-hover p-1 rounded-sm border border-dm-border">
+      <div className="font-bold text-dm-accent">{name}</div>
       <div className="font-mono mt-0.5">
         {val} <span className="opacity-60 text-[9px]">({formatMod(val)})</span>
       </div>

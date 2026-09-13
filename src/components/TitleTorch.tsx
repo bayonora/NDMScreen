@@ -30,7 +30,7 @@ export function TitleTorch() {
 
       {/* The Revealed Text - The mask remains ALWAYS, only opacity changes to prevent flashing */}
       <div 
-        className="absolute inset-0 flex items-center justify-center text-xl font-display font-bold tracking-widest text-[#c1a063] select-none pointer-events-none transition-opacity duration-300 ease-in-out"
+        className="absolute inset-0 flex items-center justify-center text-xl font-display font-bold tracking-widest text-dm-accent select-none pointer-events-none transition-opacity duration-300 ease-in-out"
         style={{
           maskImage: `radial-gradient(circle 50px at ${position.x}px ${position.y}px, black 10%, transparent 100%)`,
           WebkitMaskImage: `radial-gradient(circle 50px at ${position.x}px ${position.y}px, black 10%, transparent 100%)`,

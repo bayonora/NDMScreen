@@ -237,12 +237,12 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
     <div className="relative w-full max-w-md" ref={containerRef}>
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-4 w-4 text-[#8b7355]" />
+          <Search className="h-4 w-4 text-dm-muted" />
         </div>
         <input
           id="global-search-input"
           type="text"
-          className="block w-full pl-10 pr-3 py-2 border border-[#3a302a] rounded-md leading-5 bg-[#14110f] text-[#e6e2da] placeholder-[#8b7355] focus:outline-none focus:ring-1 focus:ring-[#c1a063] focus:border-[#c1a063] sm:text-sm transition-colors"
+          className="block w-full pl-10 pr-3 py-2 border border-dm-border rounded-md leading-5 bg-dm-bg-alt text-dm-text placeholder-dm-muted focus:outline-none focus:ring-1 focus:ring-dm-accent focus:border-dm-accent sm:text-sm transition-colors"
           placeholder="Buscar personajes, notas, mapas... (Ctrl+K)"
           value={query}
           onChange={(e) => {
@@ -260,10 +260,10 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 mt-1 w-full bg-[#1e1a17] shadow-lg max-h-96 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto sm:text-sm border border-[#3a302a]"
+            className="absolute z-50 mt-1 w-full bg-dm-bg shadow-lg max-h-96 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto sm:text-sm border border-dm-border"
           >
             {results.length === 0 ? (
-              <div className="px-4 py-3 text-sm text-[#8b7355] text-center">
+              <div className="px-4 py-3 text-sm text-dm-muted text-center">
                 No se encontraron resultados para "{query}"
               </div>
             ) : (
@@ -276,20 +276,20 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
                     className={cn(
                       "cursor-pointer select-none relative py-2 pl-3 pr-9 border-l-2 transition-colors",
                       selectedIndex === idx
-                        ? "bg-[#14110f] border-[#c1a063] text-white"
-                        : "border-transparent text-[#e6e2da] hover:bg-[#1a1614] hover:border-[#8b7355]"
+                        ? "bg-dm-bg-alt border-dm-accent text-white"
+                        : "border-transparent text-dm-text hover:bg-dm-bg-hover hover:border-dm-muted"
                     )}
                   >
                     <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3 truncate">
-                          <div className={cn("shrink-0", selectedIndex === idx ? "text-[#c1a063]" : "text-[#8b7355]")}>
+                          <div className={cn("shrink-0", selectedIndex === idx ? "text-dm-accent" : "text-dm-muted")}>
                             {res.icon}
                           </div>
                           <div className="flex flex-col truncate">
                             <span className="font-medium truncate">{res.label}</span>
                             {(res.subLabel || res.type) && (
-                              <span className="text-xs text-[#8b7355] truncate flex gap-2 mt-0.5">
-                                <span className="px-1.5 rounded-sm bg-[#14110f] border border-[#3a302a] text-[10px] uppercase tracking-wider shrink-0">{res.type}</span>
+                              <span className="text-xs text-dm-muted truncate flex gap-2 mt-0.5">
+                                <span className="px-1.5 rounded-sm bg-dm-bg-alt border border-dm-border text-[10px] uppercase tracking-wider shrink-0">{res.type}</span>
                                 <span className="truncate opacity-80">{res.subLabel}</span>
                               </span>
                             )}
@@ -299,7 +299,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
                           onClick={(e) => handleNavigate(e, res)}
                           className={cn(
                             "shrink-0 p-2 rounded-sm border transition-colors flex items-center justify-center ml-2",
-                            selectedIndex === idx ? "bg-[#14110f] border-[#c1a063] text-[#c1a063] hover:bg-[#2a2420]" : "border-transparent text-[#8b7355] hover:text-[#c1a063] hover:border-[#3a302a]"
+                            selectedIndex === idx ? "bg-dm-bg-alt border-dm-accent text-dm-accent hover:bg-[#2a2420]" : "border-transparent text-dm-muted hover:text-dm-accent hover:border-dm-border"
                           )}
                           title="Ir a la pestaña"
                         >
@@ -338,9 +338,9 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
               if (res.tab === "notes") {
                  const n = storeState.notes.find(x => x.id === res.id);
                  if (n) return (
-                    <div className="bg-[#1e1a17]/60 backdrop-blur-xl border border-[#c1a063]/20 rounded-xl p-6 max-w-2xl w-full shadow-[0_8px_32px_rgba(0,0,0,0.8)]">
-                      <h2 className="text-2xl font-bold text-[#c1a063] mb-4">{n.title}</h2>
-                      <div className="prose prose-invert prose-sm max-w-none prose-headings:text-[#c1a063] prose-a:text-orange-400">
+                    <div className="bg-dm-bg/60 backdrop-blur-xl border border-dm-accent/20 rounded-xl p-6 max-w-2xl w-full shadow-[0_8px_32px_rgba(0,0,0,0.8)]">
+                      <h2 className="text-2xl font-bold text-dm-accent mb-4">{n.title}</h2>
+                      <div className="prose prose-invert prose-sm max-w-none prose-headings:text-dm-accent prose-a:text-orange-400">
                         <Markdown remarkPlugins={[remarkGfm, remarkBreaks]}>{n.content}</Markdown>
                       </div>
                     </div>
@@ -348,11 +348,11 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
               }
               if (res.tab === "maps") {
                  const m = storeState.maps.find(x => x.id === res.id);
-                 if (m) return <img src={m.image} alt={m.name} className="max-w-4xl max-h-[80vh] object-contain rounded-sm border border-[#3a302a] shadow-2xl" />;
+                 if (m) return <img src={m.image} alt={m.name} className="max-w-4xl max-h-[80vh] object-contain rounded-sm border border-dm-border shadow-2xl" />;
                  const loc = storeState.locations.find(x => x.id === res.id);
                  if (loc) return (
-                   <div className="bg-[#1e1a17] border border-[#3a302a] rounded-sm p-6 max-w-md w-full shadow-2xl text-[#e6e2da] space-y-2">
-                     <h2 className="text-xl font-bold text-[#c1a063]">{loc.name}</h2>
+                   <div className="bg-dm-bg border border-dm-border rounded-sm p-6 max-w-md w-full shadow-2xl text-dm-text space-y-2">
+                     <h2 className="text-xl font-bold text-dm-accent">{loc.name}</h2>
                      <div className="text-sm italic opacity-70">Región: {loc.region}</div>
                      <p className="text-sm">{loc.description}</p>
                    </div>
@@ -361,8 +361,8 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
               if (res.tab === "shops") {
                  const s = storeState.shops.find(x => x.id === res.id);
                  if (s) return (
-                   <div className="bg-[#1e1a17] border border-[#3a302a] rounded-sm p-6 max-w-md w-full shadow-2xl text-[#e6e2da] space-y-2">
-                     <h2 className="text-xl font-bold text-[#c1a063]">{s.name}</h2>
+                   <div className="bg-dm-bg border border-dm-border rounded-sm p-6 max-w-md w-full shadow-2xl text-dm-text space-y-2">
+                     <h2 className="text-xl font-bold text-dm-accent">{s.name}</h2>
                      <div className="text-sm italic opacity-70">Tendero: {s.ownerName}</div>
                      {s.ownerImage && <img src={s.ownerImage} alt={s.ownerName} className="w-full rounded-sm my-2" />}
                      <p className="text-sm">Objetos en venta: {s.items?.length || 0}</p>
@@ -372,9 +372,9 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
               if (res.tab === "items") {
                  const i = storeState.customItems.find(x => x.id === res.id);
                  if (i) return (
-                   <div className="bg-[#1e1a17] border border-[#3a302a] rounded-sm p-6 max-w-sm w-full shadow-2xl text-[#e6e2da] space-y-2">
-                     <h2 className="text-xl font-bold text-[#c1a063]">{i.name}</h2>
-                     <div className="text-[#c1a063] font-bold text-lg">{i.value}</div>
+                   <div className="bg-dm-bg border border-dm-border rounded-sm p-6 max-w-sm w-full shadow-2xl text-dm-text space-y-2">
+                     <h2 className="text-xl font-bold text-dm-accent">{i.name}</h2>
+                     <div className="text-dm-accent font-bold text-lg">{i.value}</div>
                      <p className="text-sm whitespace-pre-wrap">{i.description}</p>
                      {i.image && <img src={i.image} alt={i.name} className="w-full rounded-sm my-2" />}
                    </div>
@@ -383,9 +383,9 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
               if (res.tab === "spells") {
                  const s = spells.find(x => x.index === res.id);
                  if (s) return (
-                   <div className="bg-[#1e1a17] border border-[#3a302a] rounded-sm p-6 max-w-2xl w-full shadow-2xl text-[#e6e2da] space-y-4">
-                     <h2 className="text-2xl font-bold text-[#c1a063] flex items-center gap-2"><Sparkles /> {s.name}</h2>
-                     <div className="flex flex-wrap gap-4 text-sm text-[#8b7355] border-y border-[#3a302a] py-3">
+                   <div className="bg-dm-bg border border-dm-border rounded-sm p-6 max-w-2xl w-full shadow-2xl text-dm-text space-y-4">
+                     <h2 className="text-2xl font-bold text-dm-accent flex items-center gap-2"><Sparkles /> {s.name}</h2>
+                     <div className="flex flex-wrap gap-4 text-sm text-dm-muted border-y border-dm-border py-3">
                        <span><strong>Nivel:</strong> {s.level === 0 ? "Truco" : s.level}</span>
                        <span><strong>Escuela:</strong> {s.school?.index ? SCHOOL_NAMES[s.school.index] : (s.school?.name || "Sin escuela")}</span>
                        <span><strong>Tiempo:</strong> {s.casting_time}</span>
@@ -393,11 +393,11 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
                        <span><strong>Rango:</strong> {s.range}</span>
                        <span><strong>Componentes:</strong> {s.components?.join(", ") || ""}</span>
                      </div>
-                     <div className="text-sm leading-relaxed max-h-64 overflow-y-auto custom-scrollbar pr-2 space-y-2 prose prose-invert prose-sm max-w-none prose-strong:text-[#c1a063]">
+                     <div className="text-sm leading-relaxed max-h-64 overflow-y-auto custom-scrollbar pr-2 space-y-2 prose prose-invert prose-sm max-w-none prose-strong:text-dm-accent">
                        <Markdown>{s.desc?.join('\n\n') || ""}</Markdown>
                        {s.higher_level && s.higher_level.length > 0 && (
                          <div className="mt-4">
-                           <strong className="text-[#c1a063]">A niveles superiores: </strong>
+                           <strong className="text-dm-accent">A niveles superiores: </strong>
                            <Markdown>{s.higher_level.join('\n\n')}</Markdown>
                          </div>
                        )}
@@ -409,14 +409,14 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
                           setPreviewResult(null);
                           setIsOpen(false);
                           setQuery("");
-                       }} className="px-4 py-2 bg-[#c1a063] text-[#14110f] font-semibold rounded-sm hover:bg-[#d4b881] transition-colors flex items-center gap-2">
+                       }} className="px-4 py-2 bg-dm-accent text-dm-bg-alt font-semibold rounded-sm hover:bg-dm-accent-hover transition-colors flex items-center gap-2">
                          <BookOpen size={16} /> Ir al Grimorio
                        </button>
                      </div>
                    </div>
                  );
               }
-              return <div className="bg-[#1e1a17] p-6 rounded-sm text-[#e6e2da]">{res.subLabel || "No hay más detalles."}</div>;
+              return <div className="bg-dm-bg p-6 rounded-sm text-dm-text">{res.subLabel || "No hay más detalles."}</div>;
             })()}
           </div>
         </motion.div>

@@ -100,20 +100,20 @@ export function ViewQuests() {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[#14110f] border-none rounded-none overflow-hidden relative">
-      <div className="bg-[#1e1a17] px-4 sm:px-6 py-4 border-b border-[#3a302a] flex justify-between items-center z-20 relative gap-4">
-        <h2 className="text-lg uppercase tracking-widest text-[#c1a063] font-light flex items-center gap-2 truncate">
+    <div className="flex-1 flex flex-col bg-dm-bg-alt border-none rounded-none overflow-hidden relative">
+      <div className="bg-dm-bg px-4 sm:px-6 py-4 border-b border-dm-border flex justify-between items-center z-20 relative gap-4">
+        <h2 className="text-lg uppercase tracking-widest text-dm-accent font-light flex items-center gap-2 truncate">
           <Target size={18} />
           Árbol de Misiones
         </h2>
         <div className="flex gap-2">
-          <Button onClick={handleImportClick} variant="ghost" className="hidden sm:flex border border-[#3a302a]">
+          <Button onClick={handleImportClick} variant="ghost" className="hidden sm:flex border border-dm-border">
             <Download size={14} className="mr-1" /> Importar
           </Button>
-          <Button onClick={exportQuests} variant="ghost" className="hidden sm:flex border border-[#3a302a]">
+          <Button onClick={exportQuests} variant="ghost" className="hidden sm:flex border border-dm-border">
             <Upload size={14} className="mr-1" /> Exportar
           </Button>
-          <Button onClick={() => handleAddQuest(null)} className="whitespace-nowrap bg-[#1a1614] border border-[#3a302a] text-[#8b7355] hover:border-[#c1a063] hover:text-[#c1a063]">
+          <Button onClick={() => handleAddQuest(null)} className="whitespace-nowrap bg-dm-bg-hover border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent">
             <Plus size={14} className="mr-1" /> Nueva Misión
           </Button>
           <input type="file" accept=".json" className="hidden" ref={fileInputRef} onChange={importQuests} />
@@ -122,7 +122,7 @@ export function ViewQuests() {
 
       <div className="flex-1 overflow-auto p-8 custom-scrollbar relative">
         {rootQuests.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-[#8b7355] opacity-50 space-y-4">
+          <div className="flex flex-col items-center justify-center h-full text-dm-muted opacity-50 space-y-4">
             <Target size={48} />
             <p>No hay misiones registradas. Crea tu primera misión raíz para empezar tu aventura.</p>
           </div>
@@ -162,27 +162,27 @@ export function ViewQuests() {
       <Modal isOpen={!!questToView} onClose={() => setQuestToView(null)} title={questToView?.title}>
          <div className="flex flex-col gap-4 max-h-[80vh] overflow-y-auto custom-scrollbar pr-2">
             {questToView?.image && (
-               <div className="w-full aspect-video sm:aspect-[21/9] bg-cover bg-center border border-[#3a302a] rounded-sm shrink-0" style={{ backgroundImage: `url(${questToView.image})` }} />
+               <div className="w-full aspect-video sm:aspect-[21/9] bg-cover bg-center border border-dm-border rounded-sm shrink-0" style={{ backgroundImage: `url(${questToView.image})` }} />
             )}
             <div className="flex items-center gap-4 text-sm font-bold uppercase tracking-widest flex-wrap">
                {questToView?.location && (
-                  <span className="flex items-center text-[#c1a063] bg-[#1a1614] border border-[#3a302a] px-3 py-1 rounded-sm">
+                  <span className="flex items-center text-dm-accent bg-dm-bg-hover border border-dm-border px-3 py-1 rounded-sm">
                     <MapPin size={14} className="mr-2" /> {questToView.location}
                   </span>
                )}
                {questToView?.status === "completed" && <span className="text-green-500 flex items-center"><CheckCircle2 size={16} className="mr-1"/> Completada</span>}
                {questToView?.status === "failed" && <span className="text-red-500 flex items-center"><XCircle size={16} className="mr-1"/> Fallada</span>}
-               {questToView?.status === "active" && <span className="text-[#8b7355] flex items-center"><Circle size={16} className="mr-1"/> Activa</span>}
+               {questToView?.status === "active" && <span className="text-dm-muted flex items-center"><Circle size={16} className="mr-1"/> Activa</span>}
             </div>
 
             {questToView?.reward && (
-               <div className="bg-[#14110f] border border-[#3a302a] p-3 rounded-sm flex flex-col gap-1">
-                 <span className="text-[10px] text-[#8b7355] font-bold uppercase tracking-wider">Recompensa</span>
-                 <span className="text-[#c1a063] font-medium">{questToView.reward}</span>
+               <div className="bg-dm-bg-alt border border-dm-border p-3 rounded-sm flex flex-col gap-1">
+                 <span className="text-[10px] text-dm-muted font-bold uppercase tracking-wider">Recompensa</span>
+                 <span className="text-dm-accent font-medium">{questToView.reward}</span>
                </div>
             )}
 
-            <div className="bg-[#14110f] border border-[#3a302a] p-4 rounded-sm whitespace-pre-wrap text-[#e6e2da] leading-relaxed">
+            <div className="bg-dm-bg-alt border border-dm-border p-4 rounded-sm whitespace-pre-wrap text-dm-text leading-relaxed">
                {questToView?.description || <span className="italic opacity-50">Sin descripción...</span>}
             </div>
             
@@ -244,7 +244,7 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
   const getStatusIcon = () => {
     if (quest.status === "completed") return <CheckCircle2 size={20} className="text-green-500" />;
     if (quest.status === "failed") return <XCircle size={20} className="text-red-500" />;
-    return <Circle size={20} className="text-[#8b7355] hover:text-[#c1a063] transition-colors" />;
+    return <Circle size={20} className="text-dm-muted hover:text-dm-accent transition-colors" />;
   };
 
   return (
@@ -254,15 +254,15 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
           ref={nodeRef}
           onClick={() => onViewQuest(quest)}
           className={cn(
-          "w-[340px] flex flex-col bg-[#1e1a17] border rounded-sm overflow-hidden shrink-0 transition-colors shadow-lg cursor-pointer hover:border-[#c1a063]",
+          "w-[340px] flex flex-col bg-dm-bg border rounded-sm overflow-hidden shrink-0 transition-colors shadow-lg cursor-pointer hover:border-dm-accent",
           quest.status === "completed" ? "border-green-900/50" :
-          quest.status === "failed" ? "border-red-900/50" : "border-[#3a302a]",
-          highlightedQuestId === quest.id ? "ring-2 ring-[#c1a063] ring-offset-2 ring-offset-[#14110f] shadow-[0_0_15px_rgba(193,160,99,0.5)]" : ""
+          quest.status === "failed" ? "border-red-900/50" : "border-dm-border",
+          highlightedQuestId === quest.id ? "ring-2 ring-dm-accent ring-offset-2 ring-offset-dm-bg-alt shadow-[0_0_15px_rgba(193,160,99,0.5)]" : ""
         )}>
           {quest.image && (
-            <div className="w-full h-24 bg-black relative border-b border-[#c1a063]/10">
+            <div className="w-full h-24 bg-black relative border-b border-dm-accent/10">
               <img src={quest.image} className="w-full h-full object-cover opacity-60 group-hover/tree:opacity-80 transition-opacity" alt="" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1e1a17] to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-dm-bg to-transparent" />
             </div>
           )}
           
@@ -275,12 +275,12 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
                  <h3 className={cn("text-sm font-bold truncate leading-tight uppercase tracking-wider", 
                     quest.status === "completed" ? "text-green-400 line-through decoration-green-900" :
                     quest.status === "failed" ? "text-red-400 line-through decoration-red-900" :
-                    "text-[#f5f2ed]"
+                    "text-dm-text-bright"
                  )} title={quest.title}>
                    {quest.title}
                  </h3>
                  {quest.location && (
-                   <div className="flex items-center text-[10px] text-[#c1a063] uppercase tracking-wider mt-1 font-bold truncate">
+                   <div className="flex items-center text-[10px] text-dm-accent uppercase tracking-wider mt-1 font-bold truncate">
                      <MapPin size={10} className="mr-1 shrink-0" /> {quest.location}
                    </div>
                  )}
@@ -288,22 +288,22 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
             </div>
 
             {quest.description && (
-              <p className="text-xs text-[#e6e2da] opacity-70 line-clamp-2 leading-relaxed" title="Click para ver completa">
+              <p className="text-xs text-dm-text opacity-70 line-clamp-2 leading-relaxed" title="Click para ver completa">
                 {quest.description}
               </p>
             )}
 
             {quest.reward && (
-               <div className="text-xs border border-[#3a302a] bg-[#14110f] px-2 py-1.5 rounded-sm flex flex-col mt-1">
-                 <span className="text-[#8b7355] text-[9px] font-bold uppercase tracking-wider mb-0.5">Recompensa</span>
-                 <span className="text-[#c1a063] font-medium truncate">{quest.reward}</span>
+               <div className="text-xs border border-dm-border bg-dm-bg-alt px-2 py-1.5 rounded-sm flex flex-col mt-1">
+                 <span className="text-dm-muted text-[9px] font-bold uppercase tracking-wider mb-0.5">Recompensa</span>
+                 <span className="text-dm-accent font-medium truncate">{quest.reward}</span>
                </div>
             )}
 
-            <div className="mt-2 flex flex-col gap-2 border-t border-[#3a302a] pt-3 z-10" onClick={e => e.stopPropagation()}>
+            <div className="mt-2 flex flex-col gap-2 border-t border-dm-border pt-3 z-10" onClick={e => e.stopPropagation()}>
                <div className="flex items-center justify-between">
-                 <span className="text-[10px] font-bold text-[#8b7355] uppercase tracking-widest">Detalles y Notas</span>
-                 <button onClick={() => onAddDetail(quest.id)} className="text-[#c1a063] hover:text-[#f5f2ed] bg-[#14110f] border border-[#3a302a] rounded-sm px-2 py-1 transition-colors flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider">
+                 <span className="text-[10px] font-bold text-dm-muted uppercase tracking-widest">Detalles y Notas</span>
+                 <button onClick={() => onAddDetail(quest.id)} className="text-dm-accent hover:text-dm-text-bright bg-dm-bg-alt border border-dm-border rounded-sm px-2 py-1 transition-colors flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider">
                    <Plus size={10} /> Añadir
                  </button>
                </div>
@@ -314,9 +314,9 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
                      <button 
                        key={d.id}
                        onClick={() => onViewDetail(quest.id, d)}
-                       className="flex items-center gap-1 text-[10px] font-bold bg-[#14110f] border border-[#3a302a] text-[#e6e2da] hover:border-[#c1a063] hover:text-[#c1a063] px-2 py-1 rounded-sm transition-colors max-w-full"
+                       className="flex items-center gap-1 text-[10px] font-bold bg-dm-bg-alt border border-dm-border text-dm-text hover:border-dm-accent hover:text-dm-accent px-2 py-1 rounded-sm transition-colors max-w-full"
                      >
-                       <FileText size={10} className="shrink-0 text-[#8b7355]" />
+                       <FileText size={10} className="shrink-0 text-dm-muted" />
                        <span className="truncate max-w-[120px]">{d.name}</span>
                      </button>
                    ))}
@@ -325,14 +325,14 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
             </div>
           </div>
 
-          <div className="flex items-center bg-[#14110f] border-t border-[#3a302a] z-10" onClick={e => e.stopPropagation()}>
-            <button onClick={() => onAddSubQuest(quest.id)} className="flex-1 p-2 text-[10px] text-[#8b7355] font-bold uppercase tracking-wider hover:text-[#f5f2ed] hover:bg-[#1e1a17] transition-all border-r border-[#3a302a] flex items-center justify-center gap-1" title="Añadir Sub-misión">
+          <div className="flex items-center bg-dm-bg-alt border-t border-dm-border z-10" onClick={e => e.stopPropagation()}>
+            <button onClick={() => onAddSubQuest(quest.id)} className="flex-1 p-2 text-[10px] text-dm-muted font-bold uppercase tracking-wider hover:text-dm-text-bright hover:bg-dm-bg transition-all border-r border-dm-border flex items-center justify-center gap-1" title="Añadir Sub-misión">
               <Plus size={12} /> Ramificar
             </button>
-            <button onClick={() => onEditQuest(quest)} className="px-4 py-2 text-[#8b7355] hover:text-[#c1a063] hover:bg-[#1e1a17] transition-all border-r border-[#3a302a]" title="Editar Misión">
+            <button onClick={() => onEditQuest(quest)} className="px-4 py-2 text-dm-muted hover:text-dm-accent hover:bg-dm-bg transition-all border-r border-dm-border" title="Editar Misión">
               <Edit2 size={14} />
             </button>
-            <button onClick={() => onDeleteQuest(quest)} className="px-4 py-2 text-[#8b7355] hover:text-red-400 hover:bg-[#1e1a17] transition-all" title="Eliminar Misión">
+            <button onClick={() => onDeleteQuest(quest)} className="px-4 py-2 text-dm-muted hover:text-red-400 hover:bg-dm-bg transition-all" title="Eliminar Misión">
               <Trash2 size={14} />
             </button>
           </div>
@@ -341,7 +341,7 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
         {children.length > 0 && (
           <button 
             onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-            className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#1e1a17] border border-[#3a302a] text-[#c1a063] flex items-center justify-center hover:bg-[#2a2420] transition-colors z-20 shadow-sm"
+            className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-dm-bg border border-dm-border text-dm-accent flex items-center justify-center hover:bg-[#2a2420] transition-colors z-20 shadow-sm"
           >
             {expanded ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
           </button>
@@ -356,17 +356,17 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
             exit={{ opacity: 0, width: 0 }}
             className="flex items-center overflow-hidden shrink-0"
           >
-             <div className="w-8 h-[2px] bg-[#3a302a] shrink-0" />
+             <div className="w-8 h-[2px] bg-dm-border shrink-0" />
              
              <div className="flex flex-col gap-6 shrink-0 relative">
                {children.map((child, index) => (
                  <div key={child.id} className="flex items-center relative pl-8">
-                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-[2px] bg-[#3a302a]" />
+                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-[2px] bg-dm-border" />
                    {index !== 0 && (
-                     <div className="absolute left-0 bottom-1/2 w-[2px] h-[calc(50%+12px)] bg-[#3a302a]" />
+                     <div className="absolute left-0 bottom-1/2 w-[2px] h-[calc(50%+12px)] bg-dm-border" />
                    )}
                    {index !== children.length - 1 && (
-                     <div className="absolute left-0 top-1/2 w-[2px] h-[calc(50%+12px)] bg-[#3a302a]" />
+                     <div className="absolute left-0 top-1/2 w-[2px] h-[calc(50%+12px)] bg-dm-border" />
                    )}
                     <HorizontalQuestTree 
                        quest={child}
@@ -448,11 +448,11 @@ function QuestModal({ isOpen, onClose, initialData, defaultParentId, allQuests }
     <Modal isOpen={isOpen} onClose={onClose} title={initialData ? "Editar Misión" : "Nueva Misión"}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex justify-center mb-4">
-          <div className="relative w-full h-40 bg-[#14110f] border border-[#3a302a] border-dashed flex items-center justify-center overflow-hidden rounded-sm group hover:border-[#c1a063] transition-colors cursor-pointer">
+          <div className="relative w-full h-40 bg-dm-bg-alt border border-dm-border border-dashed flex items-center justify-center overflow-hidden rounded-sm group hover:border-dm-accent transition-colors cursor-pointer">
             {image ? (
               <img src={image} alt="Quest" className="w-full h-full object-cover group-hover:opacity-50 transition-opacity" />
             ) : (
-              <div className="text-[#8b7355] flex flex-col items-center group-hover:text-[#c1a063] transition-colors">
+              <div className="text-dm-muted flex flex-col items-center group-hover:text-dm-accent transition-colors">
                 <UploadIcon size={24} className="mb-2" />
                 <span className="text-xs uppercase tracking-widest font-bold">Añadir Imagen (Opcional)</span>
               </div>
@@ -465,7 +465,7 @@ function QuestModal({ isOpen, onClose, initialData, defaultParentId, allQuests }
             />
             {image && (
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="bg-[#14110f]/80 px-3 py-1 text-white text-xs uppercase tracking-widest font-bold rounded-sm backdrop-blur-sm">Cambiar</span>
+                <span className="bg-dm-bg-alt/80 px-3 py-1 text-white text-xs uppercase tracking-widest font-bold rounded-sm backdrop-blur-sm">Cambiar</span>
               </div>
             )}
           </div>
@@ -476,11 +476,11 @@ function QuestModal({ isOpen, onClose, initialData, defaultParentId, allQuests }
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input label="Lugar (Opcional)" value={location} onChange={e => setLocation(e.target.value)} />
           <div className="flex flex-col gap-1 w-full">
-            <label className="text-[10px] font-bold text-[#c1a063] uppercase tracking-widest">Misión Anterior (Rama)</label>
+            <label className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">Misión Anterior (Rama)</label>
             <select 
               value={parentId} 
               onChange={(e) => setParentId(e.target.value)}
-              className="flex h-10 w-full bg-[#1e1a17] border border-[#3a302a] px-3 py-2 text-sm text-[#f5f2ed] focus:outline-none focus:border-[#c1a063]"
+              className="flex h-10 w-full bg-dm-bg border border-dm-border px-3 py-2 text-sm text-dm-text-bright focus:outline-none focus:border-dm-accent"
             >
               <option value="">(Ninguna - Nueva Misión)</option>
               {availableParents.map(q => (
@@ -491,18 +491,18 @@ function QuestModal({ isOpen, onClose, initialData, defaultParentId, allQuests }
         </div>
 
         <div className="flex flex-col gap-1 w-full">
-          <label className="text-[10px] font-bold text-[#c1a063] uppercase tracking-widest">Descripción</label>
+          <label className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">Descripción</label>
           <textarea 
             value={description}
             onChange={e => setDescription(e.target.value)}
-            className="flex min-h-[100px] w-full bg-[#1e1a17] border border-[#3a302a] px-3 py-2 text-sm text-[#f5f2ed] placeholder:text-[#8b7355] focus:outline-none focus:border-[#c1a063] resize-y custom-scrollbar"
+            className="flex min-h-[100px] w-full bg-dm-bg border border-dm-border px-3 py-2 text-sm text-dm-text-bright placeholder:text-dm-muted focus:outline-none focus:border-dm-accent resize-y custom-scrollbar"
           />
         </div>
 
         <Input label="Recompensa (Opcional)" value={reward} onChange={e => setReward(e.target.value)} />
 
-        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[#3a302a]">
-          <Button type="button" variant="ghost" onClick={onClose} className="border border-[#3a302a]">Cancelar</Button>
+        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-dm-border">
+          <Button type="button" variant="ghost" onClick={onClose} className="border border-dm-border">Cancelar</Button>
           <Button type="submit">Guardar</Button>
         </div>
       </form>
@@ -567,13 +567,13 @@ function DetailModal({
     <Modal isOpen={!!state.mode} onClose={close} title={state.mode === "add" ? "Nuevo Detalle" : state.mode === "edit" ? "Editar Detalle" : "Detalle"}>
       {state.mode === "view" ? (
          <div className="flex flex-col gap-4">
-            <h3 className="text-xl font-bold text-[#c1a063] uppercase tracking-widest">{state.detail?.name}</h3>
-            <div className="bg-[#14110f] border border-[#3a302a] p-4 rounded-sm">
-               <p className="text-sm text-[#e6e2da] whitespace-pre-wrap leading-relaxed opacity-90">{state.detail?.description}</p>
+            <h3 className="text-xl font-bold text-dm-accent uppercase tracking-widest">{state.detail?.name}</h3>
+            <div className="bg-dm-bg-alt border border-dm-border p-4 rounded-sm">
+               <p className="text-sm text-dm-text whitespace-pre-wrap leading-relaxed opacity-90">{state.detail?.description}</p>
             </div>
-            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[#3a302a]">
+            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-dm-border">
                <Button variant="ghost" onClick={handleDelete} className="text-red-400 hover:text-red-300 hover:bg-red-900/20">Eliminar</Button>
-               <Button variant="ghost" onClick={() => setState({ ...state, mode: "edit" })} className="border border-[#3a302a]">Editar</Button>
+               <Button variant="ghost" onClick={() => setState({ ...state, mode: "edit" })} className="border border-dm-border">Editar</Button>
                <Button onClick={close}>Cerrar</Button>
             </div>
          </div>
@@ -581,16 +581,16 @@ function DetailModal({
          <form onSubmit={handleSave} className="flex flex-col gap-4">
             <Input label="Título (Ej: Nota, Pista, Recompensa extra)" value={name} onChange={e => setName(e.target.value)} required />
             <div className="flex flex-col gap-1 w-full">
-              <label className="text-[10px] font-bold text-[#c1a063] uppercase tracking-widest">Descripción</label>
+              <label className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">Descripción</label>
               <textarea 
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                className="flex min-h-[150px] w-full bg-[#1e1a17] border border-[#3a302a] px-3 py-2 text-sm text-[#f5f2ed] placeholder:text-[#8b7355] focus:outline-none focus:border-[#c1a063] resize-y custom-scrollbar"
+                className="flex min-h-[150px] w-full bg-dm-bg border border-dm-border px-3 py-2 text-sm text-dm-text-bright placeholder:text-dm-muted focus:outline-none focus:border-dm-accent resize-y custom-scrollbar"
                 required
               />
             </div>
-            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[#3a302a]">
-              <Button type="button" variant="ghost" onClick={close} className="border border-[#3a302a]">Cancelar</Button>
+            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-dm-border">
+              <Button type="button" variant="ghost" onClick={close} className="border border-dm-border">Cancelar</Button>
               <Button type="submit">Guardar</Button>
             </div>
          </form>

@@ -146,13 +146,13 @@ export function ViewParty() {
 
   return (
     <div className="flex-1 flex flex-col bg-transparent border-none rounded-none overflow-hidden">
-      <div className="bg-[#1e1a17] px-4 sm:px-6 py-4 border-b border-[#3a302a] flex justify-between items-center z-20 relative gap-4">
-        <h2 className="text-lg uppercase tracking-widest text-[#c1a063] font-light flex items-center gap-2 truncate">
-          <Users className="text-[#c1a063] shrink-0" size={20} /> 
+      <div className="bg-dm-bg px-4 sm:px-6 py-4 border-b border-dm-border flex justify-between items-center z-20 relative gap-4">
+        <h2 className="text-lg uppercase tracking-widest text-dm-accent font-light flex items-center gap-2 truncate">
+          <Users className="text-dm-accent shrink-0" size={20} /> 
           <span className="hidden sm:inline">Grupo y Personajes</span><span className="sm:hidden">Personajes</span>
         </h2>
       </div>
-      <div className="bg-[#1e1a17] px-4 sm:px-6 py-4 border-b border-[#3a302a] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+      <div className="bg-dm-bg px-4 sm:px-6 py-4 border-b border-dm-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <div className="flex gap-2 w-full sm:w-auto overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
           <Button variant={tab === "players" ? "primary" : "secondary"} onClick={() => setTab("players")} className="whitespace-nowrap">
             Jugadores ({players.length})
@@ -165,7 +165,7 @@ export function ViewParty() {
           </Button>
         </div>
         <div className="flex gap-2 w-full sm:w-auto overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
-          <label className="cursor-pointer px-3 sm:px-4 py-2 bg-[#1a1614] border border-[#3a302a] text-[#8b7355] text-xs uppercase tracking-widest hover:bg-[#2a2420] hover:border-[#c1a063] hover:text-[#c1a063] inline-flex items-center justify-center transition-all shadow-sm rounded-none whitespace-nowrap">
+          <label className="cursor-pointer px-3 sm:px-4 py-2 bg-dm-bg-hover border border-dm-border text-dm-muted text-xs uppercase tracking-widest hover:bg-dm-bg-hover hover:border-dm-accent hover:text-dm-accent inline-flex items-center justify-center transition-all shadow-sm rounded-none whitespace-nowrap">
             <Download size={14} className="mr-2" /> Importar {tab === "players" ? "Jugadores" : tab === "npcs" ? "NPCs" : "Criaturas"}
             <input type="file" accept=".json" className="hidden" onChange={importData} />
           </label>
@@ -217,13 +217,13 @@ export function ViewParty() {
           </AnimatePresence>
           
           {tab === "players" && players.length === 0 && (
-             <p className="text-[#e6e2da] opacity-50 w-full text-center py-10 ">No hay jugadores. Añade uno para empezar.</p>
+             <p className="text-dm-text opacity-50 w-full text-center py-10 ">No hay jugadores. Añade uno para empezar.</p>
           )}
           {tab === "npcs" && npcs.length === 0 && (
-             <p className="text-[#e6e2da] opacity-50 w-full text-center py-10 ">No hay NPCs. Añade uno para empezar.</p>
+             <p className="text-dm-text opacity-50 w-full text-center py-10 ">No hay NPCs. Añade uno para empezar.</p>
           )}
           {tab === "creatures" && creatures.length === 0 && (
-             <p className="text-[#e6e2da] opacity-50 w-full text-center py-10 ">No hay Criaturas. Añade una para empezar.</p>
+             <p className="text-dm-text opacity-50 w-full text-center py-10 ">No hay Criaturas. Añade una para empezar.</p>
           )}
         </div>
       </div>
@@ -375,7 +375,7 @@ function CharacterModal({ isOpen, onClose, initialData, defaultType }: { isOpen:
           <Input label="Clase de Armadura (AC)" name="ac" type="number" required defaultValue={initialData?.ac} />
         </div>
 
-        <div className="border border-[#3a302a] rounded-sm p-3 grid grid-cols-3 sm:grid-cols-6 gap-2 bg-[#0a0a09]">
+        <div className="border border-dm-border rounded-sm p-3 grid grid-cols-3 sm:grid-cols-6 gap-2 bg-dm-bg-darker">
           <Input label="FUE" name="str" type="number" required defaultValue={initialData?.stats?.STR || 10} />
           <Input label="DEX" name="dex" type="number" required defaultValue={initialData?.stats?.DEX || 10} />
           <Input label="CON" name="con" type="number" required defaultValue={initialData?.stats?.CON || 10} />
@@ -396,12 +396,12 @@ function CharacterModal({ isOpen, onClose, initialData, defaultType }: { isOpen:
 
         <div className="flex items-center gap-4 mt-2">
           {image ? (
-            <div className="relative w-16 h-16 border border-[#c1a063] group">
+            <div className="relative w-16 h-16 border border-dm-accent group">
               <img src={image} alt="Preview" className="w-full h-full object-cover" />
               <button type="button" onClick={() => setImage(undefined)} className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-red-400 transition-opacity">X</button>
             </div>
           ) : (
-            <label className="w-16 h-16 border border-[#3a302a] flex items-center justify-center text-[#8b7355] cursor-pointer hover:border-[#c1a063] hover:text-[#c1a063] transition-colors shrink-0">
+            <label className="w-16 h-16 border border-dm-border flex items-center justify-center text-dm-muted cursor-pointer hover:border-dm-accent hover:text-dm-accent transition-colors shrink-0">
               <ImageIcon size={20} />
               <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
             </label>
@@ -409,7 +409,7 @@ function CharacterModal({ isOpen, onClose, initialData, defaultType }: { isOpen:
           <span className="text-xs text-gray-500 italic">Sube un retrato para mostrarlo en la ficha del personaje.</span>
         </div>
 
-        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[#3a302a]">
+        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-dm-border">
           <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
           <Button type="submit">Guardar</Button>
         </div>

@@ -62,9 +62,9 @@ export function ViewInitiative() {
 
   return (
     <div className="flex-1 flex flex-col bg-transparent border-none rounded-none overflow-hidden">
-      <div className="bg-[#1e1a17] px-4 sm:px-6 py-4 border-b border-[#3a302a] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+      <div className="bg-dm-bg px-4 sm:px-6 py-4 border-b border-dm-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <div className="flex items-center gap-4 w-full sm:w-auto overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
-          <h2 className="text-lg uppercase tracking-widest text-[#c1a063] font-light flex items-center gap-2 truncate"><span className="hidden sm:inline">Iniciativa</span><span className="sm:hidden">Iniciativa</span></h2>
+          <h2 className="text-lg uppercase tracking-widest text-dm-accent font-light flex items-center gap-2 truncate"><span className="hidden sm:inline">Iniciativa</span><span className="sm:hidden">Iniciativa</span></h2>
           <div className="flex gap-2">
             {!isCombatActive ? (
               <Button onClick={handleStartCombat} className="whitespace-nowrap">
@@ -72,7 +72,7 @@ export function ViewInitiative() {
               </Button>
             ) : (
               <>
-                <Button onClick={handleNextTurn} variant="secondary" className="border-[#3a302a] text-[#c1a063] whitespace-nowrap">
+                <Button onClick={handleNextTurn} variant="secondary" className="border-dm-border text-dm-accent whitespace-nowrap">
                   <SkipForward size={14} className="mr-1" /> Siguiente Turno
                 </Button>
                 <Button onClick={handleEndCombat} variant="danger" className="whitespace-nowrap">
@@ -124,27 +124,27 @@ export function ViewInitiative() {
                   key={c.id} 
                   className={cn(
                     "flex items-center px-3 sm:px-6 py-4 border-b transition-colors relative overflow-hidden group",
-                    isDead ? "border-[#8a211b]/30" : "border-[#2a2420]",
-                    isActive ? "bg-[#2a2420]" : "hover:bg-[#1e1a17]",
+                    isDead ? "border-dm-danger/30" : "border-dm-bg-card",
+                    isActive ? "bg-dm-bg-card" : "hover:bg-dm-bg",
                     isFull && !isDead ? "shadow-[inset_0_0_10px_rgba(193,160,99,0.02)]" : "",
                     isHurt && !isDead ? "shadow-[inset_0_0_15px_rgba(138,33,27,0.03)]" : "",
                     isBloodied && !isDead ? "shadow-[inset_0_0_20px_rgba(138,33,27,0.08)]" : "",
-                    isBadlyWounded && !isDead ? "shadow-[inset_0_0_30px_rgba(138,33,27,0.15)] border-[#8a211b]/30" : "",
-                    isCritical && !isDead ? "shadow-[inset_0_0_40px_rgba(138,33,27,0.25)] border-[#8a211b]/60" : ""
+                    isBadlyWounded && !isDead ? "shadow-[inset_0_0_30px_rgba(138,33,27,0.15)] border-dm-danger/30" : "",
+                    isCritical && !isDead ? "shadow-[inset_0_0_40px_rgba(138,33,27,0.25)] border-dm-danger/60" : ""
                   )}
                 >
                   {isActive && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c1a063] shadow-[0_0_10px_#c1a063] z-10 pointer-events-none" />
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-dm-accent shadow-[0_0_10px_#c1a063] z-10 pointer-events-none" />
                   )}
                   {(isCritical || isBadlyWounded) && !isDead && (
                     <motion.div 
-                      className={cn("absolute inset-0 pointer-events-none mix-blend-screen", isCritical ? "bg-[#8a211b]/20" : "bg-[#8a211b]/10")}
+                      className={cn("absolute inset-0 pointer-events-none mix-blend-screen", isCritical ? "bg-dm-danger/20" : "bg-dm-danger/10")}
                       animate={{ opacity: [0, 1, 0] }}
                       transition={{ repeat: Infinity, duration: isCritical ? 1 : 2, ease: "easeInOut" }}
                     />
                   )}
                   {isDead && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#8a211b]/10 to-[#8a211b]/30 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-dm-danger/10 to-dm-danger/30 pointer-events-none" />
                   )}
                   {isDead && (
                     <div className="absolute right-32 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none rotate-12 scale-150">
@@ -152,15 +152,15 @@ export function ViewInitiative() {
                     </div>
                   )}
                   {isDead && (
-                    <div className="absolute left-16 top-1/2 -translate-y-1/2 w-[60%] h-px bg-[#8a211b]/70 shadow-[0_0_10px_#8a211b] pointer-events-none z-10" />
+                    <div className="absolute left-16 top-1/2 -translate-y-1/2 w-[60%] h-px bg-dm-danger/70 shadow-[0_0_10px_#8a211b] pointer-events-none z-10" />
                   )}
 
-                  <div className={cn("w-16 flex items-center justify-center font-bold", isActive ? "text-[#c1a063]" : "text-[#f5f2ed] opacity-50")}>
+                  <div className={cn("w-16 flex items-center justify-center font-bold", isActive ? "text-dm-accent" : "text-dm-text-bright opacity-50")}>
                     <input 
                       type="number" 
                       value={c.initiative} 
                       onChange={(e) => actions.updateCombatant(c.id, { initiative: Number(e.target.value) })}
-                      className="w-12 text-center text-2xl h-10 px-0 font-bold border-none bg-transparent focus:bg-[#3a302a] rounded-sm outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-12 text-center text-2xl h-10 px-0 font-bold border-none bg-transparent focus:bg-dm-border rounded-sm outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -171,13 +171,13 @@ export function ViewInitiative() {
                           onClick={() => setViewCharModal({ open: true, char })}
                           className={cn(
                             "font-bold text-lg text-left truncate transition-colors", 
-                            isActive ? "text-[#f5f2ed]" : "text-[#f5f2ed] opacity-80", 
-                            isDead ? "line-through text-gray-500 decoration-[#8a211b]" : "",
-                            "hover:text-[#c1a063]"
+                            isActive ? "text-dm-text-bright" : "text-dm-text-bright opacity-80", 
+                            isDead ? "line-through text-gray-500 decoration-dm-danger" : "",
+                            "hover:text-dm-accent"
                           )}
                         >
                           {char.type === "player" && <User size={16} className="inline-block mr-2 text-green-600" />}
-                          {char.type === "creature" && <Skull size={16} className="inline-block mr-2 text-[#8a211b]" />}
+                          {char.type === "creature" && <Skull size={16} className="inline-block mr-2 text-dm-danger" />}
                           {char.type === "npc" && <UserCheck size={16} className="inline-block mr-2 text-blue-500" />}
                           {char.name}
                         </button>
@@ -187,7 +187,7 @@ export function ViewInitiative() {
                             <button 
                               key={s.id}
                               onClick={() => setStatusModal({ open: true, combatantId: c.id, effect: s })}
-                              className="px-2 py-0.5 bg-[#8a211b]/20 text-[#ff8f8a] text-[11px] uppercase tracking-wider rounded-sm border border-[#8a211b]/50 cursor-pointer hover:bg-[#8a211b]/40 truncate max-w-[150px] font-bold"
+                              className="px-2 py-0.5 bg-dm-danger/20 text-[#ff8f8a] text-[11px] uppercase tracking-wider rounded-sm border border-dm-danger/50 cursor-pointer hover:bg-dm-danger/40 truncate max-w-[150px] font-bold"
                               title={s.description}
                             >
                               {s.name}{s.duration ? ` (${s.duration})` : ""}
@@ -195,14 +195,14 @@ export function ViewInitiative() {
                           ))}
                           <button 
                             onClick={() => setStatusModal({ open: true, combatantId: c.id })}
-                            className="w-5 h-5 rounded-sm border border-[#3a302a] flex items-center justify-center text-[12px] opacity-40 hover:opacity-100 hover:text-[#c1a063] hover:border-[#c1a063]"
+                            className="w-5 h-5 rounded-sm border border-dm-border flex items-center justify-center text-[12px] opacity-40 hover:opacity-100 hover:text-dm-accent hover:border-dm-accent"
                             title="Añadir Estado"
                           >
                             +
                           </button>
                         </div>
                       </div>
-                      <span className={cn("text-[10px] uppercase font-bold", isActive ? "opacity-100 text-[#c1a063]" : "opacity-30")}>
+                      <span className={cn("text-[10px] uppercase font-bold", isActive ? "opacity-100 text-dm-accent" : "opacity-30")}>
                         {isActive ? "▶ TURNO ACTIVO" : (char.type === "player" ? "Jugador" : char.type === "creature" ? "Criatura" : "NPC")}
                       </span>
                     </div>
@@ -213,24 +213,24 @@ export function ViewInitiative() {
                             <Heart size={14} className={cn(
                               "mr-auto shrink-0 transition-colors", 
                               isDead ? "text-gray-600" : 
-                              isCritical ? "text-[#8a211b] animate-bounce" : 
-                              isBadlyWounded ? "text-[#8a211b] animate-pulse" :
-                              isActive ? "text-red-500" : "text-[#8a211b]"
+                              isCritical ? "text-dm-danger animate-bounce" : 
+                              isBadlyWounded ? "text-dm-danger animate-pulse" :
+                              isActive ? "text-red-500" : "text-dm-danger"
                             )} />
                             <MathInput 
                               value={c.hpCurrent}
                               onValueChange={(val) => actions.updateCombatant(c.id, { hpCurrent: val })}
-                              className="w-20 h-6 p-0 md:text-right text-left border-none bg-transparent text-[#e6e2da] text-xl font-bold focus:bg-[#3a302a] rounded-sm"
+                              className="w-20 h-6 p-0 md:text-right text-left border-none bg-transparent text-dm-text text-xl font-bold focus:bg-dm-border rounded-sm"
                             />
                             <span className="opacity-50 text-base select-none shrink-0">/ {char.hpMax}</span>
                         </div>
-                        <div className={cn("w-full md:w-32 h-1.5 bg-[#1a1614] rounded-full relative overflow-hidden border", (isCritical || isBadlyWounded) ? "border-[#8a211b]" : "border-[#3a302a]", isCritical ? "animate-pulse" : "")}>
+                        <div className={cn("w-full md:w-32 h-1.5 bg-dm-bg-hover rounded-full relative overflow-hidden border", (isCritical || isBadlyWounded) ? "border-dm-danger" : "border-dm-border", isCritical ? "animate-pulse" : "")}>
                           <div 
                             className={cn(
                               "absolute inset-0 transition-all duration-500", 
                               isDead ? "bg-gray-600" : 
-                              isCritical ? "bg-[#8a211b]" : 
-                              isBadlyWounded ? "bg-[#a52a22]" :
+                              isCritical ? "bg-dm-danger" : 
+                              isBadlyWounded ? "bg-dm-danger-hover" :
                               char.type === "player" ? "bg-green-600" : 
                               char.type === "npc" ? "bg-blue-600" : "bg-red-800"
                             )} 
@@ -241,7 +241,7 @@ export function ViewInitiative() {
 
                       <div className="w-16 flex items-center justify-center">
                         <div className="flex items-center justify-center p-1 relative" title="Clase de Armadura">
-                          <Shield size={36} className={cn("opacity-80", isActive ? "text-[#c1a063]" : "text-[#4a3e35]")} />
+                          <Shield size={36} className={cn("opacity-80", isActive ? "text-dm-accent" : "text-dm-border-focus")} />
                           <span className="absolute text-[13px] font-bold mt-[-2px]">{char.ac}</span>
                         </div>
                       </div>
@@ -251,7 +251,7 @@ export function ViewInitiative() {
                   <div className="w-12 shrink-0 flex justify-end items-center">
                     <button 
                       onClick={() => actions.killCombatant(c.id)}
-                      className="p-2 text-[#3a302a] hover:text-[#8a211b] transition-colors"
+                      className="p-2 text-dm-border hover:text-dm-danger transition-colors"
                       title="Mandar al cementerio"
                     >
                       <Trash2 size={20} />
@@ -353,17 +353,17 @@ function AddCombatantModal({ isOpen, onClose }: { isOpen: boolean, onClose: () =
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Añadir a Iniciativa">
-      <div className="flex space-x-4 mb-6 border-b border-[#c1a063]/10">
+      <div className="flex space-x-4 mb-6 border-b border-dm-accent/10">
         <button 
           type="button"
-          className={cn("pb-2 uppercase tracking-widest text-xs font-bold transition-colors", mode === "existing" ? "text-[#c1a063] border-b-2 border-[#c1a063]" : "text-[#8b7355] hover:text-white border-b-2 border-transparent")}
+          className={cn("pb-2 uppercase tracking-widest text-xs font-bold transition-colors", mode === "existing" ? "text-dm-accent border-b-2 border-dm-accent" : "text-dm-muted hover:text-white border-b-2 border-transparent")}
           onClick={() => setMode("existing")}
         >
           Existente
         </button>
         <button 
           type="button"
-          className={cn("pb-2 uppercase tracking-widest text-xs font-bold transition-colors", mode === "temp" ? "text-[#c1a063] border-b-2 border-[#c1a063]" : "text-[#8b7355] hover:text-white border-b-2 border-transparent")}
+          className={cn("pb-2 uppercase tracking-widest text-xs font-bold transition-colors", mode === "temp" ? "text-dm-accent border-b-2 border-dm-accent" : "text-dm-muted hover:text-white border-b-2 border-transparent")}
           onClick={() => setMode("temp")}
         >
           Nueva Temporal
@@ -372,11 +372,11 @@ function AddCombatantModal({ isOpen, onClose }: { isOpen: boolean, onClose: () =
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {mode === "existing" ? (
           <div className="flex flex-col gap-1 w-full">
-            <label className="text-[10px] font-bold text-[#c1a063] uppercase tracking-widest">Personaje</label>
+            <label className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">Personaje</label>
             <select 
               value={selectedId} 
               onChange={(e) => setSelectedId(e.target.value)}
-              className="flex h-10 w-full bg-[#1e1a17] border border-[#3a302a] px-3 py-2 text-sm text-[#f5f2ed] focus:outline-none focus:border-[#c1a063]"
+              className="flex h-10 w-full bg-dm-bg border border-dm-border px-3 py-2 text-sm text-dm-text-bright focus:outline-none focus:border-dm-accent"
               required={mode === "existing"}
             >
               <option value="">Selecciona...</option>
@@ -397,7 +397,7 @@ function AddCombatantModal({ isOpen, onClose }: { isOpen: boolean, onClose: () =
               )}
             </select>
             {availablePlayers.length === 0 && availableNpcs.length === 0 && availableCreatures.length === 0 && (
-              <p className="text-xs text-[#8a211b] mt-1">Todos los personajes ya están en la iniciativa.</p>
+              <p className="text-xs text-dm-danger mt-1">Todos los personajes ya están en la iniciativa.</p>
             )}
           </div>
         ) : (
@@ -407,8 +407,8 @@ function AddCombatantModal({ isOpen, onClose }: { isOpen: boolean, onClose: () =
               <Input label="Vida Máxima (HP)" type="number" value={tempHpMax} onChange={e => setTempHpMax(e.target.value)} required={mode === "temp"} />
               <Input label="Armadura (CA)" type="number" value={tempAc} onChange={e => setTempAc(e.target.value)} required={mode === "temp"} />
             </div>
-            <div className="flex items-center gap-2 text-sm text-[#e6e2da] mt-2">
-              <input type="checkbox" id="isTempEnemy" checked={isTempEnemy} onChange={(e) => setIsTempEnemy(e.target.checked)} className="w-4 h-4 rounded bg-[#0a0a09] border-[#3a302a] text-[#8a211b] focus:ring-[#8a211b]" />
+            <div className="flex items-center gap-2 text-sm text-dm-text mt-2">
+              <input type="checkbox" id="isTempEnemy" checked={isTempEnemy} onChange={(e) => setIsTempEnemy(e.target.checked)} className="w-4 h-4 rounded bg-[#0a0a09] border-dm-border text-dm-danger focus:ring-dm-danger" />
               <label htmlFor="isTempEnemy">Es Enemigo (Criatura)</label>
             </div>
           </>
@@ -421,7 +421,7 @@ function AddCombatantModal({ isOpen, onClose }: { isOpen: boolean, onClose: () =
           value={initiative}
           onChange={(e) => setInitiative(e.target.value)}
         />
-        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[#3a302a]">
+        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-dm-border">
           <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
           <Button type="submit" disabled={mode === "existing" && !selectedId}>Añadir</Button>
         </div>
@@ -496,8 +496,8 @@ function StatusModal({ isOpen, onClose, combatantId, effect }: { isOpen: boolean
     <Modal isOpen={isOpen} onClose={onClose} title={effect ? "Editar Estado" : "Nuevo Estado"}>
       <div className="flex flex-col md:flex-row gap-6 max-h-[70vh]">
         {!effect && (
-          <div className="w-full md:w-1/3 flex flex-col gap-2 border-b md:border-b-0 md:border-r border-[#3a302a] pb-4 md:pb-0 md:pr-4 overflow-y-auto custom-scrollbar">
-            <h3 className="text-[10px] uppercase tracking-widest text-[#c1a063] font-bold mb-2">Predefinidos (D&D 5e)</h3>
+          <div className="w-full md:w-1/3 flex flex-col gap-2 border-b md:border-b-0 md:border-r border-dm-border pb-4 md:pb-0 md:pr-4 overflow-y-auto custom-scrollbar">
+            <h3 className="text-[10px] uppercase tracking-widest text-dm-accent font-bold mb-2">Predefinidos (D&D 5e)</h3>
             {PREDEFINED_STATUSES.map((status) => (
               <button
                 key={status.name}
@@ -506,7 +506,7 @@ function StatusModal({ isOpen, onClose, combatantId, effect }: { isOpen: boolean
                   setName(status.name);
                   setDesc(status.description);
                 }}
-                className="text-left text-sm px-3 py-2 bg-[#1a1614] border border-[#3a302a] text-[#8b7355] hover:text-[#c1a063] hover:border-[#c1a063] transition-colors"
+                className="text-left text-sm px-3 py-2 bg-dm-bg-hover border border-dm-border text-dm-muted hover:text-dm-accent hover:border-dm-accent transition-colors"
               >
                 {status.name}
               </button>
@@ -536,7 +536,7 @@ function StatusModal({ isOpen, onClose, combatantId, effect }: { isOpen: boolean
             onChange={(e) => setDuration(e.target.value)}
           />
           
-          <div className="flex justify-between mt-auto pt-4 border-t border-[#3a302a]">
+          <div className="flex justify-between mt-auto pt-4 border-t border-dm-border">
             {effect ? (
               <Button type="button" variant="danger" onClick={handleDelete}>Borrar Estado</Button>
             ) : <div></div>}
@@ -562,12 +562,12 @@ function GraveyardModal({ isOpen, onClose, onViewChar }: { isOpen: boolean, onCl
           const char = (c.isTemp && c.tempData) ? c.tempData : actions.getCharacter(c.characterId);
           if (!char) return null;
           return (
-            <div key={c.id} className="flex items-center justify-between p-3 bg-[#1e1a17] border border-[#3a302a] rounded-sm shadow-md">
+            <div key={c.id} className="flex items-center justify-between p-3 bg-dm-bg border border-dm-border rounded-sm shadow-md">
               <div>
-                <button onClick={() => { onViewChar(char); onClose(); }} className="font-bold hover:text-[#c1a063] truncate max-w-[200px] text-[#e6e2da]">
+                <button onClick={() => { onViewChar(char); onClose(); }} className="font-bold hover:text-dm-accent truncate max-w-[200px] text-dm-text">
                   {char.name}
                 </button>
-                <div className="text-[10px] uppercase text-[#c1a063] opacity-60">HP al morir: {c.hpCurrent}</div>
+                <div className="text-[10px] uppercase text-dm-accent opacity-60">HP al morir: {c.hpCurrent}</div>
               </div>
               <div className="flex gap-2">
                 <Button variant="secondary" onClick={() => actions.reviveCombatant(c.id)} title="Devolver a Iniciativa">
@@ -580,7 +580,7 @@ function GraveyardModal({ isOpen, onClose, onViewChar }: { isOpen: boolean, onCl
             </div>
           )
         })}
-        {graveyard.length === 0 && <p className="text-[#e6e2da] opacity-50 text-center py-4 ">El cementerio está vacío.</p>}
+        {graveyard.length === 0 && <p className="text-dm-text opacity-50 text-center py-4 ">El cementerio está vacío.</p>}
       </div>
       <ConfirmDeleteModal 
         isOpen={!!deleteId} 

@@ -35,7 +35,7 @@ export function Lightbox({ isOpen, onClose, src, alt, title }: LightboxProps) {
           >
             <button
               onClick={onClose}
-              className="absolute -top-12 right-0 p-2 text-[#c1a063] hover:text-white transition-colors z-10"
+              className="absolute -top-12 right-0 p-2 text-dm-accent hover:text-white transition-colors z-10"
             >
               <X size={32} />
             </button>
@@ -43,12 +43,12 @@ export function Lightbox({ isOpen, onClose, src, alt, title }: LightboxProps) {
               <img
                 src={src}
                 alt={alt || title || "Imagen"}
-                className="max-w-[95vw] max-h-[85vh] object-contain border shadow-2xl border-[#c1a063]/30 shadow-[#c1a063]/10"
+                className="max-w-[95vw] max-h-[85vh] object-contain border shadow-2xl border-dm-accent/30 shadow-dm-accent/10"
               />
               
               {title && (
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-6 pt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <h2 className="text-2xl font-display text-[#c1a063] uppercase tracking-widest text-center">
+                  <h2 className="text-2xl font-display text-dm-accent uppercase tracking-widest text-center">
                     {title}
                   </h2>
                 </div>
@@ -56,7 +56,7 @@ export function Lightbox({ isOpen, onClose, src, alt, title }: LightboxProps) {
             </div>
             
             {title && (
-              <div className="mt-4 text-[#c1a063] font-display uppercase tracking-widest text-xl opacity-80 md:hidden">
+              <div className="mt-4 text-dm-accent font-display uppercase tracking-widest text-xl opacity-80 md:hidden">
                 {title}
               </div>
             )}

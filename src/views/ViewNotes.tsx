@@ -85,21 +85,21 @@ export function ViewNotes() {
   return (
     <div className="flex-1 flex flex-col bg-transparent border-none rounded-none overflow-hidden relative">
       {/* HEADER: Matches standard top bar */}
-      <div className="bg-[#1e1a17] px-4 sm:px-6 py-4 border-b border-[#3a302a] flex justify-between items-center z-20 relative gap-4">
-        <h2 className="text-lg uppercase tracking-widest text-[#c1a063] font-light flex items-center gap-2 truncate">
-          <StickyNote className="text-[#c1a063] shrink-0" size={20} />
+      <div className="bg-dm-bg px-4 sm:px-6 py-4 border-b border-dm-border flex justify-between items-center z-20 relative gap-4">
+        <h2 className="text-lg uppercase tracking-widest text-dm-accent font-light flex items-center gap-2 truncate">
+          <StickyNote className="text-dm-accent shrink-0" size={20} />
           <span className="hidden sm:inline">Bloc de Notas</span><span className="sm:hidden">Notas</span>
         </h2>
         <div className="flex space-x-2 w-full sm:w-auto overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="p-2 border border-[#3a302a] text-[#8b7355] hover:border-[#c1a063] hover:text-[#c1a063] transition-colors shrink-0"
+            className="p-2 border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent transition-colors shrink-0"
             title="Importar Notas">
             <Download size={18} />
           </button>
           <button
             onClick={handleExport}
-            className="p-2 border border-[#3a302a] text-[#8b7355] hover:border-[#c1a063] hover:text-[#c1a063] transition-colors shrink-0"
+            className="p-2 border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent transition-colors shrink-0"
             title="Exportar Notas">
             <Upload size={18} />
           </button>
@@ -107,7 +107,7 @@ export function ViewNotes() {
           
           <button
             onClick={() => setEditingNote({ id: "", title: "", content: "", color: COLORS[0] })}
-            className="flex items-center space-x-2 px-4 py-2 bg-[#c1a063] text-black hover:bg-white transition-colors uppercase tracking-wider text-sm font-semibold whitespace-nowrap shrink-0"
+            className="flex items-center space-x-2 px-4 py-2 bg-dm-accent text-black hover:bg-white transition-colors uppercase tracking-wider text-sm font-semibold whitespace-nowrap shrink-0"
           >
             <Plus size={16} />
             <span>Nueva Nota</span>
@@ -115,7 +115,7 @@ export function ViewNotes() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar pb-24 text-[#e6e2da]">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar pb-24 text-dm-text">
         <>
           <SortableGrid
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full"
@@ -123,10 +123,10 @@ export function ViewNotes() {
           onReorder={(newNotes) => actions.reorderNotes(newNotes)}
           renderItem={(note) => (
             <div
-              className={`${note.color || COLORS[0]} active:scale-[0.98] border border-[#3a302a] p-4 flex flex-col shadow-lg hover:border-[#c1a063] transition-colors group relative`}
+              className={`${note.color || COLORS[0]} active:scale-[0.98] border border-dm-border p-4 flex flex-col shadow-lg hover:border-dm-accent transition-colors group relative`}
             >
               <div className="flex justify-between items-start mb-2">
-                <h3 className="text-lg text-[#c1a063] font-bold truncate pr-6">{note.title || "Sin título"}</h3>
+                <h3 className="text-lg text-dm-accent font-bold truncate pr-6">{note.title || "Sin título"}</h3>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -144,7 +144,7 @@ export function ViewNotes() {
           )}
         />
           {(!notes || notes.length === 0) && (
-            <div className="col-span-full flex flex-col items-center justify-center h-64 text-[#8b7355] border-2 border-dashed border-[#3a302a]">
+            <div className="col-span-full flex flex-col items-center justify-center h-64 text-dm-muted border-2 border-dashed border-dm-border">
               <p>No hay notas guardadas.</p>
               <p className="text-sm mt-2">Usa "Nueva Nota" para crear un recordatorio o tarjeta.</p>
             </div>
@@ -156,19 +156,19 @@ export function ViewNotes() {
       {viewingNote && (
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4 sm:p-6 transition-all" onClick={() => setViewingNote(null)}>
           <div
-            className={`${viewingNote.color || COLORS[0]} border border-[#3a302a] p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative shadow-2xl shadow-black custom-scrollbar flex flex-col`}
+            className={`${viewingNote.color || COLORS[0]} border border-dm-border p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative shadow-2xl shadow-black custom-scrollbar flex flex-col`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-start mb-6">
-               <h2 className="text-2xl text-[#c1a063] font-bold pr-4">{viewingNote.title || "Sin título"}</h2>
+               <h2 className="text-2xl text-dm-accent font-bold pr-4">{viewingNote.title || "Sin título"}</h2>
                <div className="flex gap-2 shrink-0">
-                 <button onClick={() => { setEditingNote(viewingNote); setViewingNote(null); }} className="text-[#8b7355] hover:text-[#c1a063] transition-colors p-2 bg-black/20 rounded border border-transparent hover:border-[#3a302a]" title="Editar">
+                 <button onClick={() => { setEditingNote(viewingNote); setViewingNote(null); }} className="text-dm-muted hover:text-dm-accent transition-colors p-2 bg-black/20 rounded border border-transparent hover:border-dm-border" title="Editar">
                    <Edit2 size={18} />
                  </button>
-                 <button onClick={() => { setDeleteId(viewingNote.id); setViewingNote(null); }} className="text-[#8b7355] hover:text-[#8a211b] transition-colors p-2 bg-black/20 rounded border border-transparent hover:border-[#3a302a]" title="Eliminar">
+                 <button onClick={() => { setDeleteId(viewingNote.id); setViewingNote(null); }} className="text-dm-muted hover:text-dm-danger transition-colors p-2 bg-black/20 rounded border border-transparent hover:border-dm-border" title="Eliminar">
                    <Trash2 size={18} />
                  </button>
-                 <button onClick={() => setViewingNote(null)} className="text-[#8b7355] hover:text-white p-2 bg-black/20 rounded border border-transparent hover:border-[#3a302a]" title="Cerrar">
+                 <button onClick={() => setViewingNote(null)} className="text-dm-muted hover:text-white p-2 bg-black/20 rounded border border-transparent hover:border-dm-border" title="Cerrar">
                    <X size={18} />
                  </button>
                </div>
@@ -183,13 +183,13 @@ export function ViewNotes() {
                     ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
                     ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
                     li: ({node, ...props}) => <li className="pl-1" {...props} />,
-                    h1: ({node, ...props}) => <h1 className="text-2xl font-bold text-[#c1a063] mb-4 mt-6 first:mt-0 font-sans uppercase tracking-widest" {...props} />,
-                    h2: ({node, ...props}) => <h2 className="text-xl font-bold text-[#c1a063] mb-3 mt-5 first:mt-0 font-sans uppercase tracking-widest" {...props} />,
-                    h3: ({node, ...props}) => <h3 className="text-lg font-bold text-[#d4b57a] mb-3 mt-4 first:mt-0 font-sans" {...props} />,
-                    strong: ({node, ...props}) => <strong className="font-bold text-[#e6e2da]" {...props} />,
-                    em: ({node, ...props}) => <em className="italic text-[#d4b57a]" {...props} />,
-                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[#c1a063] pl-4 py-1 mb-4 bg-black/20 italic" {...props} />,
-                    a: ({node, ...props}) => <a className="text-[#c1a063] hover:underline" target="_blank" rel="noopener noreferrer" {...props} />
+                    h1: ({node, ...props}) => <h1 className="text-2xl font-bold text-dm-accent mb-4 mt-6 first:mt-0 font-sans uppercase tracking-widest" {...props} />,
+                    h2: ({node, ...props}) => <h2 className="text-xl font-bold text-dm-accent mb-3 mt-5 first:mt-0 font-sans uppercase tracking-widest" {...props} />,
+                    h3: ({node, ...props}) => <h3 className="text-lg font-bold text-dm-accent-hover mb-3 mt-4 first:mt-0 font-sans" {...props} />,
+                    strong: ({node, ...props}) => <strong className="font-bold text-dm-text" {...props} />,
+                    em: ({node, ...props}) => <em className="italic text-dm-accent-hover" {...props} />,
+                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-dm-accent pl-4 py-1 mb-4 bg-black/20 italic" {...props} />,
+                    a: ({node, ...props}) => <a className="text-dm-accent hover:underline" target="_blank" rel="noopener noreferrer" {...props} />
                   }}
                 >
                   {viewingNote.content}
@@ -204,16 +204,16 @@ export function ViewNotes() {
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4 transition-all">
           <form
             onSubmit={handleSave}
-            className={`${editingNote.color || COLORS[0]} border border-[#3a302a] rounded-lg p-6 max-w-lg w-full relative shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col`}
+            className={`${editingNote.color || COLORS[0]} border border-dm-border rounded-lg p-6 max-w-lg w-full relative shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col`}
           >
             <button
               type="button"
               onClick={() => setEditingNote(null)}
-              className="absolute top-4 right-4 text-[#8b7355] hover:text-white"
+              className="absolute top-4 right-4 text-dm-muted hover:text-white"
             >
               <X size={20} />
             </button>
-            <h2 className="text-xl text-[#c1a063] tracking-widest uppercase mb-4 font-light">
+            <h2 className="text-xl text-dm-accent tracking-widest uppercase mb-4 font-light">
               {editingNote.id ? "Editar Nota" : "Nueva Nota"}
             </h2>
 
@@ -222,19 +222,19 @@ export function ViewNotes() {
               placeholder="Título de la nota"
               value={editingNote.title}
               onChange={(e) => setEditingNote({ ...editingNote, title: e.target.value })}
-              className="bg-black/50 border border-[#3a302a] p-2 text-white mb-4 focus:border-[#c1a063] outline-none"
+              className="bg-black/50 border border-dm-border p-2 text-white mb-4 focus:border-dm-accent outline-none"
             />
             
             <textarea
               placeholder="Escribe tu nota aquí..."
               value={editingNote.content}
               onChange={(e) => setEditingNote({ ...editingNote, content: e.target.value })}
-              className="bg-black/50 border border-[#3a302a] p-2 text-white mb-4 focus:border-[#c1a063] outline-none h-48 resize-none"
+              className="bg-black/50 border border-dm-border p-2 text-white mb-4 focus:border-dm-accent outline-none h-48 resize-none"
               required
             />
 
             <div className="flex items-center mb-6 space-x-2">
-              <Palette size={16} className="text-[#8b7355]" />
+              <Palette size={16} className="text-dm-muted" />
               <div className="flex space-x-2">
                 {COLORS.map((c) => (
                   <button
@@ -250,7 +250,7 @@ export function ViewNotes() {
             <div className="flex justify-end">
               <button
                 type="submit"
-                className="px-6 py-2 bg-[#c1a063] text-black font-bold uppercase tracking-widest hover:bg-white transition-colors"
+                className="px-6 py-2 bg-dm-accent text-black font-bold uppercase tracking-widest hover:bg-white transition-colors"
               >
                 Guardar
               </button>

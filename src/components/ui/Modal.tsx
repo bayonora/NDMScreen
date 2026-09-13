@@ -24,17 +24,17 @@ export function Modal({ isOpen, onClose, title, children, className, headerRight
       
       <div 
         className={cn(
-          "relative bg-[#1e1a17]/60 backdrop-blur-xl border border-[#c1a063]/20 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] w-full max-w-2xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 overflow-hidden",
+          "relative bg-dm-bg/60 backdrop-blur-xl border border-dm-accent/20 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] w-full max-w-2xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 overflow-hidden",
           className
         )}
       >
-        <div className="flex items-center justify-between p-4 border-b border-[#c1a063]/10">
-          <h2 className="text-2xl font-display text-[#c1a063] uppercase tracking-widest">{title}</h2>
+        <div className="flex items-center justify-between p-4 border-b border-dm-accent/10">
+          <h2 className="text-2xl font-display text-dm-accent uppercase tracking-widest">{title}</h2>
           <div className="flex items-center gap-2">
             {headerRight}
             <button
               onClick={onClose}
-              className="p-1 text-[#c1a063] hover:text-white transition-colors"
+              className="p-1 text-dm-accent hover:text-white transition-colors"
             >
               <X size={24} />
             </button>

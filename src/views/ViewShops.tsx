@@ -79,20 +79,20 @@ export function ViewShops() {
 
   return (
     <div className="flex-1 flex flex-col bg-transparent border-none rounded-none overflow-hidden relative">
-      <div className="bg-[#1e1a17] px-4 sm:px-6 py-4 border-b border-[#3a302a] flex justify-between items-center z-10 relative gap-4">
-        <h2 className="text-lg uppercase tracking-widest text-[#c1a063] font-light flex items-center gap-2 truncate">
-          <StoreIcon className="text-[#c1a063] shrink-0" size={20} /> <span className="hidden sm:inline">Tiendas</span><span className="sm:hidden">Tiendas</span>
+      <div className="bg-dm-bg px-4 sm:px-6 py-4 border-b border-dm-border flex justify-between items-center z-10 relative gap-4">
+        <h2 className="text-lg uppercase tracking-widest text-dm-accent font-light flex items-center gap-2 truncate">
+          <StoreIcon className="text-dm-accent shrink-0" size={20} /> <span className="hidden sm:inline">Tiendas</span><span className="sm:hidden">Tiendas</span>
         </h2>
         {!selectedShop && (
           <div className="flex gap-2">
             <input type="file" accept=".json" className="hidden" ref={fileInputRef} onChange={handleImport} />
-            <Button variant="ghost" onClick={() => fileInputRef.current?.click()} className="hidden sm:flex border border-[#3a302a]" title="Importar Tiendas">
+            <Button variant="ghost" onClick={() => fileInputRef.current?.click()} className="hidden sm:flex border border-dm-border" title="Importar Tiendas">
               <Download size={14} className="mr-1" /> Importar
             </Button>
-            <Button variant="ghost" onClick={exportShops} className="hidden sm:flex border border-[#3a302a]" title="Exportar Tiendas">
+            <Button variant="ghost" onClick={exportShops} className="hidden sm:flex border border-dm-border" title="Exportar Tiendas">
               <Upload size={14} className="mr-1" /> Exportar
             </Button>
-            <Button onClick={() => { setEditShopData(null); setIsAddOpen(true); }} className="whitespace-nowrap shrink-0 bg-[#1a1614] border border-[#3a302a] text-[#8b7355] hover:border-[#c1a063] hover:text-[#c1a063]">
+            <Button onClick={() => { setEditShopData(null); setIsAddOpen(true); }} className="whitespace-nowrap shrink-0 bg-dm-bg-hover border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent">
               <Plus size={14} className="mr-1" /> Nueva Tienda
             </Button>
           </div>
@@ -113,20 +113,20 @@ export function ViewShops() {
           onReorder={(newShops) => actions.reorderShops(newShops)}
           renderItem={(s) => (
             <div 
-              className="bg-[#151210] group active:scale-[0.98] border border-[#3a302a] overflow-hidden cursor-pointer hover:border-[#c1a063] hover:shadow-[0_0_15px_rgba(193,160,99,0.15)] transition-all duration-300 flex flex-col shadow-lg shadow-black/80 relative"
+              className="bg-dm-bg-darker group active:scale-[0.98] border border-dm-border overflow-hidden cursor-pointer hover:border-dm-accent hover:shadow-[0_0_15px_rgba(193,160,99,0.15)] transition-all duration-300 flex flex-col shadow-lg shadow-black/80 relative"
               onClick={() => setSelectedShopId(s.id)}
             >
               {/* Área de Imagen / Banner */}
-              <div className="relative h-48 w-full overflow-hidden bg-[#0f0d0c]">
+              <div className="relative h-48 w-full overflow-hidden bg-dm-bg-darker">
                 {s.ownerImage ? (
                   <>
                     <img src={s.previewImage || s.ownerImage} alt={s.ownerName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 ease-out" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#151210] via-[#151210]/40 to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-dm-bg-darker via-dm-bg-darker/40 to-transparent"></div>
                   </>
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <StoreIcon size={48} className="text-[#3a302a] mb-2 group-hover:text-[#4a3e35] transition-colors duration-500" />
-                    <div className="absolute bottom-0 w-full h-24 bg-gradient-to-t from-[#151210] to-transparent"></div>
+                    <StoreIcon size={48} className="text-dm-border mb-2 group-hover:text-dm-border-focus transition-colors duration-500" />
+                    <div className="absolute bottom-0 w-full h-24 bg-gradient-to-t from-dm-bg-darker to-transparent"></div>
                   </div>
                 )}
                 
@@ -134,14 +134,14 @@ export function ViewShops() {
                 <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-[-10px] group-hover:translate-y-0">
                   <button 
                     onClick={(e) => handleEditShop(s, e)} 
-                    className="p-2 bg-[#0f0d0c]/90 backdrop-blur-sm border border-[#3a302a] text-[#8b7355] hover:text-[#c1a063] hover:border-[#c1a063] transition-all duration-200"
+                    className="p-2 bg-dm-bg-darker/90 backdrop-blur-sm border border-dm-border text-dm-muted hover:text-dm-accent hover:border-dm-accent transition-all duration-200"
                     title="Editar Tienda"
                   >
                     <Edit2 size={16}/>
                   </button>
                   <button 
                     onClick={(e) => handleDeleteShop(s.id, e)} 
-                    className="p-2 bg-[#0f0d0c]/90 backdrop-blur-sm border border-[#3a302a] text-[#8b7355] hover:text-[#8a211b] hover:border-[#8a211b] transition-all duration-200"
+                    className="p-2 bg-dm-bg-darker/90 backdrop-blur-sm border border-dm-border text-dm-muted hover:text-dm-danger hover:border-dm-danger transition-all duration-200"
                     title="Eliminar Tienda"
                   >
                     <Trash2 size={16}/>
@@ -151,32 +151,32 @@ export function ViewShops() {
               
               {/* Contenido de la Tarjeta */}
               <div className="p-6 flex-1 flex flex-col relative">
-                 <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#3a302a] to-transparent opacity-50"></div>
+                 <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-dm-border to-transparent opacity-50"></div>
                  
-                 <h3 className="font-display text-xl tracking-wide text-[#d4c8b8] group-hover:text-[#c1a063] transition-colors duration-300 mb-1 line-clamp-1">{s.name}</h3>
+                 <h3 className="font-display text-xl tracking-wide text-dm-text-muted group-hover:text-dm-accent transition-colors duration-300 mb-1 line-clamp-1">{s.name}</h3>
                  
                  <div className="flex items-center gap-2 mb-4">
-                   <div className="h-[1px] w-4 bg-[#c1a063]/50"></div>
-                   <p className="text-[10px] uppercase tracking-[0.2em] text-[#8b7355] truncate">{s.ownerName || "Comerciante Anónimo"}</p>
+                   <div className="h-[1px] w-4 bg-dm-accent/50"></div>
+                   <p className="text-[10px] uppercase tracking-[0.2em] text-dm-muted truncate">{s.ownerName || "Comerciante Anónimo"}</p>
                  </div>
                  
                  {/* Stats o Inventario Inferior */}
-                 <div className="mt-auto flex items-center justify-between pt-5 border-t border-[#3a302a]/30">
-                    <span className="text-xs uppercase tracking-widest text-[#6b5945]">Inventario</span>
-                    <div className="flex items-center gap-1.5 bg-[#0f0d0c] border border-[#3a302a] px-2 py-1 rounded-sm">
-                      <StoreIcon size={12} className="text-[#c1a063]" />
-                      <span className="text-xs font-mono text-[#c1a063]">{s.items?.length || 0}</span>
+                 <div className="mt-auto flex items-center justify-between pt-5 border-t border-dm-border/30">
+                    <span className="text-xs uppercase tracking-widest text-dm-muted-alt">Inventario</span>
+                    <div className="flex items-center gap-1.5 bg-dm-bg-darker border border-dm-border px-2 py-1 rounded-sm">
+                      <StoreIcon size={12} className="text-dm-accent" />
+                      <span className="text-xs font-mono text-dm-accent">{s.items?.length || 0}</span>
                     </div>
                  </div>
               </div>
               
               {/* Brillo en hover */}
-              <div className="absolute inset-0 border border-[#c1a063] opacity-0 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none"></div>
+              <div className="absolute inset-0 border border-dm-accent opacity-0 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none"></div>
             </div>
           )}
         />
             {shops.length === 0 && (
-              <p className="text-[#e6e2da] opacity-50 text-center py-10 col-span-full ">No hay tiendas. Crea una para añadir objetos.</p>
+              <p className="text-dm-text opacity-50 text-center py-10 col-span-full ">No hay tiendas. Crea una para añadir objetos.</p>
             )}
           </>
         ) : (
@@ -231,10 +231,10 @@ function ShopInventory({ shop }: { shop: Shop }) {
       
       {/* Columna Izquierda: Lista de Objetos (Inventario) */}
       <div className="flex-1 flex flex-col gap-6 order-2 lg:order-1">
-        <div className="flex justify-between items-center bg-[#1e1a17]/90 p-6 border border-[#3a302a] shadow-lg shadow-black/50 rounded-sm">
+        <div className="flex justify-between items-center bg-dm-bg/90 p-6 border border-dm-border shadow-lg shadow-black/50 rounded-sm">
           <div>
-            <h2 className="text-2xl font-display text-[#c1a063] uppercase tracking-widest">Inventario</h2>
-            <p className="text-xs uppercase tracking-widest text-[#e6e2da] opacity-70 mt-1">{shop.items.length} Objetos Disponibles</p>
+            <h2 className="text-2xl font-display text-dm-accent uppercase tracking-widest">Inventario</h2>
+            <p className="text-xs uppercase tracking-widest text-dm-text opacity-70 mt-1">{shop.items.length} Objetos Disponibles</p>
           </div>
           <Button onClick={() => { setEditItemData(null); setIsAddItemOpen(true); }}>
             <Plus size={14} className="mr-1" /> Añadir Objeto
@@ -243,7 +243,7 @@ function ShopInventory({ shop }: { shop: Shop }) {
 
         <div className="flex flex-col gap-3">
           {shop.items.length === 0 && (
-            <div className="p-10 text-center border border-dashed border-[#3a302a] bg-[#1e1a17]/50 text-[#8b7355] text-sm tracking-widest uppercase">
+            <div className="p-10 text-center border border-dashed border-dm-border bg-dm-bg/50 text-dm-muted text-sm tracking-widest uppercase">
               El inventario está vacío
             </div>
           )}
@@ -253,45 +253,45 @@ function ShopInventory({ shop }: { shop: Shop }) {
               className={cn(
                 "flex items-center justify-between p-4 border transition-all shadow-md shadow-black/30",
                 item.hidden 
-                  ? "bg-[#000000] border-[#161311]" 
-                  : "bg-[#1e1a17]/90 border-[#3a302a] hover:border-[#c1a063] cursor-pointer backdrop-blur-sm"
+                  ? "bg-[#000000] border-dm-bg-darker" 
+                  : "bg-dm-bg/90 border-dm-border hover:border-dm-accent cursor-pointer backdrop-blur-sm"
               )}
               onClick={() => !item.hidden && setViewItem(item)}
             >
               {item.hidden ? (
                 <div className="flex items-center gap-4 opacity-30">
-                  <div className="w-12 h-12 bg-black border border-[#161311] flex items-center justify-center">
-                    <EyeOff size={20} className="text-[#3a302a]" />
+                  <div className="w-12 h-12 bg-black border border-dm-bg-darker flex items-center justify-center">
+                    <EyeOff size={20} className="text-dm-border" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-[#8b7355] line-through">{item.name}</h3>
-                    <p className="text-xs text-[#6b5945]">Oculto para jugadores</p>
+                    <h3 className="font-bold text-dm-muted line-through">{item.name}</h3>
+                    <p className="text-xs text-dm-muted-alt">Oculto para jugadores</p>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
                   {item.image ? (
-                    <img src={item.image} alt={item.name} className="w-12 h-12 object-cover border border-[#3a302a] rounded-sm" />
+                    <img src={item.image} alt={item.name} className="w-12 h-12 object-cover border border-dm-border rounded-sm" />
                   ) : (
-                    <div className="w-12 h-12 bg-[#0f0d0c] border border-[#3a302a] flex items-center justify-center rounded-sm">
-                      <ImageIcon className="text-[#c1a063] opacity-30" size={20} />
+                    <div className="w-12 h-12 bg-dm-bg-darker border border-dm-border flex items-center justify-center rounded-sm">
+                      <ImageIcon className="text-dm-accent opacity-30" size={20} />
                     </div>
                   )}
                   <div>
-                    <h3 className="font-bold text-[#c1a063] text-lg font-display">{item.name}</h3>
-                    <p className="text-xs text-[#8b7355] font-mono">{item.price}</p>
+                    <h3 className="font-bold text-dm-accent text-lg font-display">{item.name}</h3>
+                    <p className="text-xs text-dm-muted font-mono">{item.price}</p>
                   </div>
                 </div>
               )}
               
               <div className="flex gap-2">
-                <button onClick={(e) => handleToggleHide(item, e)} className={cn("p-2", item.hidden ? "text-[#c1a063]" : "text-[#3a302a] hover:text-[#c1a063]")}>
+                <button onClick={(e) => handleToggleHide(item, e)} className={cn("p-2", item.hidden ? "text-dm-accent" : "text-dm-border hover:text-dm-accent")}>
                   {item.hidden ? <Eye size={16}/> : <EyeOff size={16}/>}
                 </button>
-                <button onClick={(e) => handleEdit(item, e)} className="p-2 text-[#3a302a] hover:text-[#c1a063]">
+                <button onClick={(e) => handleEdit(item, e)} className="p-2 text-dm-border hover:text-dm-accent">
                   <Edit2 size={16}/>
                 </button>
-                <button onClick={(e) => handleDelete(item.id, e)} className="p-2 text-[#3a302a] hover:text-[#8a211b]">
+                <button onClick={(e) => handleDelete(item.id, e)} className="p-2 text-dm-border hover:text-dm-danger">
                   <Trash2 size={16}/>
                 </button>
               </div>
@@ -302,37 +302,37 @@ function ShopInventory({ shop }: { shop: Shop }) {
 
       {/* Columna Derecha: Tarjeta Inmersiva del Mercader */}
       <div className="w-full lg:w-[400px] shrink-0 order-1 lg:order-2">
-        <div className="sticky top-6 flex flex-col bg-[#151210] border border-[#3a302a] shadow-2xl shadow-black overflow-hidden rounded-sm">
+        <div className="sticky top-6 flex flex-col bg-dm-bg-darker border border-dm-border shadow-2xl shadow-black overflow-hidden rounded-sm">
           {/* Imagen Full-Bleed con Fade Inferior */}
-          <div className="w-full h-[500px] relative bg-[#0f0d0c]">
+          <div className="w-full h-[500px] relative bg-dm-bg-darker">
              {shop.ownerImage ? (
                <>
                  <img src={shop.ownerImage} alt={shop.name} className="w-full h-full object-cover object-top" />
                  {/* Intense gradient overlay to ensure it completely blends to the panel background color (#151210) before the text */}
-                 <div className="absolute inset-0 bg-gradient-to-t from-[#151210] via-[#151210]/70 to-transparent"></div>
-                 <div className="absolute bottom-0 w-full h-48 bg-gradient-to-t from-[#151210] via-[#151210] to-transparent"></div>
-                 <div className="absolute bottom-0 w-full h-16 bg-[#151210]"></div>
+                 <div className="absolute inset-0 bg-gradient-to-t from-dm-bg-darker via-dm-bg-darker/70 to-transparent"></div>
+                 <div className="absolute bottom-0 w-full h-48 bg-gradient-to-t from-dm-bg-darker via-dm-bg-darker to-transparent"></div>
+                 <div className="absolute bottom-0 w-full h-16 bg-dm-bg-darker"></div>
                </>
              ) : (
                <div className="w-full h-full flex items-center justify-center">
-                 <StoreIcon size={64} className="text-[#3a302a]" />
+                 <StoreIcon size={64} className="text-dm-border" />
                </div>
              )}
           </div>
           
           {/* Info del Mercader sobre la imagen difuminada */}
           <div className="relative z-10 px-8 pb-8 pt-0 -mt-20">
-            <h2 className="text-3xl font-display text-[#d4c8b8] tracking-wider mb-2">{shop.name}</h2>
+            <h2 className="text-3xl font-display text-dm-text-muted tracking-wider mb-2">{shop.name}</h2>
             
             <div className="flex items-center gap-3">
-              <div className="h-[1px] w-8 bg-[#c1a063]/50"></div>
-              <p className="text-xs uppercase tracking-[0.2em] text-[#c1a063] font-bold">{shop.ownerName || "Anónimo"}</p>
+              <div className="h-[1px] w-8 bg-dm-accent/50"></div>
+              <p className="text-xs uppercase tracking-[0.2em] text-dm-accent font-bold">{shop.ownerName || "Anónimo"}</p>
             </div>
             
             {/* Decoración adicional opcional */}
-            <div className="mt-8 pt-6 border-t border-[#3a302a]/50 flex justify-between items-center">
-               <span className="text-[10px] uppercase tracking-widest text-[#6b5945]">Propietario / Mercader</span>
-               <StoreIcon size={16} className="text-[#3a302a]" />
+            <div className="mt-8 pt-6 border-t border-dm-border/50 flex justify-between items-center">
+               <span className="text-[10px] uppercase tracking-widest text-dm-muted-alt">Propietario / Mercader</span>
+               <StoreIcon size={16} className="text-dm-border" />
             </div>
           </div>
         </div>
@@ -349,15 +349,15 @@ function ShopInventory({ shop }: { shop: Shop }) {
         {viewItem && (
           <div className="flex flex-col gap-6">
             {viewItem.image && (
-              <img src={viewItem.image} alt={viewItem.name} className="w-full h-48 object-cover border border-[#3a302a] rounded-sm" />
+              <img src={viewItem.image} alt={viewItem.name} className="w-full h-48 object-cover border border-dm-border rounded-sm" />
             )}
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#8b7355] uppercase tracking-widest">Precio</span>
-                <span className="font-mono text-[#c1a063]">{viewItem.price}</span>
+                <span className="text-xs font-bold text-dm-muted uppercase tracking-widest">Precio</span>
+                <span className="font-mono text-dm-accent">{viewItem.price}</span>
               </div>
-              <div className="w-full h-px bg-[#3a302a]" />
-              <div className="text-[#e6e2da] opacity-90 whitespace-pre-wrap leading-relaxed ">
+              <div className="w-full h-px bg-dm-border" />
+              <div className="text-dm-text opacity-90 whitespace-pre-wrap leading-relaxed ">
                 {viewItem.description}
               </div>
             </div>
@@ -430,26 +430,26 @@ function AddShopModal({ isOpen, onClose, editData }: { isOpen: boolean, onClose:
           <Input label="Nombre del Mercader" name="ownerName" required defaultValue={editData?.ownerName} />
           
           <div className="flex flex-col gap-1 w-full">
-            <label className="text-[10px] font-bold text-[#c1a063] uppercase tracking-widest">Imagen (Tienda o Mercader)</label>
+            <label className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">Imagen (Tienda o Mercader)</label>
             <input 
               type="file" 
               accept="image/*" 
               onChange={handleFileChange}
-              className="flex h-10 w-full bg-[#1e1a17] border border-[#3a302a] px-3 py-1 text-sm text-[#f5f2ed] file:border-0 file:bg-transparent file:text-sm file:font-bold file:text-[#c1a063] cursor-pointer"
+              className="flex h-10 w-full bg-dm-bg border border-dm-border px-3 py-1 text-sm text-dm-text-bright file:border-0 file:bg-transparent file:text-sm file:font-bold file:text-dm-accent cursor-pointer"
             />
           </div>
 
           {(previewImage || fullImage) && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-end">
-                <label className="text-[10px] font-bold text-[#c1a063] uppercase tracking-widest">Vista Previa de Tarjeta</label>
+                <label className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">Vista Previa de Tarjeta</label>
                 {fullImage && (
-                  <button type="button" onClick={() => setRawImageSrc(fullImage)} className="text-xs text-[#8b7355] hover:text-[#c1a063] underline">
+                  <button type="button" onClick={() => setRawImageSrc(fullImage)} className="text-xs text-dm-muted hover:text-dm-accent underline">
                     Ajustar Recorte
                   </button>
                 )}
               </div>
-              <div className="relative h-32 w-full overflow-hidden bg-[#0f0d0c] border border-[#3a302a] rounded-sm mt-1 flex items-center justify-center">
+              <div className="relative h-32 w-full overflow-hidden bg-dm-bg-darker border border-dm-border rounded-sm mt-1 flex items-center justify-center">
                 {previewImage ? (
                   <img 
                     src={previewImage} 
@@ -467,7 +467,7 @@ function AddShopModal({ isOpen, onClose, editData }: { isOpen: boolean, onClose:
             </div>
           )}
 
-          <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[#3a302a]">
+          <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-dm-border">
             <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>Cancelar</Button>
             <Button type="submit" disabled={loading}>{loading ? "Procesando..." : "Guardar"}</Button>
           </div>

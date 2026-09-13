@@ -49,7 +49,7 @@ export function ImageCropperModal({ isOpen, imageSrc, onClose, onCropComplete, a
         />
       </div>
       <div className="flex items-center gap-4 mb-4">
-        <span className="text-sm text-[#8b7355]">Zoom</span>
+        <span className="text-sm text-dm-muted">Zoom</span>
         <input
           type="range"
           value={zoom}
@@ -58,10 +58,10 @@ export function ImageCropperModal({ isOpen, imageSrc, onClose, onCropComplete, a
           step={0.1}
           aria-labelledby="Zoom"
           onChange={(e) => setZoom(Number(e.target.value))}
-          className="w-full accent-[#c1a063]"
+          className="w-full accent-dm-accent"
         />
       </div>
-      <div className="flex justify-end gap-2 border-t border-[#3a302a] pt-4">
+      <div className="flex justify-end gap-2 border-t border-dm-border pt-4">
         <Button variant="ghost" onClick={onClose}>Cancelar</Button>
         <Button onClick={handleSave}>Recortar y Guardar</Button>
       </div>

@@ -14,6 +14,7 @@ type UIState = {
   highlightedQuestId?: string;
   highlightedSpellId?: string;
   collapsedCharacters?: string[];
+  theme?: string;
 };
 
 type StoreState = {
