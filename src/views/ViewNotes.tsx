@@ -6,6 +6,7 @@ import { useState, useRef } from "react";
 import { useStore, actions, store } from "../store/useStore";
 import { Plus, X, Download, Upload, Palette, Edit2, Trash2, StickyNote } from "lucide-react";
 import { Note } from "../types";
+import { mergeDedupe } from "../lib/utils";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { SortableGrid } from "../components/SortableGrid";
 import { ImportModal } from "../components/ImportModal";
