@@ -8,7 +8,7 @@ import { Input, Button } from "../components/ui/Input";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { ImportModal } from "../components/ImportModal";
 import { Quest, QuestStatus, QuestDetail } from "../types";
-import { cn, compressImage } from "../lib/utils";
+import { cn, mergeDedupe, compressImage } from "../lib/utils";
 import { v4 as uuidv4 } from "uuid";
 
 export function ViewQuests() {
@@ -95,7 +95,7 @@ export function ViewQuests() {
     if (mode === "overwrite") {
       store.setState({ quests: pendingImport });
     } else {
-      store.setState({ quests: [...(store.getState().quests || []), ...pendingImport] });
+      store.setState({ quests: mergeDedupe(store.getState().quests || [], pendingImport) });
     }
     setPendingImport(null);
   };
@@ -108,14 +108,14 @@ export function ViewQuests() {
           Árbol de Misiones
         </h2>
         <div className="flex gap-2">
-          <Button onClick={handleImportClick} variant="ghost" className="hidden sm:flex border border-dm-border">
-            <Download size={14} className="mr-1" /> Importar
+          <Button onClick={handleImportClick} variant="ghost" className="flex px-2 sm:px-4 border border-dm-border" title="Importar">
+            <Download size={14} className="sm:mr-1" /> <span className="hidden sm:inline">Importar</span>
           </Button>
-          <Button onClick={exportQuests} variant="ghost" className="hidden sm:flex border border-dm-border">
-            <Upload size={14} className="mr-1" /> Exportar
+          <Button onClick={exportQuests} variant="ghost" className="flex px-2 sm:px-4 border border-dm-border" title="Exportar">
+            <Upload size={14} className="sm:mr-1" /> <span className="hidden sm:inline">Exportar</span>
           </Button>
           <Button onClick={() => handleAddQuest(null)} className="whitespace-nowrap bg-dm-bg-hover border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent">
-            <Plus size={14} className="mr-1" /> Nueva Misión
+            <Plus size={14} className="mr-1" /> <span className="hidden sm:inline">Nueva Misión</span><span className="sm:hidden">Nueva</span>
           </Button>
           <input type="file" accept=".json" className="hidden" ref={fileInputRef} onChange={importQuests} />
         </div>
@@ -212,7 +212,7 @@ export function ViewQuests() {
   );
 }
 
-function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, onViewDetail, onViewQuest, onDeleteQuest, highlightedQuestId }: { 
+function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, onViewDetail, onViewQuest, onDeleteQuest, highlightedQuestId, seenIds = new Set() }: { 
   quest: Quest, 
   onAddSubQuest: (id: string) => void,
   onEditQuest: (q: Quest) => void,
@@ -220,10 +220,18 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
   onViewDetail: (qId: string, d: QuestDetail) => void,
   onViewQuest: (q: Quest) => void,
   onDeleteQuest: (q: Quest) => void,
-  highlightedQuestId?: string
+  highlightedQuestId?: string,
+  seenIds?: Set<string>
 }) {
   const quests = useStore((state) => state.quests);
-  const children = quests.filter(q => q.parentId === quest.id).sort((a,b) => a.createdAt - b.createdAt);
+  
+  // Cycle detection logic
+  const currentSeenIds = new Set(seenIds);
+  currentSeenIds.add(quest.id);
+  
+  // Filter out children that would cause a cycle
+  const children = quests.filter(q => q.parentId === quest.id && !currentSeenIds.has(q.id)).sort((a,b) => a.createdAt - b.createdAt);
+  
   const [expanded, setExpanded] = useState(true);
   const nodeRef = useRef<HTMLDivElement>(null);
 
@@ -342,7 +350,8 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
         {children.length > 0 && (
           <button 
             onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-            className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-dm-bg border border-dm-border text-dm-accent flex items-center justify-center hover:bg-[#2a2420] transition-colors z-20 shadow-sm"
+            className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-dm-bg-alt border border-dm-border text-dm-accent flex items-center justify-center hover:bg-dm-bg transition-colors z-20 shadow-md"
+            title={expanded ? "Ocultar submisiones" : "Mostrar submisiones"}
           >
             {expanded ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
           </button>
@@ -359,16 +368,21 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
           >
              <div className="w-8 h-[2px] bg-dm-border shrink-0" />
              
-             <div className="flex flex-col gap-6 shrink-0 relative">
+             <div className="flex flex-col shrink-0 relative">
                {children.map((child, index) => (
-                 <div key={child.id} className="flex items-center relative pl-8">
-                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-[2px] bg-dm-border" />
-                   {index !== 0 && (
-                     <div className="absolute left-0 bottom-1/2 w-[2px] h-[calc(50%+12px)] bg-dm-border" />
-                   )}
-                   {index !== children.length - 1 && (
-                     <div className="absolute left-0 top-1/2 w-[2px] h-[calc(50%+12px)] bg-dm-border" />
-                   )}
+                 <div key={child.id} className="flex items-center relative pl-8 py-3">
+                   <svg className="absolute left-0 top-0 w-8 h-full pointer-events-none text-dm-border" preserveAspectRatio="none">
+                     {/* Horizontal line to child */}
+                     <line x1="0" y1="50%" x2="32" y2="50%" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                     {/* Vertical line UP to previous child */}
+                     {index !== 0 && (
+                       <line x1="1" y1="0" x2="1" y2="50%" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                     )}
+                     {/* Vertical line DOWN to next child */}
+                     {index !== children.length - 1 && (
+                       <line x1="1" y1="50%" x2="1" y2="100%" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                     )}
+                   </svg>
                     <HorizontalQuestTree 
                        quest={child}
                        highlightedQuestId={highlightedQuestId} 
@@ -378,6 +392,7 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
                        onViewDetail={onViewDetail}
                        onViewQuest={onViewQuest}
                        onDeleteQuest={onDeleteQuest}
+                       seenIds={currentSeenIds}
                     />
                  </div>
                ))}
@@ -520,6 +535,7 @@ function DetailModal({
 }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
   const quests = useStore((state) => state.quests);
 
   React.useEffect(() => {
@@ -555,16 +571,21 @@ function DetailModal({
   };
 
   const handleDelete = () => {
+     setShowConfirm(true);
+  };
+  
+  const confirmDelete = () => {
      if (!state.detail) return;
-     if (!confirm("¿Eliminar este detalle?")) return;
      const q = quests.find(x => x.id === state.questId);
      if (!q) return;
-     const newDetails = (q.details || []).filter(d => d.id !== state.detail!.id);
+     const newDetails = (q.details || []).filter(d => d.id !== state.detail.id);
      actions.updateQuest(state.questId, { details: newDetails });
+     setShowConfirm(false);
      close();
   };
 
   return (
+    <>
     <Modal isOpen={!!state.mode} onClose={close} title={state.mode === "add" ? "Nuevo Detalle" : state.mode === "edit" ? "Editar Detalle" : "Detalle"}>
       {state.mode === "view" ? (
          <div className="flex flex-col gap-4">
@@ -597,5 +618,13 @@ function DetailModal({
          </form>
       )}
     </Modal>
+    <ConfirmDeleteModal
+       isOpen={showConfirm}
+       onClose={() => setShowConfirm(false)}
+       onConfirm={confirmDelete}
+       title="Eliminar Detalle"
+       message="¿Estás seguro de que quieres eliminar este detalle?"
+    />
+    </>
   )
 }

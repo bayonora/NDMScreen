@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { store, useStore, actions } from "../store/useStore";
+import { mergeDedupe } from "../lib/utils";
 import { Modal } from "../components/ui/Modal";
 import { Button, Input, Textarea } from "../components/ui/Input";
 import { Shop, ShopItem } from "../types";
@@ -72,7 +73,7 @@ export function ViewShops() {
     if (mode === "overwrite") {
       store.setState({ shops: pendingImport });
     } else {
-      store.setState({ shops: [...(store.getState().shops || []), ...pendingImport] });
+      store.setState({ shops: mergeDedupe(store.getState().shops || [], pendingImport) });
     }
     setPendingImport(null);
   };
@@ -86,14 +87,14 @@ export function ViewShops() {
         {!selectedShop && (
           <div className="flex gap-2">
             <input type="file" accept=".json" className="hidden" ref={fileInputRef} onChange={handleImport} />
-            <Button variant="ghost" onClick={() => fileInputRef.current?.click()} className="hidden sm:flex border border-dm-border" title="Importar Tiendas">
-              <Download size={14} className="mr-1" /> Importar
+            <Button variant="ghost" onClick={() => fileInputRef.current?.click()} className="flex px-2 sm:px-4 border border-dm-border" title="Importar Tiendas">
+              <Download size={14} className="sm:mr-1" /> <span className="hidden sm:inline">Importar</span>
             </Button>
-            <Button variant="ghost" onClick={exportShops} className="hidden sm:flex border border-dm-border" title="Exportar Tiendas">
-              <Upload size={14} className="mr-1" /> Exportar
+            <Button variant="ghost" onClick={exportShops} className="flex px-2 sm:px-4 border border-dm-border" title="Exportar Tiendas">
+              <Upload size={14} className="sm:mr-1" /> <span className="hidden sm:inline">Exportar</span>
             </Button>
             <Button onClick={() => { setEditShopData(null); setIsAddOpen(true); }} className="whitespace-nowrap shrink-0 bg-dm-bg-hover border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent">
-              <Plus size={14} className="mr-1" /> Nueva Tienda
+              <Plus size={14} className="mr-1" /> <span className="hidden sm:inline">Nueva Tienda</span><span className="sm:hidden">Nueva</span>
             </Button>
           </div>
         )}

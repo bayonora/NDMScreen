@@ -10,7 +10,7 @@ import { CustomItem, LootTable } from "../types";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { SortableGrid } from "../components/SortableGrid";
 import { ImportModal } from "../components/ImportModal";
-import { cn, compressImage } from "../lib/utils";
+import { cn, mergeDedupe, compressImage } from "../lib/utils";
 
 
 const LOOT_COLORS = [
@@ -144,13 +144,13 @@ export function ViewItems() {
       if (mode === "overwrite") {
         store.setState({ customItems: pendingImport });
       } else {
-        store.setState({ customItems: [...(store.getState().customItems || []), ...pendingImport] });
+        store.setState({ customItems: mergeDedupe(store.getState().customItems || [], pendingImport) });
       }
     } else {
       if (mode === "overwrite") {
         store.setState({ lootTables: pendingImport });
       } else {
-        store.setState({ lootTables: [...(store.getState().lootTables || []), ...pendingImport] });
+        store.setState({ lootTables: mergeDedupe(store.getState().lootTables || [], pendingImport) });
       }
     }
     setPendingImport(null);
@@ -171,38 +171,32 @@ export function ViewItems() {
   return (
     <div className="flex-1 flex flex-col bg-transparent border-none rounded-none overflow-hidden relative">
       {/* HEADER: Matches standard top bar */}
-      <div className="bg-dm-bg px-4 sm:px-6 py-4 border-b border-dm-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 z-20 relative">
-        <div className="flex items-center space-x-4 sm:space-x-6">
-          <div className="flex items-center gap-2">
-            <Package className={cn("shrink-0 transition-colors", activeTab === "items" ? "text-dm-accent" : "text-dm-muted")} size={20} />
+      <div className="bg-dm-bg px-4 sm:px-6 py-4 border-b border-dm-border flex justify-between items-center z-20 relative gap-4">
+        <div className="flex items-center space-x-4 sm:space-x-6 overflow-x-auto custom-scrollbar">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <Package className={cn("shrink-0 transition-colors hidden sm:block", activeTab === "items" ? "text-dm-accent" : "text-dm-muted")} size={20} />
             <button
               onClick={() => setActiveTab("items")}
-              className={cn("text-base sm:text-lg tracking-widest uppercase font-light transition-all relative", activeTab === "items" ? "text-dm-accent" : "text-dm-muted hover:text-white")}
+              className={cn("text-sm sm:text-lg tracking-widest uppercase font-light transition-all pb-1 border-b-2", activeTab === "items" ? "text-dm-accent border-dm-accent" : "text-dm-muted hover:text-white border-transparent")}
             >
-              Objetos Únicos
-              {activeTab === "items" && (
-                <motion.div layoutId="items-tab-indicator" className="absolute -bottom-[22px] left-0 right-0 h-[2px] bg-dm-accent" />
-              )}
+              Objetos
             </button>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <button
               onClick={() => setActiveTab("loot")}
-              className={cn("text-base sm:text-lg tracking-widest uppercase font-light transition-all relative", activeTab === "loot" ? "text-dm-accent" : "text-dm-muted hover:text-white")}
+              className={cn("text-sm sm:text-lg tracking-widest uppercase font-light transition-all pb-1 border-b-2", activeTab === "loot" ? "text-dm-accent border-dm-accent" : "text-dm-muted hover:text-white border-transparent")}
             >
-              Tablas de Botín
-              {activeTab === "loot" && (
-                <motion.div layoutId="items-tab-indicator" className="absolute -bottom-[22px] left-0 right-0 h-[2px] bg-dm-accent" />
-              )}
+              Botín
             </button>
           </div>
         </div>
         
-        <div className="flex space-x-2 w-full sm:w-auto overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
-          <button onClick={() => fileInputRef.current?.click()} className="p-2 border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent transition-colors shrink-0" title="Importar">
+        <div className="flex space-x-2 shrink-0">
+          <button onClick={() => fileInputRef.current?.click()} className="flex p-2 border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent transition-colors" title="Importar">
             <Download size={18} />
           </button>
-          <button onClick={handleExport} className="p-2 border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent transition-colors shrink-0" title="Exportar">
+          <button onClick={handleExport} className="flex p-2 border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent transition-colors" title="Exportar">
             <Upload size={18} />
           </button>
           <input type="file" accept=".json" className="hidden" ref={fileInputRef} onChange={handleImport} />
@@ -212,10 +206,11 @@ export function ViewItems() {
               if (activeTab === "items") setEditingItem({ id: "", name: "", shortDescription: "", description: "", value: "", image: "", color: "#c1a063" });
               else setEditingTable({ id: "", name: "", description: "", rawText: "", color: "#c1a063" });
             }}
-            className="flex items-center space-x-2 px-4 py-2 bg-dm-accent text-black hover:bg-white transition-colors uppercase tracking-wider text-sm font-semibold whitespace-nowrap shrink-0"
+            className="flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 bg-dm-accent text-black hover:bg-white transition-colors uppercase tracking-wider text-xs sm:text-sm font-semibold whitespace-nowrap"
           >
             <Plus size={16} />
-            <span>{activeTab === "items" ? "Nuevo Objeto" : "Nueva Tabla"}</span>
+            <span className="hidden sm:inline">{activeTab === "items" ? "Nuevo Objeto" : "Nueva Tabla"}</span>
+            <span className="sm:hidden">Nuevo</span>
           </button>
         </div>
       </div>

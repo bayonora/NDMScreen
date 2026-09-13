@@ -3,7 +3,7 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
@@ -71,10 +71,10 @@ class SmartTouchSensor extends TouchSensor {
   ] as any;
 }
 
-class SmartPointerSensor extends PointerSensor {
+class SmartMouseSensor extends MouseSensor {
   static activators = [
     {
-      eventName: 'onPointerDown' as const,
+      eventName: 'onMouseDown' as const,
       handler: ({ nativeEvent: event }: any) => {
         if (
           !event.isPrimary ||
@@ -106,7 +106,7 @@ export function SortableGrid<T extends { id: string }>({
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   const sensors = useSensors(
-    useSensor(SmartPointerSensor, {
+    useSensor(SmartMouseSensor, {
       activationConstraint: {
         distance: 8,
       },

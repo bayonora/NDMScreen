@@ -1,8 +1,9 @@
+import { get } from 'idb-keyval';
 import React, { useState, useRef, useMemo } from "react";
 import { useStore, actions, store } from "../store/useStore";
 import { MapData, LocationData } from "../types";
 import { Map, Image as ImageIcon, Maximize2, Edit2, Trash2, Plus, Upload, Download, MapPin, ChevronRight, ArrowLeft, Loader2, ImageOff, FolderPlus, FileText } from "lucide-react";
-import { cn, compressImage } from "../lib/utils";
+import { cn, mergeDedupe, compressImage } from "../lib/utils";
 import { Modal } from "../components/ui/Modal";
 import { Input, Textarea, Button } from "../components/ui/Input";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
@@ -14,21 +15,25 @@ import { ImportModal } from "../components/ImportModal";
 
 function StorageIndicator() {
   const [used, setUsed] = useState(0);
-  
+    
   React.useEffect(() => {
-    const calc = () => {
-      const data = localStorage.getItem('ndms_state') || '';
-      // Approximate size in bytes (each char in localStorage is UTF-16, so ~2 bytes, but Blob size works well enough for an estimate of string size)
-      const bytes = data.length * 2; // Precise UTF-16 byte calculation for localStorage
-      setUsed(bytes);
+    const calc = async () => {
+      try {
+        const data = await get('ndms_state');
+        if (data) {
+          const str = JSON.stringify(data);
+          setUsed(str.length * 2); // Approximate in bytes
+        } else {
+          setUsed(0);
+        }
+      } catch (e) {
+        console.error(e);
+      }
     };
     calc();
-    // Update when local storage changes or window gets focus
-    window.addEventListener('storage', calc);
     window.addEventListener('focus', calc);
     const interval = setInterval(calc, 5000); // Check every 5s
     return () => {
-      window.removeEventListener('storage', calc);
       window.removeEventListener('focus', calc);
       clearInterval(interval);
     };
@@ -143,8 +148,8 @@ export function ViewMaps() {
       });
     } else {
       store.setState({ 
-        maps: [...maps, ...(pendingImport.maps || [])], 
-        locations: [...locations, ...(pendingImport.locations || [])] 
+        maps: mergeDedupe(maps, pendingImport.maps || []), 
+        locations: mergeDedupe(locations, pendingImport.locations || []) 
       });
     }
     setPendingImport(null);

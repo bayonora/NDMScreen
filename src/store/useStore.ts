@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
+import { get, set } from "idb-keyval";
 import { Player, NPC, Creature, Character, Combatant, MapData, LocationData, Shop, ShopItem, Note, CustomItem, LootTable, Quest } from "../types";
 import { v4 as uuidv4 } from "uuid";
-
 
 type UIState = {
   combatActive: boolean;
@@ -32,6 +32,7 @@ type StoreState = {
   quests: Quest[];
   favoriteSpells: string[];
   uiState: UIState;
+  isHydrated: boolean;
 };
 
 const DEFAULT_STATE: StoreState = {
@@ -55,7 +56,8 @@ const DEFAULT_STATE: StoreState = {
     editingNoteId: null,
     hasSeenWelcome: false,
     draftNote: null,
-  }
+  },
+  isHydrated: false,
 };
 
 const STORE_KEY = "dnd_dm_screen_data";
@@ -63,13 +65,26 @@ const STORE_KEY = "dnd_dm_screen_data";
 class Store {
   state: StoreState;
   listeners: Set<() => void> = new Set();
+  saveTimeout: any = null;
 
   constructor() {
-    const saved = localStorage.getItem(STORE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        this.state = { ...DEFAULT_STATE, ...parsed };
+    this.state = DEFAULT_STATE;
+    this.init();
+  }
+
+  async init() {
+    try {
+      let saved = await get(STORE_KEY);
+      if (!saved) {
+        // Migration from localStorage
+        const local = localStorage.getItem(STORE_KEY);
+        if (local) {
+          saved = JSON.parse(local);
+        }
+      }
+
+      if (saved) {
+        this.state = { ...DEFAULT_STATE, ...saved, isHydrated: true };
         if (!this.state.uiState) {
           this.state.uiState = DEFAULT_STATE.uiState;
         }
@@ -87,6 +102,7 @@ class Store {
         this.state.customItems = this.state.customItems || [];
         this.state.lootTables = this.state.lootTables || [];
         this.state.quests = this.state.quests || [];
+        this.state.favoriteSpells = this.state.favoriteSpells || [];
 
         // Heal ghosts
         const isGhost = (c: any) => {
@@ -101,12 +117,13 @@ class Store {
         if (this.state.graveyard) {
            this.state.graveyard = this.state.graveyard.filter((c) => !isGhost(c));
         }
-      } catch {
-        this.state = DEFAULT_STATE;
+      } else {
+         this.state = { ...DEFAULT_STATE, isHydrated: true };
       }
-    } else {
-      this.state = DEFAULT_STATE;
+    } catch {
+      this.state = { ...DEFAULT_STATE, isHydrated: true };
     }
+    this.listeners.forEach((l) => l());
   }
 
   subscribe(listener: () => void) {
@@ -125,16 +142,19 @@ class Store {
   }
 
   save() {
-    try {
-      const stateToSave = {
-        ...this.state,
-        npcs: this.state.npcs.filter((n: any) => !n.isTemp)
-      };
-      localStorage.setItem(STORE_KEY, JSON.stringify(stateToSave));
-    } catch (e) {
-      console.error("Failed to save to localStorage. It might be full.", e);
-      alert("Error al guardar: La memoria del navegador está llena. Reduce el tamaño de las imágenes.");
-    }
+    if (this.saveTimeout) clearTimeout(this.saveTimeout);
+    this.saveTimeout = setTimeout(async () => {
+      try {
+        const stateToSave = {
+          ...this.state,
+          npcs: this.state.npcs.filter((n: any) => !n.isTemp)
+        };
+        await set(STORE_KEY, stateToSave);
+      } catch (e) {
+        console.error("Failed to save to IndexedDB.", e);
+        alert("Error al guardar: La memoria del navegador está llena. Reduce el tamaño de las imágenes.");
+      }
+    }, 500); // Debounce to prevent blocking IO spam
   }
 
   exportData() {
@@ -151,7 +171,7 @@ class Store {
   importData(jsonString: string, mode: "merge" | "overwrite" = "overwrite") {
     try {
       const parsed = JSON.parse(jsonString);
-      if (Array.isArray(parsed) || (parsed.players && parsed.npcs && !parsed.uiState)) {
+      if (!parsed.uiState) {
         alert("Parece que estás intentando importar un archivo de una sección específica (como Notas o Grupo) en el Importador Global. Ve a la sección correspondiente para importarlo o usa un archivo de Exportación Total.");
         return;
       }
@@ -188,20 +208,29 @@ class Store {
       }
  else {
         const state = this.getState();
+        
+        // Helper function to deduplicate arrays by 'id'
+        const mergeDedupe = (existing, imported) => {
+          if (!Array.isArray(imported)) return existing;
+          const existingMap = new Map(existing.map(item => [item.id, item]));
+          imported.forEach(item => existingMap.set(item.id, item)); // Overwrite if same id exists
+          return Array.from(existingMap.values());
+        };
+
         this.setState({
           ...parsed,
-          players: [...(state.players || []), ...(Array.isArray(parsed.players) ? parsed.players : [])],
-          npcs: [...(state.npcs || []), ...(Array.isArray(parsed.npcs) ? parsed.npcs : [])],
-          creatures: [...(state.creatures || []), ...(Array.isArray(parsed.creatures) ? parsed.creatures : [])],
-          combatants: [...(state.combatants || []), ...(Array.isArray(parsed.combatants) ? parsed.combatants : [])],
-          graveyard: [...(state.graveyard || []), ...(Array.isArray(parsed.graveyard) ? parsed.graveyard : [])],
-          maps: [...(state.maps || []), ...(Array.isArray(parsed.maps) ? parsed.maps : [])],
-          locations: [...(state.locations || []), ...(Array.isArray(parsed.locations) ? parsed.locations : [])],
-          shops: [...(state.shops || []), ...(Array.isArray(parsed.shops) ? parsed.shops : [])],
-          notes: [...(state.notes || []), ...(Array.isArray(parsed.notes) ? parsed.notes : [])],
-          customItems: [...(state.customItems || []), ...(Array.isArray(parsed.customItems) ? parsed.customItems : [])],
-          lootTables: [...(state.lootTables || []), ...(Array.isArray(parsed.lootTables) ? parsed.lootTables : [])],
-          quests: [...(state.quests || []), ...(Array.isArray(parsed.quests) ? parsed.quests : [])],
+          players: mergeDedupe(state.players || [], parsed.players),
+          npcs: mergeDedupe(state.npcs || [], parsed.npcs),
+          creatures: mergeDedupe(state.creatures || [], parsed.creatures),
+          combatants: mergeDedupe(state.combatants || [], parsed.combatants),
+          graveyard: mergeDedupe(state.graveyard || [], parsed.graveyard),
+          maps: mergeDedupe(state.maps || [], parsed.maps),
+          locations: mergeDedupe(state.locations || [], parsed.locations),
+          shops: mergeDedupe(state.shops || [], parsed.shops),
+          notes: mergeDedupe(state.notes || [], parsed.notes),
+          customItems: mergeDedupe(state.customItems || [], parsed.customItems),
+          lootTables: mergeDedupe(state.lootTables || [], parsed.lootTables),
+          quests: mergeDedupe(state.quests || [], parsed.quests),
           favoriteSpells: Array.from(new Set([...(state.favoriteSpells || []), ...(Array.isArray(parsed.favoriteSpells) ? parsed.favoriteSpells : [])])),
         });
       }

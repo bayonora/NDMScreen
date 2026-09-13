@@ -31,8 +31,12 @@ type Tab = "party" | "initiative" | "quests" | "maps" | "shops" | "notes" | "ite
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("party");
 
+  const isHydrated = useStore((state) => state.isHydrated);
   const uiState = useStore((state) => state.uiState);
   const theme = uiState?.theme || 'clasico';
+
+
+
   React.useEffect(() => {
     console.log('Current theme:', theme);
     document.documentElement.setAttribute('data-theme', theme);
@@ -87,6 +91,18 @@ export default function App() {
       setPendingImport(null);
     }
   };
+
+
+  if (!isHydrated) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-dm-bg-darker">
+        <div className="flex flex-col items-center gap-4 text-dm-accent">
+          <div className="w-8 h-8 border-4 border-dm-accent border-t-transparent rounded-full animate-spin" />
+          <p className="tracking-widest uppercase text-sm">Cargando Campaña...</p>
+        </div>
+      </div>
+    );
+  }
 
   const renderTab = () => {
     switch (activeTab) {

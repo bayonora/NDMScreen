@@ -19,9 +19,15 @@ export function MathInput({ value, onValueChange, className, onBlur, onKeyDown, 
   const evaluateMath = (expr: string): number | null => {
     try {
       if (!/^[0-9+\-*/.\s]+$/.test(expr)) return null;
+      
+      // Protection against dividing by zero visually like 40/0
+      if (/\/\s*0+(?!\.)/.test(expr)) return null;
+
       // eslint-disable-next-line no-new-func
       const result = new Function(`return ${expr}`)();
-      if (typeof result === 'number' && !isNaN(result)) {
+      
+      // Strict mathematically finite check (Blocks Infinity and NaN)
+      if (typeof result === 'number' && Number.isFinite(result)) {
         return Math.floor(result);
       }
       return null;

@@ -130,3 +130,11 @@ export function normalizeSearchText(text: string | null | undefined): string {
   if (!text) return "";
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
+
+// Helper to deduplicate arrays during import
+export function mergeDedupe<T extends { id: string }>(existing: T[], imported: T[]): T[] {
+  if (!Array.isArray(imported)) return existing;
+  const existingMap = new Map(existing.map(item => [item.id, item]));
+  imported.forEach(item => existingMap.set(item.id, item));
+  return Array.from(existingMap.values());
+}

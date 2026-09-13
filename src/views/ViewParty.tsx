@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useStore, actions, store } from "../store/useStore";
 import { StatBlock } from "../components/StatBlock";
+import { mergeDedupe } from "../lib/utils";
 import { Modal } from "../components/ui/Modal";
 import { Input, Button, Textarea } from "../components/ui/Input";
 import { Character, Player, NPC } from "../types";
@@ -103,23 +104,23 @@ export function ViewParty() {
         if (Array.isArray(pendingImport.creatures)) store.setState({ creatures: pendingImport.creatures.filter((c: any) => !c.isTemp) });
       } else {
         const state = store.getState();
-        if (Array.isArray(pendingImport.players)) store.setState({ players: [...state.players, ...pendingImport.players] });
-        if (Array.isArray(pendingImport.npcs)) store.setState({ npcs: [...state.npcs, ...pendingImport.npcs.filter((n: any) => !n.isTemp)] });
-        if (Array.isArray(pendingImport.creatures)) store.setState({ creatures: [...(state.creatures || []), ...pendingImport.creatures.filter((c: any) => !c.isTemp)] });
+        if (Array.isArray(pendingImport.players)) store.setState({ players: mergeDedupe(state.players, pendingImport.players) });
+        if (Array.isArray(pendingImport.npcs)) store.setState({ npcs: mergeDedupe(state.npcs, pendingImport.npcs.filter((n: any) => !n.isTemp)) });
+        if (Array.isArray(pendingImport.creatures)) store.setState({ creatures: mergeDedupe(state.creatures || [], pendingImport.creatures.filter((c: any) => !c.isTemp)) });
       }
     } else {
       const arrayData = Array.isArray(pendingImport) ? pendingImport : [];
       if (tab === "players") {
         if (mode === "overwrite") store.setState({ players: arrayData });
-        else store.setState({ players: [...store.getState().players, ...arrayData] });
+        else store.setState({ players: mergeDedupe(store.getState().players, arrayData) });
       } else if (tab === "npcs") {
         const validData = arrayData.filter((n: any) => !n.isTemp);
         if (mode === "overwrite") store.setState({ npcs: validData });
-        else store.setState({ npcs: [...store.getState().npcs, ...validData] });
+        else store.setState({ npcs: mergeDedupe(store.getState().npcs, validData) });
       } else {
         const validData = arrayData.filter((c: any) => !c.isTemp);
         if (mode === "overwrite") store.setState({ creatures: validData });
-        else store.setState({ creatures: [...(store.getState().creatures || []), ...validData] });
+        else store.setState({ creatures: mergeDedupe(store.getState().creatures || [], validData) });
       }
     }
     setPendingImport(null);
@@ -167,16 +168,25 @@ export function ViewParty() {
             Criaturas ({creatures.length})
           </Button>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
-          <label className="cursor-pointer px-3 sm:px-4 py-2 bg-dm-bg-hover border border-dm-border text-dm-muted text-xs uppercase tracking-widest hover:bg-dm-bg-hover hover:border-dm-accent hover:text-dm-accent inline-flex items-center justify-center transition-all shadow-sm rounded-none whitespace-nowrap">
+        <div className="flex gap-2 shrink-0">
+          <label className="cursor-pointer hidden sm:inline-flex px-3 sm:px-4 py-2 bg-dm-bg-hover border border-dm-border text-dm-muted text-xs uppercase tracking-widest hover:bg-dm-bg-hover hover:border-dm-accent hover:text-dm-accent items-center justify-center transition-all shadow-sm rounded-none whitespace-nowrap">
             <Download size={14} className="mr-2" /> Importar {tab === "players" ? "Jugadores" : tab === "npcs" ? "NPCs" : "Criaturas"}
             <input type="file" accept=".json" className="hidden" onChange={importData} />
           </label>
-          <Button variant="secondary" onClick={exportData} className="whitespace-nowrap">
+          <label className="cursor-pointer sm:hidden inline-flex px-3 py-2 bg-dm-bg-hover border border-dm-border text-dm-muted text-xs hover:bg-dm-bg-hover hover:border-dm-accent hover:text-dm-accent items-center justify-center transition-all shadow-sm rounded-none">
+            <Download size={16} />
+            <input type="file" accept=".json" className="hidden" onChange={importData} />
+          </label>
+          
+          <Button variant="secondary" onClick={exportData} className="hidden sm:inline-flex whitespace-nowrap">
             <Upload size={14} className="mr-2" /> Exportar {tab === "players" ? "Jugadores" : tab === "npcs" ? "NPCs" : "Criaturas"}
           </Button>
-          <Button onClick={openNew} className="whitespace-nowrap">
-            <Plus size={14} className="mr-2" /> Añadir
+          <Button variant="secondary" onClick={exportData} className="sm:hidden inline-flex px-3 py-2">
+            <Upload size={16} />
+          </Button>
+          
+          <Button onClick={openNew} className="whitespace-nowrap inline-flex">
+            <Plus size={14} className="sm:mr-2" /> <span className="hidden sm:inline">Añadir</span><span className="sm:hidden ml-1">Añadir</span>
           </Button>
         </div>
       </div>

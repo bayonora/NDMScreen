@@ -195,3 +195,20 @@ body {
 .hover\:bg-dm-danger-hover:hover { background-color: var(--theme-danger-hover); }
 .hover\:border-dm-danger-hover:hover { border-color: var(--theme-danger-hover); }
 .hover\:text-dm-danger-hover:hover { color: var(--theme-danger-hover); }
+
+/* Non-hover states for hover colors */
+.bg-dm-accent-hover { background-color: var(--theme-accent-hover); }
+.border-dm-accent-hover { border-color: var(--theme-accent-hover); }
+.text-dm-accent-hover { color: var(--theme-accent-hover); }
+
+.bg-dm-danger-hover { background-color: var(--theme-danger-hover); }
+.border-dm-danger-hover { border-color: var(--theme-danger-hover); }
+.text-dm-danger-hover { color: var(--theme-danger-hover); }
+
+.bg-dm-border { background-color: var(--theme-border); }
+
+.text-dm-border { color: var(--theme-border); }
+
+.fill-dm-border { fill: var(--theme-border); }
+
+.stroke-dm-border { stroke: var(--theme-border); }

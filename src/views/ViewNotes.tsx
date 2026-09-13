@@ -78,7 +78,7 @@ export function ViewNotes() {
     if (mode === "overwrite") {
       store.setState({ notes: pendingImport });
     } else {
-      store.setState({ notes: [...(store.getState().notes || []), ...pendingImport] });
+      store.setState({ notes: mergeDedupe(store.getState().notes || [], pendingImport) });
     }
     setPendingImport(null);
   };
@@ -91,16 +91,16 @@ export function ViewNotes() {
           <StickyNote className="text-dm-accent shrink-0" size={20} />
           <span className="hidden sm:inline">Bloc de Notas</span><span className="sm:hidden">Notas</span>
         </h2>
-        <div className="flex space-x-2 w-full sm:w-auto overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
+        <div className="flex space-x-2 shrink-0">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="p-2 border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent transition-colors shrink-0"
+            className="flex p-2 border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent transition-colors shrink-0"
             title="Importar Notas">
             <Download size={18} />
           </button>
           <button
             onClick={handleExport}
-            className="p-2 border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent transition-colors shrink-0"
+            className="flex p-2 border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent transition-colors shrink-0"
             title="Exportar Notas">
             <Upload size={18} />
           </button>
@@ -108,10 +108,11 @@ export function ViewNotes() {
           
           <button
             onClick={() => setEditingNote({ id: "", title: "", content: "", color: COLORS[0] })}
-            className="flex items-center space-x-2 px-4 py-2 bg-dm-accent text-black hover:bg-white transition-colors uppercase tracking-wider text-sm font-semibold whitespace-nowrap shrink-0"
+            className="flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 bg-dm-accent text-black hover:bg-white transition-colors uppercase tracking-wider text-xs sm:text-sm font-semibold whitespace-nowrap shrink-0"
           >
             <Plus size={16} />
-            <span>Nueva Nota</span>
+            <span className="hidden sm:inline">Nueva Nota</span>
+            <span className="sm:hidden">Nueva</span>
           </button>
         </div>
       </div>
