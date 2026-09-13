@@ -157,14 +157,14 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
       <div className="w-full h-px bg-dm-border my-2" />
 
       <div className="space-y-1 text-sm opacity-90">
-        {!isPlayer && n.skills && (
+        {(character as any).skills && (
           <div>
-            <strong className="text-dm-accent">Habilidades</strong> {n.skills}
+            <strong className="text-dm-accent">Habilidades</strong> {(character as any).skills}
           </div>
         )}
-        {!isPlayer && n.senses && (
+        {(character as any).senses && (
           <div>
-            <strong className="text-dm-accent">Sentidos</strong> {n.senses}
+            <strong className="text-dm-accent">Sentidos</strong> {(character as any).senses}
           </div>
         )}
         {isPlayer && (
@@ -172,9 +172,9 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
             <strong className="text-dm-accent">Percepción Pasiva</strong> {p.passivePerception}
           </div>
         )}
-        {!isPlayer && n.languages && (
+        {(character as any).languages && (
           <div>
-            <strong className="text-dm-accent">Idiomas</strong> {n.languages}
+            <strong className="text-dm-accent">Idiomas</strong> {(character as any).languages}
           </div>
         )}
         {!isPlayer && n.cr && (
@@ -184,21 +184,21 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
         )}
       </div>
 
-      {!isPlayer && (n.specialTraits || n.actions) && (
+      {((character as any).specialTraits || (character as any).actions) && (
         <div className="w-full h-px bg-dm-border my-2" />
       )}
 
-      {!isPlayer && n.specialTraits && (
+      {(character as any).specialTraits && (
         <div className="mt-2 text-sm whitespace-pre-wrap opacity-90">
-          {n.specialTraits}
+          {(character as any).specialTraits}
         </div>
       )}
 
-      {!isPlayer && n.actions && (
+      {(character as any).actions && (
         <>
           <h2 className="text-lg font-bold text-dm-accent mt-4 mb-2 border-b border-dm-border">Acciones</h2>
           <div className="text-sm whitespace-pre-wrap opacity-90">
-            {n.actions}
+            {(character as any).actions}
           </div>
         </>
       )}

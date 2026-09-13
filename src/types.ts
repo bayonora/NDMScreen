@@ -23,6 +23,11 @@ export type Player = {
   ac: number;
   stats: StatBlock;
   passivePerception: number;
+  skills?: string;
+  senses?: string;
+  languages?: string;
+  specialTraits?: string;
+  actions?: string;
   tags?: CharacterTag[];
   image?: string;
 };
