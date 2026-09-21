@@ -4,6 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import {defineConfig, Plugin} from 'vite';
 
+const __dirname = import.meta.dirname || path.resolve('.');
+
 // LINT.IfChange(aistudio_media_plugin)
 function aistudioMediaPlugin(): Plugin {
   return {
@@ -74,8 +76,10 @@ export default defineConfig(() => {
       },
     },
     server: {
+      host: '0.0.0.0',
+      port: 3000,
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
@@ -84,13 +88,22 @@ export default defineConfig(() => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom', 'lucide-react', 'react-zoom-pan-pinch'],
-            motion: ['motion']
-          }
-        }
+          manualChunks(id: string) {
+            if (id.includes('node_modules')) {
+              if (id.includes('motion')) return 'motion';
+              if (
+                id.includes('react') ||
+                id.includes('react-dom') ||
+                id.includes('lucide-react') ||
+                id.includes('react-zoom-pan-pinch')
+              ) {
+                return 'vendor';
+              }
+            }
+          },
+        },
       },
-      chunkSizeWarningLimit: 1000
+      chunkSizeWarningLimit: 1000,
     },
   };
 });
