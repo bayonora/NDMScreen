@@ -198,7 +198,7 @@ export function ViewParty() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-12 sm:pb-16 custom-scrollbar">
         <div className="w-full">
           <AnimatePresence mode="wait">
             <motion.div

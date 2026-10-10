@@ -313,7 +313,7 @@ export function ViewMaps() {
                </Button>
            </div>
            
-           <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6">
+           <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 pb-12 sm:pb-16">
               <div className={cn("grid gap-4", !currentNode ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2")}>
                  {children.map(child => {
                    const isLegacyMap = !('description' in child);

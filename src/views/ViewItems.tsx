@@ -215,7 +215,7 @@ export function ViewItems() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar pb-24 text-dm-text">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar pb-12 sm:pb-16 text-dm-text">
         {activeTab === "items" ? (
           <>
           <SortableGrid 

@@ -144,13 +144,13 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden relative">
-        <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-4 sm:p-6 pb-24">
+      <main className="flex-1 min-h-0 relative overflow-hidden">
+        <div className="h-full w-full overflow-hidden flex flex-col">
           {renderTab()}
         </div>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-dm-bg-darker border-t border-dm-accent/10 z-40 overflow-x-auto custom-scrollbar">
+      <nav className="shrink-0 bg-dm-bg-darker border-t border-dm-accent/10 z-40 overflow-x-auto custom-scrollbar select-none pb-[env(safe-area-inset-bottom,0px)]">
         <div className="flex justify-start sm:justify-center min-w-max">
           <NavButton active={activeTab === 'party'} onClick={() => setActiveTab('party')} label="Grupo" icon={Users} />
           <NavButton active={activeTab === 'initiative'} onClick={() => setActiveTab('initiative')} label="Iniciativa" icon={Swords} />

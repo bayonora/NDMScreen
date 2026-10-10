@@ -105,7 +105,7 @@ export function ViewShops() {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 custom-scrollbar z-10 relative">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-12 sm:pb-16 custom-scrollbar z-10 relative">
         {!selectedShop ? (
           <>
           <SortableGrid

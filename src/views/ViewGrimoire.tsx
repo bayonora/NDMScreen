@@ -141,7 +141,7 @@ export function ViewGrimoire() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 custom-scrollbar relative z-10 text-dm-text">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-12 sm:pb-16 custom-scrollbar relative z-10 text-dm-text">
         <div className="max-w-5xl mx-auto space-y-6">
         
         {/* Search Controls */}

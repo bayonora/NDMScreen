@@ -115,7 +115,19 @@ body {
   transition-duration: 300ms;
 }
 @theme {
+  --font-dnd: "Cinzel Decorative", "Cinzel", serif;
+  --font-display: "Cinzel", serif;
+  --font-serif: "Lora", serif;
+  --font-sans: "Plus Jakarta Sans", sans-serif;
   --color-testcolor: #ff0000;
+}
+
+.font-dnd {
+  font-family: 'Cinzel Decorative', 'Cinzel', serif;
+}
+
+.font-display {
+  font-family: 'Cinzel', serif;
 }
 
 

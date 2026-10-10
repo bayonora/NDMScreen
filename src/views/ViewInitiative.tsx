@@ -97,7 +97,7 @@ export function ViewInitiative() {
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
 
-        <div className="flex flex-col pb-28">
+        <div className="flex flex-col pb-12 sm:pb-16">
           <AnimatePresence mode="popLayout">
             {combatants.map((c, idx) => {
               const char = (c.isTemp && c.tempData) ? c.tempData : actions.getCharacter(c.characterId);
