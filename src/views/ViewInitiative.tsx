@@ -3,7 +3,7 @@ import { useStore, actions } from "../store/useStore";
 import { StatusEffect } from "../types";
 import { Input, Button, Textarea } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
-import { Play, SkipForward, Square, Plus, Shield, Heart, Trash2, RotateCcw, Skull, UserCheck, User } from "lucide-react";
+import { Play, SkipForward, Square, Plus, Shield, Heart, Trash2, RotateCcw, Skull, UserCheck, User, Copy } from "lucide-react";
 import { cn } from "../lib/utils";
 import { StatBlock } from "../components/StatBlock";
 import { motion, AnimatePresence } from "motion/react";
@@ -97,7 +97,7 @@ export function ViewInitiative() {
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
 
-        <div className="flex flex-col">
+        <div className="flex flex-col pb-28">
           <AnimatePresence mode="popLayout">
             {combatants.map((c, idx) => {
               const char = (c.isTemp && c.tempData) ? c.tempData : actions.getCharacter(c.characterId);
@@ -250,7 +250,16 @@ export function ViewInitiative() {
                     </div>
                   </div>
 
-                  <div className="w-12 shrink-0 flex justify-end items-center">
+                  <div className="shrink-0 flex justify-end items-center gap-1">
+                    {c.isTemp && (
+                      <button 
+                        onClick={() => actions.duplicateTempCombatant(c.id)}
+                        className="p-2 text-dm-muted hover:text-dm-accent transition-colors"
+                        title="Duplicar criatura temporal"
+                      >
+                        <Copy size={18} />
+                      </button>
+                    )}
                     <button 
                       onClick={() => actions.killCombatant(c.id)}
                       className="p-2 text-dm-border hover:text-dm-danger transition-colors"

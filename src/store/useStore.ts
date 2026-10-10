@@ -396,6 +396,40 @@ export const actions = {
       ].sort((a, b) => b.initiative - a.initiative),
     });
   },
+  duplicateTempCombatant: (combatantId: string) => {
+    const state = store.getState();
+    const source = state.combatants.find((c) => c.id === combatantId);
+    if (!source || !source.isTemp || !source.tempData) return;
+
+    const newId = uuidv4();
+    // Helper to generate a nice numbered or copied name
+    const baseName = source.tempData.name.replace(/\s*\(\d+\)$/, "");
+    // Count how many combatants with similar base name already exist
+    const count = state.combatants.filter(
+      (c) => c.tempData && c.tempData.name.replace(/\s*\(\d+\)$/, "") === baseName
+    ).length;
+    const newName = `${baseName} (${count + 1})`;
+
+    const newTempData = {
+      ...source.tempData,
+      id: newId,
+      name: newName,
+    };
+
+    const newCombatant: Combatant = {
+      id: newId,
+      characterId: newId,
+      initiative: source.initiative,
+      hpCurrent: newTempData.hpMax,
+      statuses: [],
+      isTemp: true,
+      tempData: newTempData,
+    };
+
+    store.setState({
+      combatants: [...state.combatants, newCombatant].sort((a, b) => b.initiative - a.initiative),
+    });
+  },
   updateCombatant: (id: string, updates: Partial<Combatant>) => {
     store.setState({
       combatants: store.getState().combatants.map((c) => (c.id === id ? { ...c, ...updates } : c)).sort((a, b) => b.initiative - a.initiative),
