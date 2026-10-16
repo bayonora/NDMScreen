@@ -3,22 +3,21 @@ import { X, Shield, Map as MapIcon, Package, ScrollText, Target, Sword, Settings
 import { useStore, actions } from "../store/useStore";
 import { Button } from "./ui/Input";
 import { cn } from "../lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { Overlay } from "./ui/Modal";
+import { motion, AnimatePresence } from "motion/react";
 
 export function WelcomeModal() {
-  const uiState = useStore((state) => state.uiState);
-  const [isOpen, setIsOpen] = useState(!uiState.hasSeenWelcome);
+  const hasSeenWelcome = useStore((state) => state.uiState.hasSeenWelcome);
+  const [isOpen, setIsOpen] = useState(!hasSeenWelcome);
 
   const handleClose = () => {
     setIsOpen(false);
     actions.updateUI({ hasSeenWelcome: true });
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/30 z-[100] flex items-center justify-center p-4">
-      <div className="bg-dm-bg/60 backdrop-blur-xl border border-dm-accent/30 rounded-xl max-w-lg w-full p-8 shadow-[0_8px_32px_rgba(0,0,0,0.8)] relative animate-in fade-in zoom-in-95 duration-300 overflow-hidden">
+    <Overlay isOpen={isOpen} onClose={handleClose} zIndex="z-[100]">
+      <div role="dialog" aria-modal="true" className="bg-dm-bg/80 backdrop-blur-xl border border-dm-accent/30 rounded-xl max-w-lg w-full max-h-full overflow-y-auto custom-scrollbar p-5 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.8)] relative animate-in fade-in zoom-in-95 duration-300">
         <h2 className="text-2xl font-bold tracking-widest uppercase text-dm-accent mb-4 flex items-center gap-3 border-b border-dm-accent/10 pb-4 leading-tight">
           <Shield className="text-dm-muted shrink-0" size={32} />
           <div>
@@ -63,7 +62,7 @@ export function WelcomeModal() {
           </Button>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }
 
@@ -247,14 +246,12 @@ const TUTORIAL_SECTIONS = [
 export function FullTutorialModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [activeSection, setActiveSection] = useState(TUTORIAL_SECTIONS[0].id);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/30 z-[100] flex items-center justify-center p-4">
-      <div className="bg-dm-bg/60 backdrop-blur-xl border border-dm-accent/30 rounded-xl max-w-4xl w-full h-[80vh] shadow-[0_8px_32px_rgba(0,0,0,0.8)] relative flex flex-col md:flex-row overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <Overlay isOpen={isOpen} onClose={onClose} zIndex="z-[100]">
+      <div role="dialog" aria-modal="true" className="bg-dm-bg/80 backdrop-blur-xl border border-dm-accent/30 rounded-xl max-w-4xl w-full h-full sm:h-[80vh] shadow-[0_8px_32px_rgba(0,0,0,0.8)] relative flex flex-col md:flex-row overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Sidebar */}
-        <div className="w-full md:w-64 bg-black/40 border-r border-dm-accent/10 flex flex-col shrink-0">
+        <div className="w-full md:w-64 bg-black/40 border-b md:border-b-0 md:border-r border-dm-accent/10 flex flex-col shrink-0">
           <div className="p-4 border-b border-dm-accent/10 flex justify-between items-center bg-black/40">
             <h2 className="text-dm-accent font-bold tracking-widest uppercase text-sm flex items-center gap-2">
               <HelpCircle size={16} /> Manual del Máster
@@ -264,13 +261,14 @@ export function FullTutorialModal({ isOpen, onClose }: { isOpen: boolean, onClos
             </button>
           </div>
           
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+          {/* Horizontal chips on phones, vertical list from md up. */}
+          <div className="flex md:flex-col gap-1 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto md:flex-1 custom-scrollbar p-2">
             {TUTORIAL_SECTIONS.map((sec) => (
               <button
                 key={sec.id}
                 onClick={() => setActiveSection(sec.id)}
                 className={cn(
-                  "w-full text-left px-3 py-3 rounded-sm flex items-center gap-3 text-sm font-medium transition-colors",
+                  "shrink-0 md:w-full text-left px-3 py-2 md:py-3 rounded-sm flex items-center gap-2 md:gap-3 text-xs md:text-sm font-medium transition-colors whitespace-nowrap",
                   activeSection === sec.id 
                     ? "bg-dm-accent/10 text-dm-accent border border-dm-accent/30" 
                     : "text-dm-muted hover:bg-dm-bg-hover hover:text-dm-text border border-transparent"
@@ -278,22 +276,22 @@ export function FullTutorialModal({ isOpen, onClose }: { isOpen: boolean, onClos
               >
                 {sec.icon}
                 <span className="flex-1 truncate">{sec.title}</span>
-                {activeSection === sec.id && <ChevronRight size={14} />}
+                {activeSection === sec.id && <ChevronRight size={14} className="hidden md:block" />}
               </button>
             ))}
           </div>
-          <div className="p-3 border-t border-dm-border text-left mt-auto">
+          <div className="hidden md:block p-3 border-t border-dm-border text-left mt-auto">
             <span className="text-[10px] text-dm-muted opacity-40 font-mono tracking-wider select-none">NDMScreen 1.1 | © Bayonora |</span>
           </div>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 flex flex-col relative overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
-          <button onClick={onClose} className="hidden md:flex absolute top-4 right-4 text-dm-muted hover:text-white transition-colors z-10 bg-dm-bg p-1 rounded-sm border border-dm-border">
+        <div className="flex-1 flex flex-col relative overflow-hidden">
+          <button onClick={onClose} className="hidden md:flex absolute top-4 right-4 text-dm-muted hover:text-dm-text-bright transition-colors z-10 bg-dm-bg p-1 rounded-sm border border-dm-border">
             <X size={20} />
           </button>
           
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 relative z-0">
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-10 relative z-0">
             <AnimatePresence mode="wait">
               {TUTORIAL_SECTIONS.map((sec) => (
                 sec.id === activeSection && (
@@ -308,7 +306,7 @@ export function FullTutorialModal({ isOpen, onClose }: { isOpen: boolean, onClos
                       <div className="p-3 bg-dm-bg rounded-md border border-dm-accent/30 text-dm-accent">
                         {sec.icon}
                       </div>
-                      <h3 className="text-2xl font-light tracking-widest uppercase text-white">
+                      <h3 className="text-lg sm:text-2xl font-light tracking-widest uppercase text-dm-text-bright">
                         {sec.title}
                       </h3>
                     </div>
@@ -327,6 +325,6 @@ export function FullTutorialModal({ isOpen, onClose }: { isOpen: boolean, onClos
           </div>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }

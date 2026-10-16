@@ -3,43 +3,64 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef } from "react";
-import { ViewParty } from "./views/ViewParty";
-import { ViewInitiative } from "./views/ViewInitiative";
-import { ViewMaps } from "./views/ViewMaps";
-import { ViewShops } from "./views/ViewShops";
-import { ViewNotes } from "./views/ViewNotes";
-import { ViewQuests } from "./views/ViewQuests";
-import { ViewItems } from "./views/ViewItems";
-import { ViewGrimoire } from "./views/ViewGrimoire";
+import React, { useState, useRef, useEffect, Suspense, lazy } from "react";
 import { cn } from "./lib/utils";
-import { Users, Swords, BookOpen, Map as MapIcon, Store as StoreIcon, Settings, Download, Upload, X, StickyNote, Backpack, Calculator, Target } from "lucide-react";
-import { store, actions, useStore } from "./store/useStore";
-import { AnimatePresence, motion } from "framer-motion";
+import { Users, Swords, BookOpen, Map as MapIcon, Store as StoreIcon, Settings, Download, Upload, StickyNote, Backpack, Calculator, Target, Info } from "lucide-react";
+import { store, actions, useStore, Tab } from "./store/useStore";
+import { motion } from "motion/react";
+import { Modal } from "./components/ui/Modal";
 import { CalculatorModal } from "./components/CalculatorModal";
 import { DiceRollerModal, D20Icon } from "./components/DiceRollerModal";
 import { WelcomeModal, FullTutorialModal } from "./components/Tutorial";
 import { GlobalSearch } from "./components/GlobalSearch";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-
-import { Info } from "lucide-react";
 import { TitleTorch } from "./components/TitleTorch";
 import { ImportModal } from "./components/ImportModal";
+import { readFileAsText } from "./lib/utils";
 
-type Tab = "party" | "initiative" | "quests" | "maps" | "shops" | "notes" | "items" | "spells";
+// Each view is its own chunk, so the first load only downloads what's on screen.
+const ViewParty = lazy(() => import("./views/ViewParty").then((m) => ({ default: m.ViewParty })));
+const ViewInitiative = lazy(() => import("./views/ViewInitiative").then((m) => ({ default: m.ViewInitiative })));
+const ViewQuests = lazy(() => import("./views/ViewQuests").then((m) => ({ default: m.ViewQuests })));
+const ViewMaps = lazy(() => import("./views/ViewMaps").then((m) => ({ default: m.ViewMaps })));
+const ViewShops = lazy(() => import("./views/ViewShops").then((m) => ({ default: m.ViewShops })));
+const ViewNotes = lazy(() => import("./views/ViewNotes").then((m) => ({ default: m.ViewNotes })));
+const ViewItems = lazy(() => import("./views/ViewItems").then((m) => ({ default: m.ViewItems })));
+const ViewGrimoire = lazy(() => import("./views/ViewGrimoire").then((m) => ({ default: m.ViewGrimoire })));
+
+const TABS: { id: Tab; label: string; icon: React.ElementType; view: React.ComponentType }[] = [
+  { id: "party", label: "Grupo", icon: Users, view: ViewParty },
+  { id: "initiative", label: "Iniciativa", icon: Swords, view: ViewInitiative },
+  { id: "quests", label: "Misiones", icon: Target, view: ViewQuests },
+  { id: "maps", label: "Mapas", icon: MapIcon, view: ViewMaps },
+  { id: "shops", label: "Tiendas", icon: StoreIcon, view: ViewShops },
+  { id: "notes", label: "Notas", icon: StickyNote, view: ViewNotes },
+  { id: "items", label: "Objetos", icon: Backpack, view: ViewItems },
+  { id: "spells", label: "Grimorio", icon: BookOpen, view: ViewGrimoire },
+];
+
+const THEMES = [
+  { id: "clasico", label: "NELLIE", swatches: ["#1e1a17", "#c1a063"], ring: "#3a302a" },
+  { id: "direi", label: "DIREI", swatches: ["#000000", "#ffffff"], ring: "#333333" },
+  { id: "noche", label: "HEAVEN", swatches: ["#0d1117", "#79c0ff"], ring: "#30363d" },
+  { id: "sangre", label: "NAUTHIZ", swatches: ["#1a0f0f", "#ff4d4d"], ring: "#3d1c1c" },
+];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<Tab>("party");
-
   const isHydrated = useStore((state) => state.isHydrated);
-  const uiState = useStore((state) => state.uiState);
-  const theme = uiState?.theme || 'clasico';
+  const theme = useStore((state) => state.uiState.theme) || "clasico";
+  const activeTab = useStore((state) => state.uiState.activeTab) || "party";
+  const setActiveTab = (tab: Tab) => actions.updateUI({ activeTab: tab });
 
-
-
-  React.useEffect(() => {
-    console.log('Current theme:', theme);
-    document.documentElement.setAttribute('data-theme', theme);
+  useEffect(() => {
+    const root = document.documentElement;
+    // Animate colors only while switching themes, instead of on every element all the time.
+    root.classList.add("theme-transition");
+    root.setAttribute("data-theme", theme);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    meta?.setAttribute("content", getComputedStyle(root).getPropertyValue("--theme-bg-darker").trim());
+    const t = setTimeout(() => root.classList.remove("theme-transition"), 400);
+    return () => clearTimeout(t);
   }, [theme]);
 
   const [showSettings, setShowSettings] = useState(false);
@@ -50,7 +71,7 @@ export default function App() {
   const [saveIndicator, setSaveIndicator] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     let timeout: ReturnType<typeof setTimeout>;
     const unsubscribe = store.subscribe(() => {
       setSaveIndicator(true);
@@ -63,25 +84,14 @@ export default function App() {
     };
   }, []);
 
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      if (content) {
-        setPendingImport(content);
-        setShowSettings(false);
-      }
-    };
-    reader.readAsText(file);
-    // reset input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    const content = await readFileAsText(file);
+    if (content) {
+      setPendingImport(content);
+      setShowSettings(false);
     }
   };
 
@@ -92,10 +102,9 @@ export default function App() {
     }
   };
 
-
   if (!isHydrated) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-dm-bg-darker">
+      <div className="h-dvh w-full flex items-center justify-center bg-dm-bg-darker">
         <div className="flex flex-col items-center gap-4 text-dm-accent">
           <div className="w-8 h-8 border-4 border-dm-accent border-t-transparent rounded-full animate-spin" />
           <p className="tracking-widest uppercase text-sm">Cargando Campaña...</p>
@@ -104,147 +113,100 @@ export default function App() {
     );
   }
 
-  const renderTab = () => {
-    switch (activeTab) {
-      case "party": return <ViewParty />;
-      case "initiative": return <ViewInitiative />;
-      case "quests": return <ViewQuests />;
-      case "maps": return <ViewMaps />;
-      case "shops": return <ViewShops />;
-      case "notes": return <ViewNotes />;
-      case "items": return <ViewItems />;
-      case "spells": return <ViewGrimoire />;
-      default: return null;
-    }
-  };
+  const ActiveView = (TABS.find((t) => t.id === activeTab) || TABS[0]).view;
 
   return (
-    <div 
-      className="flex flex-col h-screen w-full text-dm-text overflow-hidden font-sans select-none"
-      style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, var(--theme-bg-hover) 0%, var(--theme-bg-darker) 100%)', backgroundColor: 'var(--theme-bg-darker)' }}
+    <div
+      className="flex flex-col h-dvh w-full text-dm-text overflow-hidden font-sans select-none"
+      style={{ backgroundImage: "radial-gradient(circle at 50% 50%, var(--theme-bg-hover) 0%, var(--theme-bg-darker) 100%)", backgroundColor: "var(--theme-bg-darker)" }}
     >
-      <header className="flex flex-wrap justify-between items-center gap-y-3 px-4 sm:px-6 py-3 border-b border-dm-accent/10 bg-dm-bg-darker">
+      <header className="flex flex-wrap justify-between items-center gap-y-2 px-3 sm:px-6 py-2 sm:py-3 pt-[max(0.5rem,env(safe-area-inset-top))] border-b border-dm-accent/10 bg-dm-bg-darker">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 border-2 border-dm-accent rotate-45 flex items-center justify-center shrink-0">
-            <span className="-rotate-45 font-bold text-xl text-dm-accent font-display">DM</span>
+          <div className="w-9 h-9 sm:w-10 sm:h-10 border-2 border-dm-accent rotate-45 flex items-center justify-center shrink-0 ml-1">
+            <span className="-rotate-45 font-bold text-lg sm:text-xl text-dm-accent font-display">DM</span>
           </div>
           <TitleTorch />
         </div>
-        <div className="w-full sm:flex-1 flex justify-center sm:px-4 max-w-lg order-last sm:order-none"><GlobalSearch onNavigate={setActiveTab} /></div>
-        <div className="flex items-center space-x-2">
+        <div className="w-full sm:flex-1 flex justify-center sm:px-4 max-w-lg order-last sm:order-none">
+          <GlobalSearch onNavigate={setActiveTab} />
+        </div>
+        <div className="flex items-center gap-1">
           {saveIndicator && (
-            <span className="text-[10px] text-dm-accent uppercase tracking-widest animate-in fade-in mr-2 opacity-70">
+            <span className="hidden sm:inline text-[10px] text-dm-accent uppercase tracking-widest animate-in fade-in mr-2 opacity-70">
               Guardado
             </span>
           )}
-          <button onClick={() => setShowCalculator(true)} className="text-dm-muted hover:text-dm-text transition-colors p-2"><Calculator size={20} /></button>
-          <button onClick={() => setShowDiceRoller(true)} className="text-dm-muted hover:text-dm-text transition-colors p-2"><D20Icon size={20} /></button>
-          <button onClick={() => setShowTutorial(true)} className="text-dm-muted hover:text-dm-text transition-colors p-2"><Info size={20} /></button>
-          <button onClick={() => setShowSettings(true)} className="text-dm-muted hover:text-dm-text transition-colors p-2"><Settings size={20} /></button>
+          <HeaderButton label="Calculadora" onClick={() => setShowCalculator(true)}><Calculator size={20} /></HeaderButton>
+          <HeaderButton label="Lanzar dados" onClick={() => setShowDiceRoller(true)}><D20Icon size={20} /></HeaderButton>
+          <HeaderButton label="Tutorial" onClick={() => setShowTutorial(true)}><Info size={20} /></HeaderButton>
+          <HeaderButton label="Ajustes" onClick={() => setShowSettings(true)}><Settings size={20} /></HeaderButton>
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 relative overflow-hidden">
-        <div className="h-full w-full overflow-hidden flex flex-col">
-          {renderTab()}
-        </div>
+      <main className="flex-1 min-h-0 relative overflow-hidden flex flex-col">
+        <ErrorBoundary resetKey={activeTab}>
+          <Suspense fallback={<ViewLoading />}>
+            <ActiveView />
+          </Suspense>
+        </ErrorBoundary>
       </main>
 
-      <nav className="shrink-0 bg-dm-bg-darker border-t border-dm-accent/10 z-40 overflow-x-auto custom-scrollbar select-none pb-[env(safe-area-inset-bottom,0px)]">
-        <div className="flex justify-start sm:justify-center min-w-max">
-          <NavButton active={activeTab === 'party'} onClick={() => setActiveTab('party')} label="Grupo" icon={Users} />
-          <NavButton active={activeTab === 'initiative'} onClick={() => setActiveTab('initiative')} label="Iniciativa" icon={Swords} />
-          <NavButton active={activeTab === 'quests'} onClick={() => setActiveTab('quests')} label="Misiones" icon={Target} />
-          <NavButton active={activeTab === 'maps'} onClick={() => setActiveTab('maps')} label="Mapas" icon={MapIcon} />
-          <NavButton active={activeTab === 'shops'} onClick={() => setActiveTab('shops')} label="Tiendas" icon={StoreIcon} />
-          <NavButton active={activeTab === 'notes'} onClick={() => setActiveTab('notes')} label="Notas" icon={StickyNote} />
-          <NavButton active={activeTab === 'items'} onClick={() => setActiveTab('items')} label="Objetos" icon={Backpack} />
-          <NavButton active={activeTab === 'spells'} onClick={() => setActiveTab('spells')} label="Grimorio" icon={BookOpen} />
+      <nav className="shrink-0 bg-dm-bg-darker border-t border-dm-accent/10 z-40 select-none pb-[env(safe-area-inset-bottom,0px)]">
+        <div className="flex max-w-5xl mx-auto">
+          {TABS.map((t) => (
+            <NavButton key={t.id} active={activeTab === t.id} onClick={() => setActiveTab(t.id)} label={t.label} icon={t.icon} />
+          ))}
         </div>
       </nav>
 
-{/* Ajustes Modal */}
-      {showSettings && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-dm-bg border border-dm-border p-6 rounded-sm w-full max-w-md relative shadow-2xl">
-            <button 
-              onClick={() => setShowSettings(false)}
-              className="absolute top-4 right-4 text-dm-muted hover:text-dm-accent"
+      <Modal isOpen={showSettings} onClose={() => setShowSettings(false)} title="Ajustes" className="max-w-md">
+        <h3 className="text-sm text-dm-muted tracking-wider uppercase mb-3">Tema de Color</h3>
+        <div className="grid grid-cols-1 gap-2 text-sm mb-8">
+          {THEMES.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => actions.updateUI({ theme: t.id })}
+              className={cn(
+                "p-3 border transition-colors text-left flex items-center justify-between",
+                theme === t.id ? "border-dm-accent text-dm-accent bg-dm-accent/10" : "border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-text"
+              )}
             >
-              <X size={20} />
+              <span>{t.label}</span>
+              <span className="flex gap-1">
+                {t.swatches.map((c) => (
+                  <span key={c} className="w-3 h-3 rounded-full border" style={{ backgroundColor: c, borderColor: t.ring }} />
+                ))}
+              </span>
             </button>
-            <h2 className="text-xl text-dm-accent tracking-widest uppercase mb-6 font-light border-b border-dm-accent/10 pb-2">
-              Ajustes de Interfaz
-            </h2>
-            <div className="flex flex-col space-y-4 mb-8">
-              <label className="text-sm text-dm-muted tracking-wider uppercase">Tema de Color</label>
-              <div className="grid grid-cols-1 gap-2 text-sm">
-                <button 
-                  onClick={() => actions.updateUI({ theme: 'clasico' })}
-                  className={cn("p-3 border transition-colors text-left flex items-center justify-between", theme === 'clasico' ? "border-dm-accent text-dm-accent bg-dm-accent/10" : "border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-text")}
-                >
-                  <span>NELLIE</span>
-                  <div className="flex gap-1"><div className="w-3 h-3 rounded-full bg-[#1e1a17] border border-[#3a302a]" /><div className="w-3 h-3 rounded-full bg-[#c1a063] border border-[#3a302a]" /></div>
-                </button>
-                <button 
-                  onClick={() => actions.updateUI({ theme: 'direi' })}
-                  className={cn("p-3 border transition-colors text-left flex items-center justify-between", theme === 'direi' ? "border-dm-accent text-dm-accent bg-dm-accent/10" : "border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-text")}
-                >
-                  <span>DIREI</span>
-                  <div className="flex gap-1"><div className="w-3 h-3 rounded-full bg-[#000000] border border-[#333333]" /><div className="w-3 h-3 rounded-full bg-[#ffffff] border border-[#333333]" /></div>
-                </button>
-                <button 
-                  onClick={() => actions.updateUI({ theme: 'noche' })}
-                  className={cn("p-3 border transition-colors text-left flex items-center justify-between", theme === 'noche' ? "border-dm-accent text-dm-accent bg-dm-accent/10" : "border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-text")}
-                >
-                  <span>HEAVEN</span>
-                  <div className="flex gap-1"><div className="w-3 h-3 rounded-full bg-[#0d1117] border border-[#30363d]" /><div className="w-3 h-3 rounded-full bg-[#79c0ff] border border-[#30363d]" /></div>
-                </button>
-                <button 
-                  onClick={() => actions.updateUI({ theme: 'sangre' })}
-                  className={cn("p-3 border transition-colors text-left flex items-center justify-between", theme === 'sangre' ? "border-dm-accent text-dm-accent bg-dm-accent/10" : "border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-text")}
-                >
-                  <span>NAUTHIZ</span>
-                  <div className="flex gap-1"><div className="w-3 h-3 rounded-full bg-[#1a0f0f] border border-[#3d1c1c]" /><div className="w-3 h-3 rounded-full bg-[#ff4d4d] border border-[#3d1c1c]" /></div>
-                </button>
-              </div>
-            </div>
-
-            <h2 className="text-xl text-dm-accent tracking-widest uppercase mb-6 font-light border-b border-dm-accent/10 pb-2">
-              Ajustes de Datos
-            </h2>
-
-            <div className="flex flex-col space-y-4">
-              <button
-                onClick={() => { store.exportData(); setShowSettings(false); }}
-                className="flex items-center justify-center space-x-3 w-full p-4 border border-dm-border hover:border-dm-accent hover:text-dm-accent transition-colors group"
-              >
-                <Upload size={20} className="text-dm-muted group-hover:text-dm-accent" />
-                <span className="uppercase tracking-wider text-sm">Exportar Todo</span>
-              </button>
-              
-              <button
-                onClick={handleImportClick}
-                className="flex items-center justify-center space-x-3 w-full p-4 border border-dm-border hover:border-dm-accent hover:text-dm-accent transition-colors group"
-              >
-                <Download size={20} className="text-dm-muted group-hover:text-dm-accent" />
-                <span className="uppercase tracking-wider text-sm">Importar Datos</span>
-              </button>
-              <input 
-                type="file" 
-                accept=".json"
-                className="hidden" 
-                ref={fileInputRef}
-                onChange={handleFileChange}
-              />
-            </div>
-            <p className="text-xs text-center text-dm-muted mt-6 px-4">
-              Al importar, podrás elegir entre fusionar con los datos actuales o sobrescribirlos por completo. Se recomienda exportar primero como copia de seguridad.
-            </p>
-          </div>
+          ))}
         </div>
-      )}
-      
+
+        <h3 className="text-sm text-dm-muted tracking-wider uppercase mb-3">Datos</h3>
+        <div className="flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={() => { store.exportData(); setShowSettings(false); }}
+            className="flex items-center justify-center space-x-3 w-full p-4 border border-dm-border hover:border-dm-accent hover:text-dm-accent transition-colors group"
+          >
+            <Upload size={20} className="text-dm-muted group-hover:text-dm-accent" />
+            <span className="uppercase tracking-wider text-sm">Exportar Todo</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center justify-center space-x-3 w-full p-4 border border-dm-border hover:border-dm-accent hover:text-dm-accent transition-colors group"
+          >
+            <Download size={20} className="text-dm-muted group-hover:text-dm-accent" />
+            <span className="uppercase tracking-wider text-sm">Importar Datos</span>
+          </button>
+          <input type="file" accept=".json,application/json" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
+        </div>
+        <p className="text-xs text-center text-dm-muted mt-6 px-4">
+          Al importar, podrás elegir entre fusionar con los datos actuales o sobrescribirlos por completo. Se recomienda exportar primero como copia de seguridad.
+        </p>
+      </Modal>
+
       <CalculatorModal isOpen={showCalculator} onClose={() => setShowCalculator(false)} />
       <DiceRollerModal isOpen={showDiceRoller} onClose={() => setShowDiceRoller(false)} />
       <WelcomeModal />
@@ -259,45 +221,45 @@ export default function App() {
   );
 }
 
-function NavButton({
-  active,
-  onClick,
-  label,
-  icon: Icon
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  icon: React.ElementType;
-}) {
+function ViewLoading() {
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-dm-accent border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+function HeaderButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button type="button" onClick={onClick} title={label} aria-label={label} className="text-dm-muted hover:text-dm-text transition-colors p-2">
+      {children}
+    </button>
+  );
+}
+
+function NavButton({ active, onClick, label, icon: Icon }: { active: boolean; onClick: () => void; label: string; icon: React.ElementType }) {
   return (
     <button
+      type="button"
       onClick={onClick}
+      aria-current={active ? "page" : undefined}
       className={cn(
-        "px-4 sm:px-8 py-3 flex flex-col items-center group relative",
+        "flex-1 min-w-0 px-0.5 pt-2.5 pb-2 sm:py-3 flex flex-col items-center relative",
         active ? "text-dm-accent" : "text-dm-muted hover:text-dm-accent"
       )}
     >
-      <Icon 
-        size={24}
+      <Icon
+        size={22}
         strokeWidth={active ? 2 : 1.5}
-        className={cn(
-          "mb-1 transition-all duration-300",
-          active ? "drop-shadow-[0_0_8px_rgba(193,160,99,0.5)] scale-110" : ""
-        )} 
+        className={cn("mb-1 transition-transform duration-300", active && "drop-shadow-[0_0_8px_var(--theme-glow)] scale-110")}
       />
-      <span 
-        className={cn(
-          "text-[10px] sm:text-xs uppercase tracking-widest transition-colors",
-          active ? "" : ""
-        )}
-      >
+      <span className="max-w-full truncate text-[9px] sm:text-[10px] md:text-xs sm:uppercase tracking-normal sm:tracking-widest">
         {label}
       </span>
       {active && (
         <motion.div
           layoutId="navIndicator"
-          className="absolute bottom-0 left-[15%] right-[15%] h-[2px] bg-dm-accent shadow-[0_0_12px_#c1a063]"
+          className="absolute bottom-0 left-[15%] right-[15%] h-[2px] bg-dm-accent shadow-[0_0_12px_var(--theme-accent)]"
           initial={false}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
@@ -305,4 +267,3 @@ function NavButton({
     </button>
   );
 }
-

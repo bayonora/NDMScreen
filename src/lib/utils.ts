@@ -131,6 +131,28 @@ export function normalizeSearchText(text: string | null | undefined): string {
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
+// Downloads data as a .json file. Uses a Blob (not a data: URL) so large exports with images work.
+export function downloadJSON(data: unknown, filename: string) {
+  const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export function readFileAsText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+
 // Helper to deduplicate arrays during import
 export function mergeDedupe<T extends { id: string }>(existing: T[], imported: T[]): T[] {
   if (!Array.isArray(imported)) return existing;

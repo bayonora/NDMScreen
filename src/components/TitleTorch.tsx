@@ -20,11 +20,16 @@ export function TitleTorch() {
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative cursor-default ml-2 hidden sm:block overflow-hidden"
+      className="relative cursor-default ml-2 hidden lg:block overflow-hidden"
       style={{ padding: '0.5rem 1rem' }}
     >
       {/* Background invisible bounding box text to give the container width */}
       <div className="text-xl font-dnd font-bold tracking-wider opacity-0 select-none whitespace-nowrap">
+        Nellie's DM Screen
+      </div>
+
+      {/* Touch screens can't hover, so they get the title shown plainly. */}
+      <div className="can-hover:hidden absolute inset-0 flex items-center justify-center text-xl font-dnd font-bold tracking-wider text-dm-accent/80 select-none pointer-events-none whitespace-nowrap">
         Nellie's DM Screen
       </div>
 

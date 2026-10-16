@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from "motion/react";
 import { Modal } from './ui/Modal';
 import { cn } from '../lib/utils';
 import { RotateCcw, Trash2 } from 'lucide-react';
@@ -63,10 +63,10 @@ export function DiceRollerModal({ isOpen, onClose }: { isOpen: boolean, onClose:
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Lanzador de Dados">
-      <div className="flex flex-col md:flex-row gap-8 h-[450px] w-full">
+      <div className="flex flex-col md:flex-row gap-6 md:gap-8 md:h-[450px] w-full">
         
         {/* Left Column: Controls */}
-        <div className="flex-1 flex flex-col gap-8">
+        <div className="flex-1 flex flex-col gap-6 md:gap-8">
           
           {/* Die Selection */}
           <div className="flex flex-col gap-3">
@@ -82,7 +82,7 @@ export function DiceRollerModal({ isOpen, onClose }: { isOpen: boolean, onClose:
                   className={cn(
                     "h-14 rounded-sm border font-bold text-lg flex flex-col items-center justify-center transition-all",
                     selectedDie === d 
-                      ? "bg-dm-accent text-dm-bg-darker border-dm-accent shadow-[0_0_15px_rgba(193,160,99,0.4)] scale-105" 
+                      ? "bg-dm-accent text-dm-bg-darker border-dm-accent shadow-[0_0_15px_var(--theme-glow)] scale-105" 
                       : "bg-dm-bg-alt border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent"
                   )}
                 >
@@ -93,7 +93,7 @@ export function DiceRollerModal({ isOpen, onClose }: { isOpen: boolean, onClose:
                 className={cn(
                   "h-14 rounded-sm border font-bold text-lg flex items-center justify-center transition-all px-1 cursor-text overflow-hidden",
                   selectedDie === customDie && String(customDie) !== ""
-                    ? "bg-dm-accent text-dm-bg-darker border-dm-accent shadow-[0_0_15px_rgba(193,160,99,0.4)] scale-105" 
+                    ? "bg-dm-accent text-dm-bg-darker border-dm-accent shadow-[0_0_15px_var(--theme-glow)] scale-105" 
                     : "bg-dm-bg border-dashed border-dm-border text-dm-muted focus-within:border-solid focus-within:border-dm-accent focus-within:text-dm-accent shadow-inner"
                 )}
                 onClick={() => {
@@ -145,16 +145,16 @@ export function DiceRollerModal({ isOpen, onClose }: { isOpen: boolean, onClose:
           </div>
 
           {/* Action Button */}
-          <div className="flex justify-center mt-auto pt-4">
+          <div className="flex justify-center mt-auto md:pt-4">
             <button 
               type="button"
               onClick={handleRoll}
               disabled={isRolling}
               className={cn(
-                "w-full py-4 rounded-sm font-bold uppercase tracking-widest text-xl transition-all border flex items-center justify-center gap-3",
+                "w-full py-3 md:py-4 rounded-sm font-bold uppercase tracking-widest text-lg md:text-xl transition-all border flex items-center justify-center gap-3",
                 isRolling 
                   ? "bg-dm-bg-alt text-dm-muted border-dm-border cursor-not-allowed" 
-                  : "bg-dm-accent text-dm-bg-darker border-dm-accent hover:bg-dm-accent-hover shadow-[0_0_15px_rgba(193,160,99,0.3)] hover:shadow-[0_0_20px_rgba(193,160,99,0.5)]"
+                  : "bg-dm-accent text-dm-bg-darker border-dm-accent hover:bg-dm-accent-hover shadow-[0_0_15px_var(--theme-glow)] hover:shadow-[0_0_20px_var(--theme-glow)]"
               )}
             >
               {isRolling ? (
@@ -174,7 +174,7 @@ export function DiceRollerModal({ isOpen, onClose }: { isOpen: boolean, onClose:
         </div>
 
         {/* Right Column: History & Results */}
-        <div className="flex-1 flex flex-col bg-dm-bg-alt border border-dm-border rounded-sm p-4 relative h-full">
+        <div className="flex-1 flex flex-col bg-dm-bg-alt border border-dm-border rounded-sm p-4 relative min-h-48 max-h-72 md:max-h-none md:h-full">
           <div className="flex items-center justify-between mb-4 border-b border-dm-border pb-2">
             <h3 className="text-dm-accent font-bold uppercase tracking-widest text-sm flex items-center gap-2">
               <D20Icon size={16} /> Historial de Tiradas
@@ -183,7 +183,7 @@ export function DiceRollerModal({ isOpen, onClose }: { isOpen: boolean, onClose:
               <button 
                 type="button"
                 onClick={clearHistory}
-                className="text-dm-muted hover:text-red-400 transition-colors"
+                className="text-dm-muted hover:text-dm-danger transition-colors"
                 title="Limpiar Historial"
               >
                 <Trash2 size={16} />

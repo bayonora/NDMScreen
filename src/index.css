@@ -1,31 +1,17 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
+/* Only for devices with a real hover (mouse). Use it to hide hover-revealed controls, so on
+   touch screens they stay visible: `can-hover:opacity-0 group-hover:opacity-100`. */
+@custom-variant can-hover (@media (hover: hover) and (pointer: fine));
 
-
-@layer utilities {
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: var(--theme-border);
-    border-radius: 20px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: var(--theme-accent);
-  }
-  
-  .mask-image-bottom {
-    mask-image: linear-gradient(to top, transparent 0%, black 15%);
-    -webkit-mask-image: linear-gradient(to top, transparent 0%, black 15%);
-  }
-}
-
+/*
+ * Theme tokens. Each theme only redefines the --theme-* variables; the @theme block below
+ * exposes them to Tailwind as `dm-*` colors, so every utility works with them
+ * (bg-dm-accent, text-dm-muted, border-dm-danger/40, hover:bg-dm-bg-card, ring-dm-accent...).
+ */
 :root {
-  /* Por defecto, Tema Oscuro Clásico */
+  /* NELLIE (clásico) */
   --theme-bg: #1e1a17;
   --theme-bg-alt: #14110f;
   --theme-bg-hover: #1a1614;
@@ -45,7 +31,7 @@
 }
 
 :root[data-theme="direi"] {
-  /* DIREI (Blanco y Negro) */
+  /* DIREI (blanco y negro) */
   --theme-bg: #000000;
   --theme-bg-alt: #0a0a0a;
   --theme-bg-hover: #141414;
@@ -65,7 +51,7 @@
 }
 
 :root[data-theme="noche"] {
-  /* Noche Profunda */
+  /* HEAVEN (noche profunda) */
   --theme-bg: #0d1117;
   --theme-bg-alt: #05080c;
   --theme-bg-hover: #161b22;
@@ -85,7 +71,7 @@
 }
 
 :root[data-theme="sangre"] {
-  /* Sangre de Dragón */
+  /* NAUTHIZ (sangre de dragón) */
   --theme-bg: #1a0f0f;
   --theme-bg-alt: #120909;
   --theme-bg-hover: #241414;
@@ -104,123 +90,116 @@
   --theme-danger-hover: #e03131;
 }
 
-body {
-  background-color: var(--theme-bg);
-  color: var(--theme-text);
+:root {
+  /* Soft accent glow used for shadows; derived so it follows the theme. */
+  --theme-glow: color-mix(in srgb, var(--theme-accent) 45%, transparent);
 }
 
-*, *::before, *::after {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 300ms;
+@theme inline {
+  --color-dm-bg: var(--theme-bg);
+  --color-dm-bg-alt: var(--theme-bg-alt);
+  --color-dm-bg-hover: var(--theme-bg-hover);
+  --color-dm-bg-darker: var(--theme-bg-darker);
+  --color-dm-bg-card: var(--theme-bg-card);
+  --color-dm-accent: var(--theme-accent);
+  --color-dm-accent-hover: var(--theme-accent-hover);
+  --color-dm-muted: var(--theme-muted);
+  --color-dm-muted-alt: var(--theme-muted-alt);
+  --color-dm-border: var(--theme-border);
+  --color-dm-border-focus: var(--theme-border-focus);
+  --color-dm-text: var(--theme-text);
+  --color-dm-text-bright: var(--theme-text-bright);
+  --color-dm-text-muted: var(--theme-text-muted);
+  --color-dm-danger: var(--theme-danger);
+  --color-dm-danger-hover: var(--theme-danger-hover);
 }
+
 @theme {
   --font-dnd: "Cinzel Decorative", "Cinzel", serif;
   --font-display: "Cinzel", serif;
   --font-serif: "Lora", serif;
   --font-sans: "Plus Jakarta Sans", sans-serif;
-  --color-testcolor: #ff0000;
 }
 
-.font-dnd {
-  font-family: 'Cinzel Decorative', 'Cinzel', serif;
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
 }
 
-.font-display {
-  font-family: 'Cinzel', serif;
+body {
+  overflow: hidden;
+  background-color: var(--theme-bg-darker);
+  color: var(--theme-text);
+  -webkit-tap-highlight-color: transparent;
 }
 
+/* Only while switching themes (class toggled from App), so normal interaction stays cheap. */
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition-property: background-color, border-color, color, fill, stroke !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-duration: 300ms !important;
+}
 
-/* Custom Theme Utilities */
-.bg-dm-bg { background-color: var(--theme-bg); }
-.bg-dm-bg-alt { background-color: var(--theme-bg-alt); }
-.bg-dm-bg-hover { background-color: var(--theme-bg-hover); }
-.bg-dm-bg-darker { background-color: var(--theme-bg-darker); }
-.bg-dm-bg-card { background-color: var(--theme-bg-card); }
-.bg-dm-accent { background-color: var(--theme-accent); }
-.bg-dm-danger { background-color: var(--theme-danger); }
+/* Markdown rendered with `prose` follows the active theme. */
+.prose {
+  --tw-prose-invert-body: var(--theme-text);
+  --tw-prose-invert-headings: var(--theme-accent);
+  --tw-prose-invert-lead: var(--theme-text);
+  --tw-prose-invert-links: var(--theme-accent);
+  --tw-prose-invert-bold: var(--theme-text-bright);
+  --tw-prose-invert-counters: var(--theme-muted);
+  --tw-prose-invert-bullets: var(--theme-muted);
+  --tw-prose-invert-hr: var(--theme-border);
+  --tw-prose-invert-quotes: var(--theme-text-muted);
+  --tw-prose-invert-quote-borders: var(--theme-accent);
+  --tw-prose-invert-code: var(--theme-text-bright);
+  --tw-prose-invert-th-borders: var(--theme-border);
+  --tw-prose-invert-td-borders: var(--theme-border);
+}
 
-.hover\:bg-dm-bg:hover { background-color: var(--theme-bg); }
-.hover\:bg-dm-bg-hover:hover { background-color: var(--theme-bg-hover); }
-.hover\:bg-dm-accent:hover { background-color: var(--theme-accent); }
-.hover\:bg-dm-danger:hover { background-color: var(--theme-danger); }
+/* Entrance animation for dialogs: `animate-in fade-in zoom-in-95`. */
+@keyframes dm-enter {
+  from {
+    opacity: var(--dm-enter-opacity, 1);
+    transform: scale(var(--dm-enter-scale, 1));
+  }
+}
+@utility animate-in {
+  animation: dm-enter 180ms ease-out;
+}
+@utility fade-in {
+  --dm-enter-opacity: 0;
+}
+@utility zoom-in-95 {
+  --dm-enter-scale: 0.95;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-in {
+    animation: none;
+  }
+}
 
-.text-dm-text { color: var(--theme-text); }
-.text-dm-text-bright { color: var(--theme-text-bright); }
-.text-dm-text-muted { color: var(--theme-text-muted); }
-.text-dm-accent { color: var(--theme-accent); }
-.text-dm-muted { color: var(--theme-muted); }
-.text-dm-border-focus { color: var(--theme-border-focus); }
-.text-dm-danger { color: var(--theme-danger); }
-
-.hover\:text-dm-accent:hover { color: var(--theme-accent); }
-.hover\:text-dm-text-bright:hover { color: var(--theme-text-bright); }
-.hover\:text-dm-danger:hover { color: var(--theme-danger); }
-
-.border-dm-border { border-color: var(--theme-border); }
-.border-dm-border-focus { border-color: var(--theme-border-focus); }
-.border-dm-accent { border-color: var(--theme-accent); }
-.border-dm-danger { border-color: var(--theme-danger); }
-
-.hover\:border-dm-accent:hover { border-color: var(--theme-accent); }
-.hover\:border-dm-danger:hover { border-color: var(--theme-danger); }
-.focus\:border-dm-accent:focus { border-color: var(--theme-accent); }
-
-/* Opacity variants used in the app */
-.bg-dm-bg-darker\/80 { background-color: color-mix(in srgb, var(--theme-bg-darker) 80%, transparent); }
-.bg-dm-bg-darker\/90 { background-color: color-mix(in srgb, var(--theme-bg-darker) 90%, transparent); }
-.border-dm-accent\/30 { border-color: color-mix(in srgb, var(--theme-accent) 30%, transparent); }
-.border-dm-accent\/20 { border-color: color-mix(in srgb, var(--theme-accent) 20%, transparent); }
-.border-dm-accent\/10 { border-color: color-mix(in srgb, var(--theme-accent) 10%, transparent); }
-.border-dm-accent\/50 { border-color: color-mix(in srgb, var(--theme-accent) 50%, transparent); }
-.bg-dm-bg\/60 { background-color: color-mix(in srgb, var(--theme-bg) 60%, transparent); }
-.bg-dm-bg\/30 { background-color: color-mix(in srgb, var(--theme-bg) 30%, transparent); }
-.bg-dm-bg\/90 { background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent); }
-.bg-dm-bg\/50 { background-color: color-mix(in srgb, var(--theme-bg) 50%, transparent); }
-.bg-dm-accent\/20 { background-color: color-mix(in srgb, var(--theme-accent) 20%, transparent); }
-.bg-dm-accent\/10 { background-color: color-mix(in srgb, var(--theme-accent) 10%, transparent); }
-.bg-dm-accent\/50 { background-color: color-mix(in srgb, var(--theme-accent) 50%, transparent); }
-.bg-dm-bg-alt\/80 { background-color: color-mix(in srgb, var(--theme-bg-alt) 80%, transparent); }
-.border-dm-border\/50 { border-color: color-mix(in srgb, var(--theme-border) 50%, transparent); }
-.border-dm-border\/30 { border-color: color-mix(in srgb, var(--theme-border) 30%, transparent); }
-.border-dm-danger\/30 { border-color: color-mix(in srgb, var(--theme-danger) 30%, transparent); }
-.border-dm-danger\/50 { border-color: color-mix(in srgb, var(--theme-danger) 50%, transparent); }
-.border-dm-danger\/60 { border-color: color-mix(in srgb, var(--theme-danger) 60%, transparent); }
-.bg-dm-danger\/20 { background-color: color-mix(in srgb, var(--theme-danger) 20%, transparent); }
-.bg-dm-danger\/10 { background-color: color-mix(in srgb, var(--theme-danger) 10%, transparent); }
-.bg-dm-danger\/40 { background-color: color-mix(in srgb, var(--theme-danger) 40%, transparent); }
-.bg-dm-danger\/70 { background-color: color-mix(in srgb, var(--theme-danger) 70%, transparent); }
-.bg-dm-danger\/90 { background-color: color-mix(in srgb, var(--theme-danger) 90%, transparent); }
-
-/* Ring variant */
-.focus\:ring-dm-accent:focus { --tw-ring-color: var(--theme-accent); box-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color); }
-.border-dm-bg-card { border-color: var(--theme-bg-card); }
-.text-dm-bg-darker { color: var(--theme-bg-darker); }
-.text-dm-bg { color: var(--theme-bg); }
-.text-dm-bg-alt { color: var(--theme-bg-alt); }
-.text-dm-bg-hover { color: var(--theme-bg-hover); }
-.hover\:text-dm-bg-hover:hover { color: var(--theme-bg-hover); }
-.hover\:text-dm-bg:hover { color: var(--theme-bg); }
-.hover\:bg-dm-accent-hover:hover { background-color: var(--theme-accent-hover); }
-.hover\:border-dm-accent-hover:hover { border-color: var(--theme-accent-hover); }
-.hover\:text-dm-accent-hover:hover { color: var(--theme-accent-hover); }
-.hover\:bg-dm-danger-hover:hover { background-color: var(--theme-danger-hover); }
-.hover\:border-dm-danger-hover:hover { border-color: var(--theme-danger-hover); }
-.hover\:text-dm-danger-hover:hover { color: var(--theme-danger-hover); }
-
-/* Non-hover states for hover colors */
-.bg-dm-accent-hover { background-color: var(--theme-accent-hover); }
-.border-dm-accent-hover { border-color: var(--theme-accent-hover); }
-.text-dm-accent-hover { color: var(--theme-accent-hover); }
-
-.bg-dm-danger-hover { background-color: var(--theme-danger-hover); }
-.border-dm-danger-hover { border-color: var(--theme-danger-hover); }
-.text-dm-danger-hover { color: var(--theme-danger-hover); }
-
-.bg-dm-border { background-color: var(--theme-border); }
-
-.text-dm-border { color: var(--theme-border); }
-
-.fill-dm-border { fill: var(--theme-border); }
-
-.stroke-dm-border { stroke: var(--theme-border); }
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--theme-border);
+    border-radius: 20px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--theme-accent);
+  }
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--theme-border) transparent;
+  }
+}

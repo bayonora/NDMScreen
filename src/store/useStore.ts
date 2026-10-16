@@ -1,13 +1,19 @@
-import { useState, useEffect, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { get, set } from "idb-keyval";
 import { Player, NPC, Creature, Character, Combatant, MapData, LocationData, Shop, ShopItem, Note, CustomItem, LootTable, Quest } from "../types";
 import { v4 as uuidv4 } from "uuid";
+import { mergeDedupe, downloadJSON } from "../lib/utils";
+
+export type Tab = "party" | "initiative" | "quests" | "maps" | "shops" | "notes" | "items" | "spells";
+
+// Collections that can be imported/exported on their own from their section.
+export type CollectionKey = "players" | "npcs" | "creatures" | "maps" | "locations" | "shops" | "notes" | "customItems" | "lootTables" | "quests";
 
 type UIState = {
+  activeTab?: Tab;
   combatActive: boolean;
   activeCombatantId: string | null;
   round: number;
-  editingNoteId: string | "new" | null;
   draftNote: Partial<Note> | null;
   hasSeenWelcome?: boolean;
   partyTab?: "players" | "npcs" | "creatures";
@@ -53,7 +59,6 @@ const DEFAULT_STATE: StoreState = {
     combatActive: false,
     activeCombatantId: null,
     round: 1,
-    editingNoteId: null,
     hasSeenWelcome: false,
     draftNote: null,
   },
@@ -65,11 +70,17 @@ const STORE_KEY = "dnd_dm_screen_data";
 class Store {
   state: StoreState;
   listeners: Set<() => void> = new Set();
-  saveTimeout: any = null;
+  saveTimeout: ReturnType<typeof setTimeout> | null = null;
+  saveErrorShown = false;
 
   constructor() {
     this.state = DEFAULT_STATE;
     this.init();
+    // Flush the debounced save so the last changes aren't lost when the tab is hidden or closed.
+    window.addEventListener("pagehide", () => this.flush());
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") this.flush();
+    });
   }
 
   async init() {
@@ -126,14 +137,13 @@ class Store {
     this.listeners.forEach((l) => l());
   }
 
-  subscribe(listener: () => void) {
+  // Arrow functions so they can be passed around unbound (e.g. to useSyncExternalStore).
+  subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => { this.listeners.delete(listener); };
-  }
+  };
 
-  getState() {
-    return this.state;
-  }
+  getState = () => this.state;
 
   setState(newState: Partial<StoreState>) {
     this.state = { ...this.state, ...newState };
@@ -142,30 +152,39 @@ class Store {
   }
 
   save() {
+    // Never persist the empty default state over saved data before hydration finishes.
+    if (!this.state.isHydrated) return;
     if (this.saveTimeout) clearTimeout(this.saveTimeout);
-    this.saveTimeout = setTimeout(async () => {
-      try {
-        const stateToSave = {
-          ...this.state,
-          npcs: this.state.npcs.filter((n: any) => !n.isTemp)
-        };
-        await set(STORE_KEY, stateToSave);
-      } catch (e) {
-        console.error("Failed to save to IndexedDB.", e);
-        alert("Error al guardar: La memoria del navegador está llena. Reduce el tamaño de las imágenes.");
-      }
-    }, 500); // Debounce to prevent blocking IO spam
+    this.saveTimeout = setTimeout(() => this.flush(), 500); // Debounce to prevent blocking IO spam
+  }
+
+  // Writes pending changes immediately (also called when the page is hidden or closed).
+  async flush() {
+    if (!this.saveTimeout) return;
+    clearTimeout(this.saveTimeout);
+    this.saveTimeout = null;
+    try {
+      const { isHydrated, ...rest } = this.state;
+      await set(STORE_KEY, { ...rest, npcs: rest.npcs.filter((n) => !n.isTemp) });
+      this.saveErrorShown = false;
+    } catch (e) {
+      console.error("Failed to save to IndexedDB.", e);
+      // Show the alert once per failure streak instead of on every keystroke.
+      if (this.saveErrorShown) return;
+      this.saveErrorShown = true;
+      const isQuota = e instanceof DOMException && e.name === "QuotaExceededError";
+      alert(isQuota
+        ? "Error al guardar: la memoria del navegador está llena. Reduce el tamaño o el número de imágenes."
+        : `Error al guardar los datos: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
 
   exportData() {
-    const stateToExport = { ...this.state, npcs: this.state.npcs.filter((n: any) => !n.isTemp), creatures: (this.state.creatures || []).filter((c: any) => !c.isTemp) };
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(stateToExport));
-    const downloadAnchorNode = document.createElement("a");
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "ndms_datos_completos.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
+    const { isHydrated, ...rest } = this.state;
+    downloadJSON(
+      { ...rest, npcs: rest.npcs.filter((n) => !n.isTemp), creatures: rest.creatures.filter((c) => !c.isTemp) },
+      "ndms_datos_completos.json"
+    );
   }
 
   importData(jsonString: string, mode: "merge" | "overwrite" = "overwrite") {
@@ -191,6 +210,8 @@ class Store {
         this.setState({
           ...DEFAULT_STATE,
           ...parsed,
+          isHydrated: true,
+          uiState: { ...DEFAULT_STATE.uiState, ...parsed.uiState },
           players: Array.isArray(parsed.players) ? parsed.players : [],
           npcs: Array.isArray(parsed.npcs) ? parsed.npcs : [],
           creatures: Array.isArray(parsed.creatures) ? parsed.creatures : [],
@@ -209,16 +230,8 @@ class Store {
  else {
         const state = this.getState();
         
-        // Helper function to deduplicate arrays by 'id'
-        const mergeDedupe = (existing, imported) => {
-          if (!Array.isArray(imported)) return existing;
-          const existingMap = new Map(existing.map(item => [item.id, item]));
-          imported.forEach(item => existingMap.set(item.id, item)); // Overwrite if same id exists
-          return Array.from(existingMap.values());
-        };
-
+        // Only the data collections are merged; the current UI state (tabs, active combat...) is kept.
         this.setState({
-          ...parsed,
           players: mergeDedupe(state.players || [], parsed.players),
           npcs: mergeDedupe(state.npcs || [], parsed.npcs),
           creatures: mergeDedupe(state.creatures || [], parsed.creatures),
@@ -243,28 +256,13 @@ class Store {
 
 export const store = new Store();
 
-export function useStore<T = StoreState>(selector: (state: StoreState) => T = (state: StoreState) => state as unknown as T): T {
-  const [state, setState] = useState(() => selector(store.getState()));
-
-  useEffect(() => {
-    let currentState = selector(store.getState());
-    const unsubscribe = store.subscribe(() => {
-      const nextState = selector(store.getState());
-      if (currentState !== nextState) {
-        currentState = nextState;
-        setState(nextState);
-      }
-    });
-    // Check in case state changed between render and effect
-    const nextState = selector(store.getState());
-    if (currentState !== nextState) {
-      currentState = nextState;
-      setState(nextState);
-    }
-    return unsubscribe;
-  }, []); // Not using selector in deps to avoid infinite loops if selector is passed inline, we assume it's stable or we can rely on fast equality.
-
-  return state;
+/**
+ * Subscribes a component to a slice of the store. The component only re-renders when the
+ * selected value changes (by reference), so select the narrowest slice you need and never
+ * build new objects/arrays inside the selector.
+ */
+export function useStore<T>(selector: (state: StoreState) => T): T {
+  return useSyncExternalStore(store.subscribe, () => selector(store.getState()));
 }
 
 export const actions = {
@@ -284,6 +282,13 @@ export const actions = {
   reorderShops: (shops: Shop[]) => store.setState({ shops }),
   reorderCustomItems: (customItems: CustomItem[]) => store.setState({ customItems }),
   reorderLootTables: (lootTables: LootTable[]) => store.setState({ lootTables }),
+
+  // Imports one section's data. Temp NPCs/creatures are never persisted, so they're dropped.
+  importCollection: (key: CollectionKey, items: any[], mode: "merge" | "overwrite") => {
+    const clean = key === "npcs" || key === "creatures" ? items.filter((i) => !i?.isTemp) : items;
+    const current = store.getState()[key] as { id: string }[];
+    store.setState({ [key]: mode === "overwrite" ? clean : mergeDedupe(current, clean) } as Partial<StoreState>);
+  },
 
   updateUI: (updates: Partial<UIState>) => {
     store.setState({ uiState: { ...store.getState().uiState, ...updates } });
@@ -363,6 +368,18 @@ export const actions = {
       combatants: state.combatants.filter((c) => c.characterId !== id),
       graveyard: state.graveyard.filter((c) => c.characterId !== id),
     });
+  },
+  // Updates a character wherever it lives: players, npcs, creatures, or a temp combatant's tempData.
+  updateCharacter: (char: Character, updates: Partial<Character>) => {
+    if (char.type === "player") return actions.updatePlayer(char.id, updates as Partial<Player>);
+    if (char.isTemp) {
+      const state = store.getState();
+      const patch = (list: Combatant[]) =>
+        list.map((c) => (c.tempData && c.tempData.id === char.id ? { ...c, tempData: { ...c.tempData, ...updates } as Combatant["tempData"] } : c));
+      return store.setState({ combatants: patch(state.combatants), graveyard: patch(state.graveyard) });
+    }
+    if (char.type === "npc") return actions.updateNPC(char.id, updates as Partial<NPC>);
+    return actions.updateCreature(char.id, updates as Partial<Creature>);
   },
   getCharacter: (id: string): Character | undefined => {
     const state = store.getState();

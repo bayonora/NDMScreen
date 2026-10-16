@@ -1,26 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Search, BookOpen, Users, Swords, Sparkles, Target, Map as MapIcon, Store as StoreIcon, StickyNote, Package, User, ExternalLink, Skull } from "lucide-react";
-import { Modal } from "./ui/Modal";
+import { Search, BookOpen, Users, Sparkles, Target, Map as MapIcon, Store as StoreIcon, StickyNote, Package, User, ExternalLink, Skull } from "lucide-react";
+import { Overlay } from "./ui/Modal";
 import { StatBlock } from "./StatBlock";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkBreaks from "remark-breaks";
-import { useStore, actions } from "../store/useStore";
+import { Markdown } from "./ui/Markdown";
+import { useStore, actions, Tab } from "../store/useStore";
 import { useSpellStore } from "../store/useSpellStore";
 import { cn, normalizeSearchText } from "../lib/utils";
-const SCHOOL_NAMES: Record<string, string> = {
-  "abjuration": "Abjuración",
-  "conjuration": "Conjuración",
-  "divination": "Adivinación",
-  "enchantment": "Encantamiento",
-  "evocation": "Evocación",
-  "illusion": "Ilusión",
-  "necromancy": "Nigromancia",
-  "transmutation": "Transmutación"
-};
-import { motion, AnimatePresence } from "framer-motion";
-
-type Tab = "party" | "initiative" | "quests" | "maps" | "shops" | "notes" | "items" | "spells";
+import { SCHOOL_NAMES } from "../data/spellLabels";
+import { motion, AnimatePresence } from "motion/react";
 
 interface SearchResult {
   id: string;
@@ -34,12 +21,21 @@ interface SearchResult {
 }
 
 export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
-  const storeState = useStore();
-  const { spells, fetchSpells } = useSpellStore();
-
-  useEffect(() => {
-    fetchSpells();
-  }, [fetchSpells]);
+  const players = useStore((s) => s.players);
+  const npcs = useStore((s) => s.npcs);
+  const creatures = useStore((s) => s.creatures);
+  const quests = useStore((s) => s.quests);
+  const maps = useStore((s) => s.maps);
+  const locations = useStore((s) => s.locations);
+  const shops = useStore((s) => s.shops);
+  const notes = useStore((s) => s.notes);
+  const customItems = useStore((s) => s.customItems);
+  const storeState = useMemo(
+    () => ({ players, npcs, creatures, quests, maps, locations, shops, notes, customItems }),
+    [players, npcs, creatures, quests, maps, locations, shops, notes, customItems]
+  );
+  const spells = useSpellStore((s) => s.spells);
+  const fetchSpells = useSpellStore((s) => s.fetchSpells);
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [previewResult, setPreviewResult] = useState<SearchResult | null>(null);
@@ -87,7 +83,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, selectedIndex, query]);
+  }, [isOpen, selectedIndex, query, storeState, spells]);
 
   const scoreString = (q: string, text: string) => {
     if (!text || !q) return 0;
@@ -126,14 +122,14 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
 
     // Search NPCs
     storeState.npcs.forEach(n => {
-      const score = Math.max(scoreString(q, n.name), scoreString(q, n.type || ""), scoreString(q, n.cr || ""));
-      if (score > 0) res.push({ id: n.id, type: "NPC", label: n.name, subLabel: n.type, tab: "party", score, icon: <Users size={16} />, action: () => actions.updateUI({ partyTab: "npcs" }) });
+      const score = Math.max(scoreString(q, n.name), scoreString(q, n.race || ""), scoreString(q, n.cr || ""));
+      if (score > 0) res.push({ id: n.id, type: "NPC", label: n.name, subLabel: [n.race, n.cr && `CR ${n.cr}`].filter(Boolean).join(" · "), tab: "party", score, icon: <Users size={16} />, action: () => actions.updateUI({ partyTab: "npcs" }) });
     });
 
     // Search Creatures
     (storeState.creatures || []).forEach(c => {
-      const score = Math.max(scoreString(q, c.name), scoreString(q, c.type || ""), scoreString(q, c.cr || ""));
-      if (score > 0) res.push({ id: c.id, type: "Criatura", label: c.name, subLabel: c.type, tab: "party", score, icon: <Skull size={16} />, action: () => actions.updateUI({ partyTab: "creatures" }) });
+      const score = Math.max(scoreString(q, c.name), scoreString(q, c.race || ""), scoreString(q, c.cr || ""));
+      if (score > 0) res.push({ id: c.id, type: "Criatura", label: c.name, subLabel: [c.race, c.cr && `CR ${c.cr}`].filter(Boolean).join(" · "), tab: "party", score, icon: <Skull size={16} />, action: () => actions.updateUI({ partyTab: "creatures" }) });
     });
 
     // Search Quests
@@ -170,7 +166,6 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
         tab: "notes", 
         score, 
         icon: <StickyNote size={16} />,
-        action: () => actions.updateUI({ editingNoteId: n.id }) 
       });
     });
 
@@ -249,7 +244,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
             setQuery(e.target.value);
             setIsOpen(true);
           }}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => { setIsOpen(true); fetchSpells(); }}
         />
       </div>
 
@@ -276,7 +271,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
                     className={cn(
                       "cursor-pointer select-none relative py-2 pl-3 pr-9 border-l-2 transition-colors",
                       selectedIndex === idx
-                        ? "bg-dm-bg-alt border-dm-accent text-white"
+                        ? "bg-dm-bg-alt border-dm-accent text-dm-text-bright"
                         : "border-transparent text-dm-text hover:bg-dm-bg-hover hover:border-dm-muted"
                     )}
                   >
@@ -299,7 +294,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
                           onClick={(e) => handleNavigate(e, res)}
                           className={cn(
                             "shrink-0 p-2 rounded-sm border transition-colors flex items-center justify-center ml-2",
-                            selectedIndex === idx ? "bg-dm-bg-alt border-dm-accent text-dm-accent hover:bg-[#2a2420]" : "border-transparent text-dm-muted hover:text-dm-accent hover:border-dm-border"
+                            selectedIndex === idx ? "bg-dm-bg-alt border-dm-accent text-dm-accent hover:bg-dm-bg-card" : "border-transparent text-dm-muted hover:text-dm-accent hover:border-dm-border"
                           )}
                           title="Ir a la pestaña"
                         >
@@ -314,41 +309,31 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
         )}
       </AnimatePresence>
 
-      {/* PREVIEW BACKDROP */}
-      <AnimatePresence>
-      {previewResult && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4"
-          onClick={() => setPreviewResult(null)}
-        >
-          <div onClick={(e) => e.stopPropagation()} className="max-h-[90vh] overflow-y-auto custom-scrollbar">
-            {(() => {
+      <Overlay isOpen={!!previewResult} onClose={() => setPreviewResult(null)} zIndex="z-[100]">
+          <div className="relative max-h-full sm:max-h-[90vh] w-full flex justify-center overflow-y-auto custom-scrollbar animate-in fade-in">
+            {previewResult && (() => {
               const res = previewResult;
               if (res.tab === "party") {
                  const p = storeState.players.find(x => x.id === res.id);
                  const n = storeState.npcs.find(x => x.id === res.id);
                  const c = storeState.creatures?.find(x => x.id === res.id);
                  const char = p || n || c;
-                 if (char) return <StatBlock character={char} hideCollapse={true} />;
+                 if (char) return <div className="max-w-md w-full"><StatBlock character={char} hideCollapse={true} /></div>;
               }
               if (res.tab === "notes") {
                  const n = storeState.notes.find(x => x.id === res.id);
                  if (n) return (
-                    <div className="bg-dm-bg/60 backdrop-blur-xl border border-dm-accent/20 rounded-xl p-6 max-w-2xl w-full shadow-[0_8px_32px_rgba(0,0,0,0.8)]">
+                    <div className="bg-dm-bg/60 backdrop-blur-xl border border-dm-accent/20 rounded-xl p-4 sm:p-6 max-w-2xl w-full shadow-[0_8px_32px_rgba(0,0,0,0.8)]">
                       <h2 className="text-2xl font-bold text-dm-accent mb-4">{n.title}</h2>
-                      <div className="prose prose-invert prose-sm max-w-none prose-headings:text-dm-accent prose-a:text-orange-400">
-                        <Markdown remarkPlugins={[remarkGfm, remarkBreaks]}>{n.content}</Markdown>
+                      <div className="prose prose-invert prose-sm max-w-none prose-headings:text-dm-accent">
+                        <Markdown>{n.content}</Markdown>
                       </div>
                     </div>
                  );
               }
               if (res.tab === "maps") {
                  const m = storeState.maps.find(x => x.id === res.id);
-                 if (m) return <img src={m.image} alt={m.name} className="max-w-4xl max-h-[80vh] object-contain rounded-sm border border-dm-border shadow-2xl" />;
+                 if (m) return <img src={m.image} alt={m.name} className="max-w-full max-h-[85vh] object-contain rounded-sm border border-dm-border shadow-2xl" />;
                  const loc = storeState.locations.find(x => x.id === res.id);
                  if (loc) return (
                    <div className="bg-dm-bg border border-dm-border rounded-sm p-6 max-w-md w-full shadow-2xl text-dm-text space-y-2">
@@ -383,7 +368,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
               if (res.tab === "spells") {
                  const s = spells.find(x => x.index === res.id);
                  if (s) return (
-                   <div className="bg-dm-bg border border-dm-border rounded-sm p-6 max-w-2xl w-full shadow-2xl text-dm-text space-y-4">
+                   <div className="bg-dm-bg border border-dm-border rounded-sm p-4 sm:p-6 max-w-2xl w-full shadow-2xl text-dm-text space-y-4">
                      <h2 className="text-2xl font-bold text-dm-accent flex items-center gap-2"><Sparkles /> {s.name}</h2>
                      <div className="flex flex-wrap gap-4 text-sm text-dm-muted border-y border-dm-border py-3">
                        <span><strong>Nivel:</strong> {s.level === 0 ? "Truco" : s.level}</span>
@@ -419,9 +404,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
               return <div className="bg-dm-bg p-6 rounded-sm text-dm-text">{res.subLabel || "No hay más detalles."}</div>;
             })()}
           </div>
-        </motion.div>
-      )}
-      </AnimatePresence>
+      </Overlay>
     </div>
   );
 }

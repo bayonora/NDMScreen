@@ -5,12 +5,11 @@ import { Lightbox } from "./ui/Lightbox";
 import { Input, Button, Textarea } from "./ui/Input";
 import { Plus, Skull, Swords, UserCheck, ChevronDown, ChevronUp } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
-import { Character, NPC, Player } from "../types";
-import { formatMod } from "../lib/utils";
+import { Character, CharacterTag, NPC, Player } from "../types";
+import { cn, formatMod } from "../lib/utils";
 import { Copy, Edit2, Trash2, Maximize2 } from "lucide-react";
 
 interface StatBlockProps {
-  key?: React.Key;
   character: Character;
   onEdit?: (c: Character) => void;
   onDelete?: (id: string) => void;
@@ -20,7 +19,7 @@ interface StatBlockProps {
   hideCollapse?: boolean;
 }
 
-export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelete, onDuplicate, onConvertToCreature, onConvertToNPC, hideCollapse }) => {
+export function StatBlock({ character, onEdit, onDelete, onDuplicate, onConvertToCreature, onConvertToNPC, hideCollapse }: StatBlockProps) {
 
   const borderColor = character.type === "player" ? "border-l-dm-accent" : character.type === "npc" ? "border-l-slate-400" : "border-l-dm-danger";
   const titleColor = character.type === "player" ? "text-dm-accent" : character.type === "npc" ? "text-slate-400" : "text-dm-danger";
@@ -28,10 +27,9 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
   const p = character as Player;
   const n = character as NPC;
   const [tagModal, setTagModal] = useState<{ open: boolean; tagId?: string; name: string; description: string }>({ open: false, name: "", description: "" });
-  const [viewTag, setViewTag] = useState<{ open: boolean; tag: any } | null>(null);
+  const [viewTag, setViewTag] = useState<{ open: boolean; tag: CharacterTag } | null>(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-  const store = useStore();
-  const isCollapsed = store.uiState.collapsedCharacters?.includes(character.id) || false;
+  const isCollapsed = useStore((state) => state.uiState.collapsedCharacters?.includes(character.id) ?? false);
 
   const tags = character.tags || [];
 
@@ -52,11 +50,7 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
       updatedTags.push(newTag);
     }
 
-    if (isPlayer) {
-      actions.updatePlayer(character.id, { tags: updatedTags });
-    } else {
-      actions.updateNPC(character.id, { tags: updatedTags });
-    }
+    actions.updateCharacter(character, { tags: updatedTags });
     
     setTagModal({ open: false, name: "", description: "" });
     if (viewTag) {
@@ -66,17 +60,13 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
 
   const handleDeleteTag = (id: string) => {
     const updatedTags = tags.filter(t => t.id !== id);
-    if (isPlayer) {
-      actions.updatePlayer(character.id, { tags: updatedTags });
-    } else {
-      actions.updateNPC(character.id, { tags: updatedTags });
-    }
+    actions.updateCharacter(character, { tags: updatedTags });
     setViewTag(null);
   };
 
 
   return (
-    <div className={`bg-dm-bg border border-dm-border border-l-4 ${borderColor} rounded-sm p-4 text-dm-text font-serif shadow-lg flex flex-col relative w-full overflow-hidden`}>
+    <div className={`@container bg-dm-bg border border-dm-border border-l-4 ${borderColor} rounded-sm p-3 sm:p-4 text-dm-text font-serif shadow-lg flex flex-col relative w-full overflow-hidden`}>
             {character.image && (
         <div 
           className="absolute top-0 right-0 bottom-0 w-[60%] opacity-20 pointer-events-none mix-blend-screen"
@@ -90,49 +80,38 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
           }} 
         />
       )}
-      <div className="absolute top-2 right-2 flex gap-1 z-10">
-        {character.image && (
-          <button onClick={() => setIsImageViewerOpen(true)} className="p-1 text-dm-border hover:text-dm-accent transition-colors" title="Ver Retrato">
-            <Maximize2 size={16} />
-          </button>
-        )}
-        {character.type === "npc" && onConvertToCreature && (
-          <button onClick={() => onConvertToCreature(character)} className="p-1 text-dm-border hover:text-dm-danger transition-colors" title="Convertir a Criatura Enemiga">
-            <Swords size={16} />
-          </button>
-        )}
-        {character.type === "creature" && onConvertToNPC && (
-          <button onClick={() => onConvertToNPC(character)} className="p-1 text-dm-border hover:text-dm-accent transition-colors" title="Convertir a NPC Aliado">
-            <UserCheck size={16} />
-          </button>
-        )}
-        {onDuplicate && (
-          <button onClick={() => onDuplicate(character)} className="p-1 text-dm-border hover:text-dm-accent transition-colors" title="Duplicar">
-            <Copy size={16} />
-          </button>
-        )}
-        {onDelete && (
-          <button onClick={() => onDelete(character.id)} className="p-1 text-dm-border hover:text-dm-danger transition-colors" title="Borrar">
-            <Trash2 size={16} />
-          </button>
-        )}
-        {onEdit && (
-          <button onClick={() => onEdit(character)} className="p-1 text-dm-border hover:text-dm-accent transition-colors" title="Editar">
-            <Edit2 size={16} />
-          </button>
-        )}
-        {!hideCollapse && (
-          <button onClick={() => actions.toggleCharacterCollapse(character.id)} className="p-1 text-dm-border hover:text-dm-accent transition-colors" title={isCollapsed ? "Expandir" : "Colapsar"}>
-            {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-          </button>
-        )}
+      <div className="flex items-start gap-2 relative z-10">
+        <h1 className={`flex-1 min-w-0 break-words text-xl sm:text-2xl font-bold font-sans ${titleColor}`}>
+          {character.type === "creature" && <Skull size={20} className="inline-block mr-2 -mt-1" />}
+          {character.type === "npc" && <UserCheck size={20} className="inline-block mr-2 -mt-1" />}
+          {character.name}
+        </h1>
+        <div className="flex flex-wrap justify-end shrink-0 max-w-[55%] -mr-1 -mt-1">
+          {character.image && (
+            <CardAction label="Ver Retrato" onClick={() => setIsImageViewerOpen(true)}><Maximize2 size={16} /></CardAction>
+          )}
+          {character.type === "npc" && onConvertToCreature && (
+            <CardAction label="Convertir a Criatura Enemiga" danger onClick={() => onConvertToCreature(character)}><Swords size={16} /></CardAction>
+          )}
+          {character.type === "creature" && onConvertToNPC && (
+            <CardAction label="Convertir a NPC Aliado" onClick={() => onConvertToNPC(character)}><UserCheck size={16} /></CardAction>
+          )}
+          {onDuplicate && (
+            <CardAction label="Duplicar" onClick={() => onDuplicate(character)}><Copy size={16} /></CardAction>
+          )}
+          {onDelete && (
+            <CardAction label="Borrar" danger onClick={() => onDelete(character.id)}><Trash2 size={16} /></CardAction>
+          )}
+          {onEdit && (
+            <CardAction label="Editar" onClick={() => onEdit(character)}><Edit2 size={16} /></CardAction>
+          )}
+          {!hideCollapse && (
+            <CardAction label={isCollapsed ? "Expandir" : "Colapsar"} onClick={() => actions.toggleCharacterCollapse(character.id)}>
+              {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+            </CardAction>
+          )}
+        </div>
       </div>
-
-      <h1 className={`text-2xl font-bold font-sans pr-24 ${titleColor}`}>
-        {character.type === "creature" && <Skull size={20} className="inline-block mr-2 -mt-1" />}
-        {character.type === "npc" && <UserCheck size={20} className="inline-block mr-2 -mt-1" />}
-        {character.name}
-      </h1>
       <p className="italic text-sm opacity-70">
         {isPlayer ? `${p.race} • ${p.classAndLevel}` : `${n.race || ""} ${n.cr ? `• CR ${n.cr}` : ""}`.trim()}
       </p>
@@ -151,7 +130,7 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
 
       <div className="w-full h-px bg-dm-border my-2" />
 
-      <div className="grid grid-cols-6 gap-2 text-center my-2 text-[11px] uppercase opacity-80">
+      <div className="grid grid-cols-3 @xs:grid-cols-6 gap-1.5 sm:gap-2 text-center my-2 text-[11px] uppercase opacity-80">
         <Stat name="FUE" val={character.stats.STR} />
         <Stat name="DES" val={character.stats.DEX} />
         <Stat name="CON" val={character.stats.CON} />
@@ -163,14 +142,14 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
       <div className="w-full h-px bg-dm-border my-2" />
 
       <div className="space-y-1 text-sm opacity-90">
-        {(character as any).skills && (
+        {character.skills && (
           <div>
-            <strong className="text-dm-accent">Habilidades</strong> {(character as any).skills}
+            <strong className="text-dm-accent">Habilidades</strong> {character.skills}
           </div>
         )}
-        {(character as any).senses && (
+        {character.senses && (
           <div>
-            <strong className="text-dm-accent">Sentidos</strong> {(character as any).senses}
+            <strong className="text-dm-accent">Sentidos</strong> {character.senses}
           </div>
         )}
         {isPlayer && (
@@ -178,9 +157,9 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
             <strong className="text-dm-accent">Percepción Pasiva</strong> {p.passivePerception}
           </div>
         )}
-        {(character as any).languages && (
+        {character.languages && (
           <div>
-            <strong className="text-dm-accent">Idiomas</strong> {(character as any).languages}
+            <strong className="text-dm-accent">Idiomas</strong> {character.languages}
           </div>
         )}
         {!isPlayer && n.cr && (
@@ -190,28 +169,28 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
         )}
       </div>
 
-      {((character as any).specialTraits || (character as any).actions) && (
+      {(character.specialTraits || character.actions) && (
         <div className="w-full h-px bg-dm-border my-2" />
       )}
 
-      {(character as any).specialTraits && (
+      {character.specialTraits && (
         <div className="mt-2 text-sm whitespace-pre-wrap opacity-90">
-          {(character as any).specialTraits}
+          {character.specialTraits}
         </div>
       )}
 
-      {(character as any).actions && (
+      {character.actions && (
         <>
           <h2 className="text-lg font-bold text-dm-accent mt-4 mb-2 border-b border-dm-border">Acciones</h2>
           <div className="text-sm whitespace-pre-wrap opacity-90">
-            {(character as any).actions}
+            {character.actions}
           </div>
         </>
       )}
 
       {/* TAGS SECTION */}
       <div className="mt-4 pt-2 border-t border-dm-border flex flex-wrap gap-2 items-center">
-        {tags.map((tag: any) => (
+        {tags.map((tag) => (
           <button 
             key={tag.id}
             onClick={() => setViewTag({ open: true, tag })}
@@ -242,7 +221,7 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
                 }}>
                   Editar
                 </Button>
-                <Button type="button" className="bg-dm-danger hover:bg-dm-danger-hover text-white" onClick={() => handleDeleteTag(viewTag.tag.id)}>
+                <Button type="button" className="bg-dm-danger hover:bg-dm-danger-hover text-dm-text-bright" onClick={() => handleDeleteTag(viewTag.tag.id)}>
                   Borrar
                 </Button>
              </div>
@@ -273,7 +252,21 @@ export const StatBlock: React.FC<StatBlockProps> = ({ character, onEdit, onDelet
       )}
     </div>
   );
-};
+}
+
+function CardAction({ label, onClick, danger, children }: { label: string; onClick: () => void; danger?: boolean; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className={cn("p-1.5 text-dm-muted transition-colors", danger ? "hover:text-dm-danger" : "hover:text-dm-accent")}
+    >
+      {children}
+    </button>
+  );
+}
 
 function Stat({ name, val }: { name: string; val: number }) {
   return (

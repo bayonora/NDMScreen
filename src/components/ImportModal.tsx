@@ -22,7 +22,7 @@ export function ImportModal({ isOpen, onClose, onMerge, onOverwrite }: ImportMod
             <span className="font-bold tracking-widest uppercase text-xs">Añadir (Fusionar)</span>
             <span className="text-[10px] mt-2 opacity-80 text-center normal-case">Mantendrá tus datos actuales y añadirá los nuevos.</span>
           </Button>
-          <Button onClick={() => { onOverwrite(); onClose(); }} variant="secondary" className="flex-1 flex flex-col items-center justify-center p-4 h-auto border-red-900/50 hover:bg-red-900/20 text-red-400">
+          <Button onClick={() => { onOverwrite(); onClose(); }} variant="secondary" className="flex-1 flex flex-col items-center justify-center p-4 h-auto border-dm-danger/50 hover:bg-dm-danger/20 hover:border-dm-danger text-dm-danger hover:text-dm-danger">
             <RefreshCw size={24} className="mb-2" />
             <span className="font-bold tracking-widest uppercase text-xs">Sobrescribir</span>
             <span className="text-[10px] mt-2 opacity-80 text-center normal-case">Borrará los datos actuales y los reemplazará por los importados.</span>

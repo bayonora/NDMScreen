@@ -156,8 +156,8 @@ export const Button = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttrib
             "px-2 py-1 text-[10px]": size === "sm",
             "px-4 py-2": size === "md",
             "px-6 py-3 text-sm": size === "lg",
-            "bg-dm-bg-hover border-dm-border text-dm-muted hover:text-dm-accent hover:border-dm-accent hover:bg-[#2a2420]": variant === "secondary",
-            "bg-dm-danger border-dm-danger text-white hover:bg-dm-danger-hover hover:border-dm-danger-hover font-bold": variant === "danger",
+            "bg-dm-bg-hover border-dm-border text-dm-muted hover:text-dm-accent hover:border-dm-accent hover:bg-dm-bg-card": variant === "secondary",
+            "bg-dm-danger border-dm-danger text-dm-text-bright hover:bg-dm-danger-hover hover:border-dm-danger-hover font-bold": variant === "danger",
             "bg-transparent border-transparent text-dm-muted hover:bg-dm-bg-hover hover:text-dm-accent hover:border-dm-border px-4 py-2 shadow-none": variant === "ghost",
           },
           className

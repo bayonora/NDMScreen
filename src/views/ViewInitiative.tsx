@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useStore, actions } from "../store/useStore";
-import { StatusEffect } from "../types";
+import { Character, StatusEffect } from "../types";
 import { Input, Button, Textarea } from "../components/ui/Input";
-import { Modal } from "../components/ui/Modal";
-import { Play, SkipForward, Square, Plus, Shield, Heart, Trash2, RotateCcw, Skull, UserCheck, User, Copy } from "lucide-react";
+import { Modal, Overlay } from "../components/ui/Modal";
+import { ViewHeader, ToolbarButton } from "../components/ui/ViewHeader";
+import { Play, SkipForward, Square, Plus, Shield, Heart, Trash2, RotateCcw, Skull, UserCheck, User, Copy, Swords } from "lucide-react";
 import { cn } from "../lib/utils";
 import { StatBlock } from "../components/StatBlock";
 import { motion, AnimatePresence } from "motion/react";
@@ -13,25 +14,34 @@ import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 export function ViewInitiative() {
   const combatants = useStore((state) => state.combatants);
   const graveyard = useStore((state) => state.graveyard);
-  const uiState = useStore((state) => state.uiState);
-  
-  const isCombatActive = uiState?.combatActive || false;
-  const activeCombatantId = uiState?.activeCombatantId || null;
+  const isCombatActive = useStore((state) => state.uiState.combatActive) || false;
+  const activeCombatantId = useStore((state) => state.uiState.activeCombatantId) || null;
+  const round = useStore((state) => state.uiState.round) || 1;
   let activeTurnIdx = combatants.findIndex(c => c.id === activeCombatantId);
   if (activeTurnIdx === -1) activeTurnIdx = 0;
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isGraveyardOpen, setIsGraveyardOpen] = useState(false);
   const [statusModal, setStatusModal] = useState<{ open: boolean; combatantId: string; effect?: StatusEffect }>({ open: false, combatantId: "" });
-  const [viewCharModal, setViewCharModal] = useState<{ open: boolean; char?: any }>({ open: false });
+  const [viewCharModal, setViewCharModal] = useState<{ open: boolean; char?: Character }>({ open: false });
+  // Subscribed so the open stat block re-renders when the character is edited (e.g. tags).
+  useStore((state) => state.players);
+  useStore((state) => state.npcs);
+  useStore((state) => state.creatures);
+  const viewedChar = (() => {
+    const snapshot = viewCharModal.char;
+    if (!snapshot) return undefined;
+    const temp = [...combatants, ...graveyard].find((c) => c.tempData?.id === snapshot.id)?.tempData;
+    return temp || actions.getCharacter(snapshot.id) || snapshot;
+  })();
 
   const handleStartCombat = () => {
-    actions.updateUI({ combatActive: true, activeCombatantId: combatants[0]?.id || null });
+    actions.updateUI({ combatActive: true, activeCombatantId: combatants[0]?.id || null, round: 1 });
   };
 
   const handleNextTurn = () => {
     if (combatants.length === 0) return;
-    
+
     // Decrementar estados del combatiente cuyo turno termina
     const currentCombatant = combatants[activeTurnIdx];
     if (currentCombatant) {
@@ -50,50 +60,52 @@ export function ViewInitiative() {
         }
         return acc;
       }, [] as StatusEffect[]);
-      
+
       actions.updateCombatant(currentCombatant.id, { statuses: updatedStatuses });
     }
 
     const nextIndex = (activeTurnIdx + 1) % combatants.length;
-    actions.updateUI({ activeCombatantId: combatants[nextIndex]?.id || null });
+    // Wrapping back to the top of the order starts a new round.
+    actions.updateUI({ activeCombatantId: combatants[nextIndex]?.id || null, round: nextIndex === 0 ? round + 1 : round });
   };
 
   const handleEndCombat = () => {
-    actions.updateUI({ combatActive: false, activeCombatantId: null });
+    actions.updateUI({ combatActive: false, activeCombatantId: null, round: 1 });
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-transparent border-none rounded-none overflow-hidden">
-      <div className="bg-dm-bg px-4 sm:px-6 py-4 border-b border-dm-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
-        <div className="flex items-center gap-4 w-full sm:w-auto overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
-          <h2 className="text-lg uppercase tracking-widest text-dm-accent font-light flex items-center gap-2 truncate"><span className="hidden sm:inline">Iniciativa</span><span className="sm:hidden">Iniciativa</span></h2>
-          <div className="flex gap-2">
-            {!isCombatActive ? (
-              <Button onClick={handleStartCombat} className="whitespace-nowrap">
-                <Play size={14} className="mr-1" /> Iniciar Combate
+    <div className="flex-1 flex flex-col min-h-0">
+      <ViewHeader
+        icon={Swords}
+        title="Iniciativa"
+        actions={
+          <>
+            <ToolbarButton icon={Skull} label={`Cementerio (${graveyard.length})`} onClick={() => setIsGraveyardOpen(true)} />
+            <ToolbarButton icon={Plus} label="Añadir" variant="primary" showLabel="always" onClick={() => setIsAddModalOpen(true)} />
+          </>
+        }
+      >
+        <div className="flex items-center gap-2 flex-wrap">
+          {!isCombatActive ? (
+            <Button onClick={handleStartCombat} disabled={combatants.length === 0} className="whitespace-nowrap">
+              <Play size={14} className="mr-1" /> Iniciar Combate
+            </Button>
+          ) : (
+            <>
+              <span className="text-xs uppercase tracking-widest text-dm-accent font-bold border border-dm-accent/40 bg-dm-accent/10 px-3 py-2">
+                Ronda {round}
+              </span>
+              <Button onClick={handleNextTurn} className="whitespace-nowrap flex-1 sm:flex-none">
+                <SkipForward size={14} className="mr-1" /> Siguiente Turno
               </Button>
-            ) : (
-              <>
-                <Button onClick={handleNextTurn} variant="secondary" className="border-dm-border text-dm-accent whitespace-nowrap">
-                  <SkipForward size={14} className="mr-1" /> Siguiente Turno
-                </Button>
-                <Button onClick={handleEndCombat} variant="danger" className="whitespace-nowrap">
-                  <Square size={14} className="mr-1" /> Finalizar
-                </Button>
-              </>
-            )}
-          </div>
+              <Button onClick={handleEndCombat} variant="danger" className="whitespace-nowrap">
+                <Square size={14} className="mr-1" /> Finalizar
+              </Button>
+            </>
+          )}
         </div>
-        <div className="flex gap-2 w-full sm:w-auto overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
-          <Button variant="secondary" onClick={() => setIsGraveyardOpen(true)} className="whitespace-nowrap">
-            <span className="mr-2">💀</span> Cementerio ({graveyard.length})
-          </Button>
-          <Button onClick={() => setIsAddModalOpen(true)} className="whitespace-nowrap">
-            <Plus size={14} className="mr-1" /> Añadir
-          </Button>
-          
-        </div>
-      </div>
+      </ViewHeader>
+
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
 
@@ -125,18 +137,18 @@ export function ViewInitiative() {
                   transition={{ duration: 0.3 }}
                   key={c.id} 
                   className={cn(
-                    "flex items-center px-3 sm:px-6 py-4 border-b transition-colors relative overflow-hidden group",
+                    "flex items-center px-2 sm:px-6 py-3 sm:py-4 border-b transition-colors relative overflow-hidden group",
                     isDead ? "border-dm-danger/30" : "border-dm-bg-card",
                     isActive ? "bg-dm-bg-card" : "hover:bg-dm-bg",
-                    isFull && !isDead ? "shadow-[inset_0_0_10px_rgba(193,160,99,0.02)]" : "",
-                    isHurt && !isDead ? "shadow-[inset_0_0_15px_rgba(138,33,27,0.03)]" : "",
-                    isBloodied && !isDead ? "shadow-[inset_0_0_20px_rgba(138,33,27,0.08)]" : "",
-                    isBadlyWounded && !isDead ? "shadow-[inset_0_0_30px_rgba(138,33,27,0.15)] border-dm-danger/30" : "",
-                    isCritical && !isDead ? "shadow-[inset_0_0_40px_rgba(138,33,27,0.25)] border-dm-danger/60" : ""
+                    isFull && !isDead ? "shadow-[inset_0_0_10px_color-mix(in_srgb,var(--theme-accent)_3%,transparent)]" : "",
+                    isHurt && !isDead ? "shadow-[inset_0_0_15px_color-mix(in_srgb,var(--theme-danger)_3%,transparent)]" : "",
+                    isBloodied && !isDead ? "shadow-[inset_0_0_20px_color-mix(in_srgb,var(--theme-danger)_8%,transparent)]" : "",
+                    isBadlyWounded && !isDead ? "shadow-[inset_0_0_30px_color-mix(in_srgb,var(--theme-danger)_15%,transparent)] border-dm-danger/30" : "",
+                    isCritical && !isDead ? "shadow-[inset_0_0_40px_color-mix(in_srgb,var(--theme-danger)_25%,transparent)] border-dm-danger/60" : ""
                   )}
                 >
                   {isActive && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-dm-accent shadow-[0_0_10px_#c1a063] z-10 pointer-events-none" />
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-dm-accent shadow-[0_0_10px_var(--theme-accent)] z-10 pointer-events-none" />
                   )}
                   {(isCritical || isBadlyWounded) && !isDead && (
                     <motion.div 
@@ -149,24 +161,24 @@ export function ViewInitiative() {
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-dm-danger/10 to-dm-danger/30 pointer-events-none" />
                   )}
                   {isDead && (
-                    <div className="absolute right-32 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none rotate-12 scale-150">
+                    <div className="absolute right-16 sm:right-32 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none rotate-12 scale-150">
                       <Skull size={100} />
                     </div>
                   )}
                   {isDead && (
-                    <div className="absolute left-16 top-1/2 -translate-y-1/2 w-[60%] h-px bg-dm-danger/70 shadow-[0_0_10px_#8a211b] pointer-events-none z-10" />
+                    <div className="absolute left-16 top-1/2 -translate-y-1/2 w-[60%] h-px bg-dm-danger/70 shadow-[0_0_10px_var(--theme-danger)] pointer-events-none z-10" />
                   )}
 
-                  <div className={cn("w-16 flex items-center justify-center font-bold", isActive ? "text-dm-accent" : "text-dm-text-bright opacity-50")}>
-                    <input 
-                      type="number" 
-                      value={c.initiative} 
-                      onChange={(e) => actions.updateCombatant(c.id, { initiative: Number(e.target.value) })}
-                      className="w-12 text-center text-2xl h-10 px-0 font-bold border-none bg-transparent focus:bg-dm-border rounded-sm outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  <div className={cn("w-11 sm:w-16 shrink-0 flex items-center justify-center font-bold", isActive ? "text-dm-accent" : "text-dm-text-bright opacity-50")}>
+                    <MathInput
+                      value={c.initiative}
+                      onValueChange={(val) => actions.updateCombatant(c.id, { initiative: val })}
+                      inputMode="numeric"
+                      className="w-10 sm:w-12 text-center text-xl sm:text-2xl h-10 px-0 font-bold border-none bg-transparent focus:bg-dm-border rounded-sm"
                     />
                   </div>
                   
-                  <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between min-w-0 pr-4 gap-4">
+                  <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between min-w-0 pr-1 sm:pr-4 gap-1 md:gap-4">
                     <div className="flex-1 flex flex-col min-w-0 gap-1">
                       <div className="flex items-center flex-wrap gap-2">
                         <button 
@@ -174,7 +186,7 @@ export function ViewInitiative() {
                           className={cn(
                             "font-bold text-lg text-left truncate transition-colors", 
                             isActive ? "text-dm-text-bright" : "text-dm-text-bright opacity-80", 
-                            isDead ? "line-through text-gray-500 decoration-dm-danger" : "",
+                            isDead ? "line-through text-dm-muted decoration-dm-danger" : "",
                             "hover:text-dm-accent"
                           )}
                         >
@@ -209,12 +221,12 @@ export function ViewInitiative() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-4 sm:gap-6 shrink-0 mt-3 md:mt-0 justify-between w-full md:w-auto">
+                    <div className="flex items-center gap-4 sm:gap-6 shrink-0 md:mt-0 justify-between w-full md:w-auto">
                       <div className="flex-1 md:w-48 flex flex-col justify-center md:items-end md:pr-4">
                         <div className="flex items-center gap-1 text-sm font-mono mb-1 justify-start md:justify-end w-full">
                             <Heart size={14} className={cn(
                               "mr-auto shrink-0 transition-colors", 
-                              isDead ? "text-gray-600" : 
+                              isDead ? "text-dm-muted-alt" : 
                               isCritical ? "text-dm-danger animate-bounce" : 
                               isBadlyWounded ? "text-dm-danger animate-pulse" :
                               isActive ? "text-red-500" : "text-dm-danger"
@@ -230,7 +242,7 @@ export function ViewInitiative() {
                           <div 
                             className={cn(
                               "absolute inset-0 transition-all duration-500", 
-                              isDead ? "bg-gray-600" : 
+                              isDead ? "bg-dm-muted-alt" : 
                               isCritical ? "bg-dm-danger" : 
                               isBadlyWounded ? "bg-dm-danger-hover" :
                               char.type === "player" ? "bg-green-600" : 
@@ -241,7 +253,7 @@ export function ViewInitiative() {
                         </div>
                       </div>
 
-                      <div className="w-16 flex items-center justify-center">
+                      <div className="w-12 sm:w-16 flex items-center justify-center">
                         <div className="flex items-center justify-center p-1 relative" title="Clase de Armadura">
                           <Shield size={36} className={cn("opacity-80", isActive ? "text-dm-accent" : "text-dm-border-focus")} />
                           <span className="absolute text-[13px] font-bold mt-[-2px]">{char.ac}</span>
@@ -287,27 +299,11 @@ export function ViewInitiative() {
         effect={statusModal.effect}
       />
       <GraveyardModal isOpen={isGraveyardOpen} onClose={() => setIsGraveyardOpen(false)} onViewChar={(char) => setViewCharModal({ open: true, char })} />
-      <AnimatePresence>
-        {viewCharModal.open && viewCharModal.char && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30" 
-            onClick={() => setViewCharModal({ open: false })}
-          >
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()} 
-              className="max-w-md w-full max-h-[90vh] overflow-y-auto custom-scrollbar flex justify-center"
-            >
-              <StatBlock character={viewCharModal.char} />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Overlay isOpen={viewCharModal.open && !!viewedChar} onClose={() => setViewCharModal({ open: false })}>
+        <div className="relative max-w-md w-full max-h-full sm:max-h-[90vh] overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95">
+          {viewedChar && <StatBlock character={viewedChar} />}
+        </div>
+      </Overlay>
     </div>
   );
 }
@@ -370,14 +366,14 @@ function AddCombatantModal({ isOpen, onClose }: { isOpen: boolean, onClose: () =
       <div className="flex space-x-4 mb-6 border-b border-dm-accent/10">
         <button 
           type="button"
-          className={cn("pb-2 uppercase tracking-widest text-xs font-bold transition-colors", mode === "existing" ? "text-dm-accent border-b-2 border-dm-accent" : "text-dm-muted hover:text-white border-b-2 border-transparent")}
+          className={cn("pb-2 uppercase tracking-widest text-xs font-bold transition-colors", mode === "existing" ? "text-dm-accent border-b-2 border-dm-accent" : "text-dm-muted hover:text-dm-text-bright border-b-2 border-transparent")}
           onClick={() => setMode("existing")}
         >
           Existente
         </button>
         <button 
           type="button"
-          className={cn("pb-2 uppercase tracking-widest text-xs font-bold transition-colors", mode === "temp" ? "text-dm-accent border-b-2 border-dm-accent" : "text-dm-muted hover:text-white border-b-2 border-transparent")}
+          className={cn("pb-2 uppercase tracking-widest text-xs font-bold transition-colors", mode === "temp" ? "text-dm-accent border-b-2 border-dm-accent" : "text-dm-muted hover:text-dm-text-bright border-b-2 border-transparent")}
           onClick={() => setMode("temp")}
         >
           Nueva Temporal
@@ -422,7 +418,7 @@ function AddCombatantModal({ isOpen, onClose }: { isOpen: boolean, onClose: () =
               <Input label="Armadura (CA)" type="number" value={tempAc} onChange={e => setTempAc(e.target.value)} required={mode === "temp"} />
             </div>
             <div className="flex items-center gap-2 text-sm text-dm-text mt-2">
-              <input type="checkbox" id="isTempEnemy" checked={isTempEnemy} onChange={(e) => setIsTempEnemy(e.target.checked)} className="w-4 h-4 rounded bg-[#0a0a09] border-dm-border text-dm-danger focus:ring-dm-danger" />
+              <input type="checkbox" id="isTempEnemy" checked={isTempEnemy} onChange={(e) => setIsTempEnemy(e.target.checked)} className="w-4 h-4 rounded accent-dm-danger" />
               <label htmlFor="isTempEnemy">Es Enemigo (Criatura)</label>
             </div>
           </>
@@ -565,7 +561,7 @@ function StatusModal({ isOpen, onClose, combatantId, effect }: { isOpen: boolean
   );
 }
 
-function GraveyardModal({ isOpen, onClose, onViewChar }: { isOpen: boolean, onClose: () => void, onViewChar: (char: any) => void }) {
+function GraveyardModal({ isOpen, onClose, onViewChar }: { isOpen: boolean, onClose: () => void, onViewChar: (char: Character) => void }) {
   const graveyard = useStore((state) => state.graveyard);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 

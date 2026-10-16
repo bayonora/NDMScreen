@@ -2,6 +2,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useModalLayer } from "./Modal";
 
 interface LightboxProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface LightboxProps {
 }
 
 export function Lightbox({ isOpen, onClose, src, alt, title }: LightboxProps) {
+  useModalLayer(isOpen, onClose);
   return createPortal(
     <AnimatePresence>
       {isOpen && (
@@ -34,8 +36,10 @@ export function Lightbox({ isOpen, onClose, src, alt, title }: LightboxProps) {
             style={{ willChange: "transform, opacity", transform: "translateZ(0)" }}
           >
             <button
+              type="button"
+              aria-label="Cerrar"
               onClick={onClose}
-              className="absolute -top-12 right-0 p-2 text-dm-accent hover:text-white transition-colors z-10"
+              className="absolute -top-12 right-0 p-2 text-dm-accent hover:text-dm-text-bright transition-colors z-10"
             >
               <X size={32} />
             </button>

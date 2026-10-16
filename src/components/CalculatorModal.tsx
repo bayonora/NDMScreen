@@ -65,24 +65,24 @@ export function CalculatorModal({ isOpen, onClose }: { isOpen: boolean, onClose:
           <div className="text-2xl text-dm-text truncate font-bold">{result !== null ? result : (expression || '0')}</div>
         </div>
         <div className="grid grid-cols-4 gap-2 mt-4 font-mono text-lg">
-          <button onClick={clear} className="col-span-2 bg-dm-danger hover:bg-red-700 text-white p-3 rounded transition-colors font-bold">C</button>
-          <button onClick={() => handleInput('/')} className="bg-dm-border hover:bg-dm-accent hover:text-black p-3 rounded transition-colors text-dm-accent">÷</button>
-          <button onClick={() => handleInput('*')} className="bg-dm-border hover:bg-dm-accent hover:text-black p-3 rounded transition-colors text-dm-accent">×</button>
+          <button onClick={clear} className="col-span-2 bg-dm-danger hover:bg-dm-danger-hover text-dm-text-bright p-3 rounded transition-colors font-bold">C</button>
+          <button onClick={() => handleInput('/')} className="bg-dm-border hover:bg-dm-accent hover:text-dm-bg-darker p-3 rounded transition-colors text-dm-accent">÷</button>
+          <button onClick={() => handleInput('*')} className="bg-dm-border hover:bg-dm-accent hover:text-dm-bg-darker p-3 rounded transition-colors text-dm-accent">×</button>
           
           <button onClick={() => handleInput('7')} className="text-dm-text bg-dm-bg-card border border-dm-border hover:bg-dm-border p-3 rounded transition-colors">7</button>
           <button onClick={() => handleInput('8')} className="text-dm-text bg-dm-bg-card border border-dm-border hover:bg-dm-border p-3 rounded transition-colors">8</button>
           <button onClick={() => handleInput('9')} className="text-dm-text bg-dm-bg-card border border-dm-border hover:bg-dm-border p-3 rounded transition-colors">9</button>
-          <button onClick={() => handleInput('-')} className="bg-dm-border hover:bg-dm-accent hover:text-black p-3 rounded transition-colors text-dm-accent">-</button>
+          <button onClick={() => handleInput('-')} className="bg-dm-border hover:bg-dm-accent hover:text-dm-bg-darker p-3 rounded transition-colors text-dm-accent">-</button>
           
           <button onClick={() => handleInput('4')} className="text-dm-text bg-dm-bg-card border border-dm-border hover:bg-dm-border p-3 rounded transition-colors">4</button>
           <button onClick={() => handleInput('5')} className="text-dm-text bg-dm-bg-card border border-dm-border hover:bg-dm-border p-3 rounded transition-colors">5</button>
           <button onClick={() => handleInput('6')} className="text-dm-text bg-dm-bg-card border border-dm-border hover:bg-dm-border p-3 rounded transition-colors">6</button>
-          <button onClick={() => handleInput('+')} className="bg-dm-border hover:bg-dm-accent hover:text-black p-3 rounded transition-colors text-dm-accent">+</button>
+          <button onClick={() => handleInput('+')} className="bg-dm-border hover:bg-dm-accent hover:text-dm-bg-darker p-3 rounded transition-colors text-dm-accent">+</button>
           
           <button onClick={() => handleInput('1')} className="text-dm-text bg-dm-bg-card border border-dm-border hover:bg-dm-border p-3 rounded transition-colors">1</button>
           <button onClick={() => handleInput('2')} className="text-dm-text bg-dm-bg-card border border-dm-border hover:bg-dm-border p-3 rounded transition-colors">2</button>
           <button onClick={() => handleInput('3')} className="text-dm-text bg-dm-bg-card border border-dm-border hover:bg-dm-border p-3 rounded transition-colors">3</button>
-          <button onClick={calculate} className="row-span-2 bg-dm-accent hover:bg-[#dfba76] text-black p-3 rounded transition-colors font-bold">=</button>
+          <button onClick={calculate} className="row-span-2 bg-dm-accent hover:bg-dm-accent-hover text-dm-bg-darker p-3 rounded transition-colors font-bold">=</button>
           
           <button onClick={() => handleInput('0')} className="col-span-2 text-dm-text bg-dm-bg-card border border-dm-border hover:bg-dm-border p-3 rounded transition-colors">0</button>
           <button onClick={() => handleInput('.')} className="text-dm-text bg-dm-bg-card border border-dm-border hover:bg-dm-border p-3 rounded transition-colors">.</button>

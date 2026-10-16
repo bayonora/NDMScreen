@@ -1,22 +1,20 @@
 import React, { useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { store, useStore, actions } from "../store/useStore";
-import { Plus, Target, CheckCircle2, Circle, XCircle, MapPin, Trash2, Edit2, ChevronLeft, ChevronRight, Upload as UploadIcon, FileText, Download, Upload } from "lucide-react";
+import { useStore, actions } from "../store/useStore";
+import { Plus, Target, CheckCircle2, Circle, XCircle, MapPin, Trash2, Edit2, ChevronLeft, ChevronRight, Upload as UploadIcon, FileText, X } from "lucide-react";
 
 import { Modal } from "../components/ui/Modal";
 import { Input, Button } from "../components/ui/Input";
+import { ViewHeader, ToolbarButton } from "../components/ui/ViewHeader";
+import { ImportExportActions, arrayOrKey } from "../components/ImportExportActions";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
-import { ImportModal } from "../components/ImportModal";
 import { Quest, QuestStatus, QuestDetail } from "../types";
-import { cn, mergeDedupe, compressImage } from "../lib/utils";
+import { cn, compressImage, downloadJSON } from "../lib/utils";
 import { v4 as uuidv4 } from "uuid";
 
 export function ViewQuests() {
   const quests = useStore((state) => state.quests);
-  const uiState = useStore((state) => state.uiState);
-  const highlightedQuestId = uiState?.highlightedQuestId;
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [pendingImport, setPendingImport] = useState<any>(null);
+  const highlightedQuestId = useStore((state) => state.uiState.highlightedQuestId);
   const [isQuestModalOpen, setIsQuestModalOpen] = useState(false);
   const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
   const [parentIdForNew, setParentIdForNew] = useState<string | null>(null);
@@ -26,18 +24,36 @@ export function ViewQuests() {
   const [questToDelete, setQuestToDelete] = useState<Quest | null>(null);
 
   const rootQuests = useMemo(() => {
-    return quests.filter(q => !q.parentId).sort((a, b) => a.createdAt - b.createdAt);
+    const byCreation = [...quests].sort((a, b) => a.createdAt - b.createdAt);
+    const ids = new Set(quests.map(q => q.id));
+    const roots = byCreation.filter(q => !q.parentId || !ids.has(q.parentId));
+
+    // Quests caught in a parent cycle are unreachable from any root; promote them so they stay visible.
+    const reached = new Set<string>();
+    const markReached = (id: string) => {
+      if (reached.has(id)) return;
+      reached.add(id);
+      quests.forEach(q => { if (q.parentId === id) markReached(q.id); });
+    };
+    roots.forEach(r => markReached(r.id));
+    byCreation.forEach(q => {
+      if (!reached.has(q.id)) {
+        roots.push(q);
+        markReached(q.id);
+      }
+    });
+    return roots;
   }, [quests]);
 
 
   React.useEffect(() => {
-    if (uiState?.highlightedQuestId) {
+    if (highlightedQuestId) {
       const timer = setTimeout(() => {
         actions.updateUI({ highlightedQuestId: undefined });
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [uiState?.highlightedQuestId]);
+  }, [highlightedQuestId]);
 
   const handleAddQuest = (parentId: string | null = null) => {
     setEditingQuest(null);
@@ -54,81 +70,34 @@ export function ViewQuests() {
   const handleAddDetail = (qId: string) => setDetailModalState({ mode: "add", questId: qId, detail: null });
   const handleViewDetail = (qId: string, detail: QuestDetail) => setDetailModalState({ mode: "view", questId: qId, detail });
 
-  const exportQuests = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(quests));
-    const downloadAnchorNode = document.createElement("a");
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "ndms_misiones.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-  };
-
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const importQuests = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (Array.isArray(parsed) && parsed.every(q => q.title !== undefined)) {
-          setPendingImport(parsed);
-        } else if (parsed && parsed.quests && Array.isArray(parsed.quests)) {
-          setPendingImport(parsed.quests);
-        } else {
-          alert("Archivo inválido o sin misiones.");
-        }
-      } catch (err) {
-        alert("Error leyendo archivo.");
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
-
-  const confirmImport = (mode: "merge" | "overwrite") => {
-    if (!pendingImport) return;
-    if (mode === "overwrite") {
-      store.setState({ quests: pendingImport });
-    } else {
-      store.setState({ quests: mergeDedupe(store.getState().quests || [], pendingImport) });
-    }
-    setPendingImport(null);
-  };
-
   return (
-    <div className="flex-1 flex flex-col bg-dm-bg-alt border-none rounded-none overflow-hidden relative">
-      <div className="bg-dm-bg px-4 sm:px-6 py-4 border-b border-dm-border flex justify-between items-center z-20 relative gap-4">
-        <h2 className="text-lg uppercase tracking-widest text-dm-accent font-light flex items-center gap-2 truncate">
-          <Target size={18} />
-          Árbol de Misiones
-        </h2>
-        <div className="flex gap-2">
-          <Button onClick={handleImportClick} variant="ghost" className="flex px-2 sm:px-4 border border-dm-border" title="Importar">
-            <Download size={14} className="sm:mr-1" /> <span className="hidden sm:inline">Importar</span>
-          </Button>
-          <Button onClick={exportQuests} variant="ghost" className="flex px-2 sm:px-4 border border-dm-border" title="Exportar">
-            <Upload size={14} className="sm:mr-1" /> <span className="hidden sm:inline">Exportar</span>
-          </Button>
-          <Button onClick={() => handleAddQuest(null)} className="whitespace-nowrap bg-dm-bg-hover border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent">
-            <Plus size={14} className="mr-1" /> <span className="hidden sm:inline">Nueva Misión</span><span className="sm:hidden">Nueva</span>
-          </Button>
-          <input type="file" accept=".json" className="hidden" ref={fileInputRef} onChange={importQuests} />
-        </div>
-      </div>
+    <div className="flex-1 flex flex-col min-h-0 bg-dm-bg-alt">
+      <ViewHeader
+        icon={Target}
+        title="Árbol de Misiones"
+        shortTitle="Misiones"
+        actions={
+          <>
+            <ImportExportActions
+              noun="Misiones"
+              onExport={() => downloadJSON(quests, "ndms_misiones.json")}
+              parse={arrayOrKey("quests", (q) => !!q && typeof q === "object" && "id" in q && "title" in q)}
+              onImport={(items, mode) => actions.importCollection("quests", items, mode)}
+              invalidMessage="Archivo inválido o sin misiones."
+            />
+            <ToolbarButton icon={Plus} label="Nueva Misión" shortLabel="Nueva" variant="primary" showLabel="always" onClick={() => handleAddQuest(null)} />
+          </>
+        }
+      />
 
-      <div className="flex-1 overflow-auto p-8 custom-scrollbar relative">
+      <div className="flex-1 overflow-auto p-3 sm:p-8 custom-scrollbar relative">
         {rootQuests.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-dm-muted opacity-50 space-y-4">
+          <div className="flex flex-col items-center justify-center h-full text-dm-muted opacity-50 space-y-4 text-center px-4">
             <Target size={48} />
             <p>No hay misiones registradas. Crea tu primera misión raíz para empezar tu aventura.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-16 min-w-max pb-32">
+          <div className="flex flex-col gap-8 md:gap-16 md:min-w-max pb-32">
             {rootQuests.map((root) => (
               <HorizontalQuestTree 
                 key={root.id} 
@@ -172,7 +141,7 @@ export function ViewQuests() {
                   </span>
                )}
                {questToView?.status === "completed" && <span className="text-green-500 flex items-center"><CheckCircle2 size={16} className="mr-1"/> Completada</span>}
-               {questToView?.status === "failed" && <span className="text-red-500 flex items-center"><XCircle size={16} className="mr-1"/> Fallada</span>}
+               {questToView?.status === "failed" && <span className="text-dm-danger flex items-center"><XCircle size={16} className="mr-1"/> Fallada</span>}
                {questToView?.status === "active" && <span className="text-dm-muted flex items-center"><Circle size={16} className="mr-1"/> Activa</span>}
             </div>
 
@@ -202,18 +171,16 @@ export function ViewQuests() {
         title="Eliminar Misión"
         message="¿Estás seguro de que quieres eliminar esta misión? Si tiene misiones derivadas, estas quedarán huérfanas (como misiones raíz)."
       />
-      <ImportModal
-        isOpen={!!pendingImport}
-        onClose={() => setPendingImport(null)}
-        onMerge={() => confirmImport("merge")}
-        onOverwrite={() => confirmImport("overwrite")}
-      />
     </div>
   );
 }
 
-function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, onViewDetail, onViewQuest, onDeleteQuest, highlightedQuestId, seenIds = new Set() }: { 
-  quest: Quest, 
+/**
+ * One quest card plus its sub-quests. Below `md` the tree is laid out vertically (children
+ * indented under the parent) so it fits a phone; from `md` up it branches horizontally.
+ */
+function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, onViewDetail, onViewQuest, onDeleteQuest, highlightedQuestId, seenIds = new Set() }: {
+  quest: Quest,
   onAddSubQuest: (id: string) => void,
   onEditQuest: (q: Quest) => void,
   onAddDetail: (qId: string) => void,
@@ -224,14 +191,14 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
   seenIds?: Set<string>
 }) {
   const quests = useStore((state) => state.quests);
-  
+
   // Cycle detection logic
   const currentSeenIds = new Set(seenIds);
   currentSeenIds.add(quest.id);
-  
+
   // Filter out children that would cause a cycle
   const children = quests.filter(q => q.parentId === quest.id && !currentSeenIds.has(q.id)).sort((a,b) => a.createdAt - b.createdAt);
-  
+
   const [expanded, setExpanded] = useState(true);
   const nodeRef = useRef<HTMLDivElement>(null);
 
@@ -252,21 +219,21 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
 
   const getStatusIcon = () => {
     if (quest.status === "completed") return <CheckCircle2 size={20} className="text-green-500" />;
-    if (quest.status === "failed") return <XCircle size={20} className="text-red-500" />;
+    if (quest.status === "failed") return <XCircle size={20} className="text-dm-danger" />;
     return <Circle size={20} className="text-dm-muted hover:text-dm-accent transition-colors" />;
   };
 
   return (
-    <div className="flex items-center group/tree">
+    <div className="flex flex-col md:flex-row md:items-center group/tree">
       <div className="relative z-10 shrink-0">
-        <div 
+        <div
           ref={nodeRef}
           onClick={() => onViewQuest(quest)}
           className={cn(
-          "w-[340px] flex flex-col bg-dm-bg border rounded-sm overflow-hidden shrink-0 transition-colors shadow-lg cursor-pointer hover:border-dm-accent",
+          "w-full md:w-[340px] flex flex-col bg-dm-bg border rounded-sm overflow-hidden shrink-0 transition-colors shadow-lg cursor-pointer hover:border-dm-accent",
           quest.status === "completed" ? "border-green-900/50" :
-          quest.status === "failed" ? "border-red-900/50" : "border-dm-border",
-          highlightedQuestId === quest.id ? "ring-2 ring-dm-accent ring-offset-2 ring-offset-dm-bg-alt shadow-[0_0_15px_rgba(193,160,99,0.5)]" : ""
+          quest.status === "failed" ? "border-dm-danger/50" : "border-dm-border",
+          highlightedQuestId === quest.id ? "ring-2 ring-dm-accent ring-offset-2 ring-offset-dm-bg-alt shadow-[0_0_15px_var(--theme-glow)]" : ""
         )}>
           {quest.image && (
             <div className="w-full h-24 bg-black relative border-b border-dm-accent/10">
@@ -274,16 +241,16 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
               <div className="absolute inset-0 bg-gradient-to-t from-dm-bg to-transparent" />
             </div>
           )}
-          
-          <div className="p-4 flex flex-col gap-3">
+
+          <div className="p-3 sm:p-4 flex flex-col gap-3">
             <div className="flex items-start gap-3">
-               <button onClick={toggleStatus} className="mt-1 hover:scale-110 transition-transform shrink-0 z-10" title="Cambiar Estado">
+               <button type="button" onClick={toggleStatus} className="mt-1 hover:scale-110 transition-transform shrink-0 z-10" title="Cambiar Estado" aria-label="Cambiar Estado">
                  {getStatusIcon()}
                </button>
                <div className="flex-1 min-w-0">
-                 <h3 className={cn("text-sm font-bold truncate leading-tight uppercase tracking-wider", 
+                 <h3 className={cn("text-sm font-bold truncate leading-tight uppercase tracking-wider",
                     quest.status === "completed" ? "text-green-400 line-through decoration-green-900" :
-                    quest.status === "failed" ? "text-red-400 line-through decoration-red-900" :
+                    quest.status === "failed" ? "text-dm-danger line-through" :
                     "text-dm-text-bright"
                  )} title={quest.title}>
                    {quest.title}
@@ -312,15 +279,16 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
             <div className="mt-2 flex flex-col gap-2 border-t border-dm-border pt-3 z-10" onClick={e => e.stopPropagation()}>
                <div className="flex items-center justify-between">
                  <span className="text-[10px] font-bold text-dm-muted uppercase tracking-widest">Detalles y Notas</span>
-                 <button onClick={() => onAddDetail(quest.id)} className="text-dm-accent hover:text-dm-text-bright bg-dm-bg-alt border border-dm-border rounded-sm px-2 py-1 transition-colors flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider">
+                 <button type="button" onClick={() => onAddDetail(quest.id)} className="text-dm-accent hover:text-dm-text-bright bg-dm-bg-alt border border-dm-border rounded-sm px-2 py-1 transition-colors flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider">
                    <Plus size={10} /> Añadir
                  </button>
                </div>
-               
+
                {quest.details && quest.details.length > 0 && (
                  <div className="flex flex-wrap gap-1.5 mt-1">
                    {quest.details.map(d => (
-                     <button 
+                     <button
+                       type="button"
                        key={d.id}
                        onClick={() => onViewDetail(quest.id, d)}
                        className="flex items-center gap-1 text-[10px] font-bold bg-dm-bg-alt border border-dm-border text-dm-text hover:border-dm-accent hover:text-dm-accent px-2 py-1 rounded-sm transition-colors max-w-full"
@@ -335,43 +303,47 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
           </div>
 
           <div className="flex items-center bg-dm-bg-alt border-t border-dm-border z-10" onClick={e => e.stopPropagation()}>
-            <button onClick={() => onAddSubQuest(quest.id)} className="flex-1 p-2 text-[10px] text-dm-muted font-bold uppercase tracking-wider hover:text-dm-text-bright hover:bg-dm-bg transition-all border-r border-dm-border flex items-center justify-center gap-1" title="Añadir Sub-misión">
+            <button type="button" onClick={() => onAddSubQuest(quest.id)} className="flex-1 p-2.5 text-[10px] text-dm-muted font-bold uppercase tracking-wider hover:text-dm-text-bright hover:bg-dm-bg transition-all border-r border-dm-border flex items-center justify-center gap-1" title="Añadir Sub-misión">
               <Plus size={12} /> Ramificar
             </button>
-            <button onClick={() => onEditQuest(quest)} className="px-4 py-2 text-dm-muted hover:text-dm-accent hover:bg-dm-bg transition-all border-r border-dm-border" title="Editar Misión">
+            <button type="button" onClick={() => onEditQuest(quest)} className="px-4 py-2.5 text-dm-muted hover:text-dm-accent hover:bg-dm-bg transition-all border-r border-dm-border" title="Editar Misión" aria-label="Editar Misión">
               <Edit2 size={14} />
             </button>
-            <button onClick={() => onDeleteQuest(quest)} className="px-4 py-2 text-dm-muted hover:text-red-400 hover:bg-dm-bg transition-all" title="Eliminar Misión">
+            <button type="button" onClick={() => onDeleteQuest(quest)} className="px-4 py-2.5 text-dm-muted hover:text-dm-danger hover:bg-dm-bg transition-all" title="Eliminar Misión" aria-label="Eliminar Misión">
               <Trash2 size={14} />
             </button>
           </div>
         </div>
 
         {children.length > 0 && (
-          <button 
+          <button
+            type="button"
             onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-            className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-dm-bg-alt border border-dm-border text-dm-accent flex items-center justify-center hover:bg-dm-bg transition-colors z-20 shadow-md"
+            className="absolute left-1/2 -bottom-3 -translate-x-1/2 md:left-auto md:bottom-auto md:translate-x-0 md:-right-3 md:top-1/2 md:-translate-y-1/2 w-6 h-6 rounded-full bg-dm-bg-alt border border-dm-border text-dm-accent flex items-center justify-center hover:bg-dm-bg transition-colors z-20 shadow-md"
             title={expanded ? "Ocultar submisiones" : "Mostrar submisiones"}
+            aria-label={expanded ? "Ocultar submisiones" : "Mostrar submisiones"}
+            aria-expanded={expanded}
           >
-            {expanded ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+            {/* Points left/right on wide screens, up/down when the tree is vertical. */}
+            {expanded ? <ChevronLeft size={14} className="rotate-90 md:rotate-0" /> : <ChevronRight size={14} className="rotate-90 md:rotate-0" />}
           </button>
         )}
       </div>
 
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {expanded && children.length > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, width: 0 }}
-            animate={{ opacity: 1, width: "auto" }}
-            exit={{ opacity: 0, width: 0 }}
-            className="flex items-center overflow-hidden shrink-0"
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center shrink-0 pt-4 md:pt-0"
           >
-             <div className="w-8 h-[2px] bg-dm-border shrink-0" />
-             
-             <div className="flex flex-col shrink-0 relative">
+             <div className="hidden md:block w-8 h-[2px] bg-dm-border shrink-0" />
+
+             <div className="flex flex-col shrink-0 relative w-full md:w-auto ml-3 pl-3 border-l-2 border-dm-border md:ml-0 md:pl-0 md:border-l-0 gap-3 md:gap-0">
                {children.map((child, index) => (
-                 <div key={child.id} className="flex items-center relative pl-8 py-3">
-                   <svg className="absolute left-0 top-0 w-8 h-full pointer-events-none text-dm-border" preserveAspectRatio="none">
+                 <div key={child.id} className="flex items-center relative md:pl-8 md:py-3">
+                   <svg className="hidden md:block absolute left-0 top-0 w-8 h-full pointer-events-none text-dm-border" preserveAspectRatio="none">
                      {/* Horizontal line to child */}
                      <line x1="0" y1="50%" x2="32" y2="50%" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" />
                      {/* Vertical line UP to previous child */}
@@ -383,9 +355,10 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
                        <line x1="1" y1="50%" x2="1" y2="100%" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" />
                      )}
                    </svg>
-                    <HorizontalQuestTree 
+                   <div className="w-full md:w-auto">
+                    <HorizontalQuestTree
                        quest={child}
-                       highlightedQuestId={highlightedQuestId} 
+                       highlightedQuestId={highlightedQuestId}
                        onAddSubQuest={onAddSubQuest}
                        onEditQuest={onEditQuest}
                        onAddDetail={onAddDetail}
@@ -394,6 +367,7 @@ function HorizontalQuestTree({ quest, onAddSubQuest, onEditQuest, onAddDetail, o
                        onDeleteQuest={onDeleteQuest}
                        seenIds={currentSeenIds}
                     />
+                   </div>
                  </div>
                ))}
              </div>
@@ -458,10 +432,25 @@ function QuestModal({ isOpen, onClose, initialData, defaultParentId, allQuests }
     onClose();
   };
 
-  const availableParents = allQuests.filter(q => q.id !== initialData?.id);
+  // A quest can't hang from itself or from any of its descendants (that would create a cycle).
+  const descendantIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (!initialData) return ids;
+    const collect = (id: string) => {
+      allQuests.forEach(q => {
+        if (q.parentId === id && !ids.has(q.id)) {
+          ids.add(q.id);
+          collect(q.id);
+        }
+      });
+    };
+    collect(initialData.id);
+    return ids;
+  }, [allQuests, initialData]);
+  const availableParents = allQuests.filter(q => q.id !== initialData?.id && !descendantIds.has(q.id));
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={initialData ? "Editar Misión" : "Nueva Misión"}>
+    <Modal isOpen={isOpen} onClose={onClose} closeOnBackdrop={false} title={initialData ? "Editar Misión" : "Nueva Misión"}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex justify-center mb-4">
           <div className="relative w-full h-40 bg-dm-bg-alt border border-dm-border border-dashed flex items-center justify-center overflow-hidden rounded-sm group hover:border-dm-accent transition-colors cursor-pointer">
@@ -480,9 +469,20 @@ function QuestModal({ isOpen, onClose, initialData, defaultParentId, allQuests }
               className="absolute inset-0 opacity-0 cursor-pointer"
             />
             {image && (
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="bg-dm-bg-alt/80 px-3 py-1 text-white text-xs uppercase tracking-widest font-bold rounded-sm backdrop-blur-sm">Cambiar</span>
-              </div>
+              <>
+                <div className="absolute inset-0 flex items-center justify-center can-hover:opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <span className="bg-dm-bg-alt/80 px-3 py-1 text-dm-text-bright text-xs uppercase tracking-widest font-bold rounded-sm backdrop-blur-sm">Cambiar</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setImage("")}
+                  className="absolute top-2 right-2 z-10 p-1.5 bg-black/70 rounded-full text-dm-danger hover:bg-black"
+                  title="Quitar imagen"
+                  aria-label="Quitar imagen"
+                >
+                  <X size={14} />
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -594,7 +594,7 @@ function DetailModal({
                <p className="text-sm text-dm-text whitespace-pre-wrap leading-relaxed opacity-90">{state.detail?.description}</p>
             </div>
             <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-dm-border">
-               <Button variant="ghost" onClick={handleDelete} className="text-red-400 hover:text-red-300 hover:bg-red-900/20">Eliminar</Button>
+               <Button variant="ghost" onClick={handleDelete} className="text-dm-danger hover:text-dm-danger-hover hover:bg-dm-danger/20">Eliminar</Button>
                <Button variant="ghost" onClick={() => setState({ ...state, mode: "edit" })} className="border border-dm-border">Editar</Button>
                <Button onClick={close}>Cerrar</Button>
             </div>
