@@ -52,7 +52,7 @@ export function WelcomeModal() {
         <div className="bg-dm-bg-alt border-l-2 border-dm-muted p-3 text-xs text-dm-muted mb-6 flex items-start gap-2">
           <HelpCircle size={16} className="shrink-0 text-dm-accent" />
           <p>
-            Para un tutorial detallado sobre cómo aprovechar cada rincón, pulsa el <strong>botón (i)</strong> junto a la calculadora en el menú lateral.
+            Para un tutorial detallado sobre cómo aprovechar cada rincón, pulsa el <strong>botón (i)</strong> de la cabecera (en el móvil, dentro de <strong>Más</strong>).
           </p>
         </div>
 

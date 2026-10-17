@@ -54,7 +54,7 @@ export const ToolbarButton = React.forwardRef<HTMLButtonElement, ToolbarButtonPr
       title={label}
       aria-label={label}
       className={cn(
-        "inline-flex items-center justify-center gap-2 h-9 min-w-9 px-2.5 border text-xs uppercase tracking-widest whitespace-nowrap transition-colors disabled:opacity-50 disabled:pointer-events-none active:scale-95",
+        "inline-flex items-center justify-center gap-2 h-10 min-w-10 sm:h-9 sm:min-w-9 px-2.5 border text-xs uppercase tracking-widest whitespace-nowrap transition-colors disabled:opacity-50 disabled:pointer-events-none active:scale-95",
         variant === "primary" && "bg-dm-accent border-dm-accent text-dm-bg-darker font-bold hover:bg-dm-accent-hover",
         variant === "secondary" && "bg-dm-bg-hover border-dm-border text-dm-muted hover:text-dm-accent hover:border-dm-accent",
         variant === "danger" && "bg-dm-danger border-dm-danger text-dm-text-bright font-bold hover:bg-dm-danger-hover",
@@ -96,7 +96,7 @@ export function SegmentedTabs<T extends string>({ value, onChange, options, clas
           aria-selected={value === opt.value}
           onClick={() => onChange(opt.value)}
           className={cn(
-            "px-2 sm:px-4 py-1.5 text-[11px] sm:text-xs uppercase tracking-wider truncate transition-colors",
+            "px-2 sm:px-4 py-2 sm:py-1.5 text-[11px] sm:text-xs uppercase tracking-wider truncate transition-colors",
             value === opt.value ? "bg-dm-accent text-dm-bg-darker font-bold" : "text-dm-muted hover:text-dm-accent"
           )}
         >

@@ -261,7 +261,7 @@ function CardAction({ label, onClick, danger, children }: { label: string; onCli
       onClick={onClick}
       title={label}
       aria-label={label}
-      className={cn("p-1.5 text-dm-muted transition-colors", danger ? "hover:text-dm-danger" : "hover:text-dm-accent")}
+      className={cn("p-2.5 sm:p-1.5 text-dm-muted transition-colors", danger ? "hover:text-dm-danger" : "hover:text-dm-accent")}
     >
       {children}
     </button>

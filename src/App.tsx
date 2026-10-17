@@ -5,7 +5,7 @@
 
 import React, { useState, useRef, useEffect, Suspense, lazy } from "react";
 import { cn } from "./lib/utils";
-import { Users, Swords, BookOpen, Map as MapIcon, Store as StoreIcon, Settings, Download, Upload, StickyNote, Backpack, Calculator, Target, Info } from "lucide-react";
+import { Users, Swords, BookOpen, Map as MapIcon, Store as StoreIcon, Settings, Download, Upload, StickyNote, Backpack, Calculator, Target, Info, LayoutGrid } from "lucide-react";
 import { store, actions, useStore, Tab } from "./store/useStore";
 import { motion } from "motion/react";
 import { Modal } from "./components/ui/Modal";
@@ -39,6 +39,9 @@ const TABS: { id: Tab; label: string; icon: React.ElementType; view: React.Compo
   { id: "spells", label: "Grimorio", icon: BookOpen, view: ViewGrimoire },
 ];
 
+/** Tabs that get their own slot in the phone nav bar; the rest live in the "Más" sheet. */
+const PHONE_PRIMARY_TABS: Tab[] = ["party", "initiative", "maps", "spells"];
+
 const THEMES = [
   { id: "clasico", label: "NELLIE", swatches: ["#1e1a17", "#c1a063"], ring: "#3a302a" },
   { id: "direi", label: "DIREI", swatches: ["#000000", "#ffffff"], ring: "#333333" },
@@ -64,6 +67,7 @@ export default function App() {
   }, [theme]);
 
   const [showSettings, setShowSettings] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
   const [showDiceRoller, setShowDiceRoller] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -113,24 +117,26 @@ export default function App() {
     );
   }
 
-  const ActiveView = (TABS.find((t) => t.id === activeTab) || TABS[0]).view;
+  const activeTabInfo = TABS.find((t) => t.id === activeTab) || TABS[0];
+  const ActiveView = activeTabInfo.view;
 
   return (
     <div
       className="flex flex-col h-dvh w-full text-dm-text overflow-hidden font-sans select-none"
       style={{ backgroundImage: "radial-gradient(circle at 50% 50%, var(--theme-bg-hover) 0%, var(--theme-bg-darker) 100%)", backgroundColor: "var(--theme-bg-darker)" }}
     >
-      <header className="flex flex-wrap justify-between items-center gap-y-2 px-3 sm:px-6 py-2 sm:py-3 pt-[max(0.5rem,env(safe-area-inset-top))] border-b border-dm-accent/10 bg-dm-bg-darker">
-        <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 border-2 border-dm-accent rotate-45 flex items-center justify-center shrink-0 ml-1">
-            <span className="-rotate-45 font-bold text-lg sm:text-xl text-dm-accent font-display">DM</span>
+      {/* Phones: one slim row (logo · search icon · tools). From `sm` up: logo · search bar · tools. */}
+      <header className="flex justify-between items-center gap-2 px-3 sm:px-6 py-1.5 sm:py-3 pt-[max(0.375rem,env(safe-area-inset-top))] border-b border-dm-accent/10 bg-dm-bg-darker">
+        <div className="flex items-center space-x-3 min-w-0">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 border-2 border-dm-accent rotate-45 flex items-center justify-center shrink-0 ml-1">
+            <span className="-rotate-45 font-bold text-base sm:text-xl text-dm-accent font-display">DM</span>
           </div>
           <TitleTorch />
         </div>
-        <div className="w-full sm:flex-1 flex justify-center sm:px-4 max-w-lg order-last sm:order-none">
+        <div className="ml-auto sm:ml-0 sm:flex-1 flex justify-center sm:px-4 max-w-lg">
           <GlobalSearch onNavigate={setActiveTab} />
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center sm:gap-1">
           {saveIndicator && (
             <span className="hidden sm:inline text-[10px] text-dm-accent uppercase tracking-widest animate-in fade-in mr-2 opacity-70">
               Guardado
@@ -138,8 +144,8 @@ export default function App() {
           )}
           <HeaderButton label="Calculadora" onClick={() => setShowCalculator(true)}><Calculator size={20} /></HeaderButton>
           <HeaderButton label="Lanzar dados" onClick={() => setShowDiceRoller(true)}><D20Icon size={20} /></HeaderButton>
-          <HeaderButton label="Tutorial" onClick={() => setShowTutorial(true)}><Info size={20} /></HeaderButton>
-          <HeaderButton label="Ajustes" onClick={() => setShowSettings(true)}><Settings size={20} /></HeaderButton>
+          <HeaderButton label="Tutorial" onClick={() => setShowTutorial(true)} className="hidden sm:block"><Info size={20} /></HeaderButton>
+          <HeaderButton label="Ajustes" onClick={() => setShowSettings(true)} className="hidden sm:block"><Settings size={20} /></HeaderButton>
         </div>
       </header>
 
@@ -152,14 +158,48 @@ export default function App() {
       </main>
 
       <nav className="shrink-0 bg-dm-bg-darker border-t border-dm-accent/10 z-40 select-none pb-[env(safe-area-inset-bottom,0px)]">
-        <div className="flex max-w-5xl mx-auto">
+        {/* Phones: the main tabs plus "Más", which opens a sheet with the rest and the tools. */}
+        <div className="flex sm:hidden">
+          {TABS.filter((t) => PHONE_PRIMARY_TABS.includes(t.id)).map((t) => (
+            <NavButton key={t.id} active={activeTab === t.id} onClick={() => setActiveTab(t.id)} label={t.label} icon={t.icon} indicatorId="navIndicatorPhone" />
+          ))}
+          <NavButton
+            indicatorId="navIndicatorPhone"
+            active={!PHONE_PRIMARY_TABS.includes(activeTab)}
+            onClick={() => setShowMore(true)}
+            label={PHONE_PRIMARY_TABS.includes(activeTab) ? "Más" : activeTabInfo.label}
+            icon={PHONE_PRIMARY_TABS.includes(activeTab) ? LayoutGrid : activeTabInfo.icon}
+            badge={!PHONE_PRIMARY_TABS.includes(activeTab)}
+          />
+        </div>
+        <div className="hidden sm:flex max-w-5xl mx-auto">
           {TABS.map((t) => (
             <NavButton key={t.id} active={activeTab === t.id} onClick={() => setActiveTab(t.id)} label={t.label} icon={t.icon} />
           ))}
         </div>
       </nav>
 
-      <Modal isOpen={showSettings} onClose={() => setShowSettings(false)} title="Ajustes" className="max-w-md">
+      <Modal isOpen={showMore} onClose={() => setShowMore(false)} title="Más">
+        <div className="grid grid-cols-4 gap-2 mb-5">
+          {TABS.filter((t) => !PHONE_PRIMARY_TABS.includes(t.id)).map((t) => (
+            <MoreTile
+              key={t.id}
+              icon={t.icon}
+              label={t.label}
+              active={activeTab === t.id}
+              onClick={() => { setActiveTab(t.id); setShowMore(false); }}
+            />
+          ))}
+        </div>
+        <h3 className="text-[10px] text-dm-muted tracking-widest uppercase mb-2">Herramientas</h3>
+        <div className="grid grid-cols-3 gap-2">
+          <MoreTile icon={Calculator} label="Calculadora" onClick={() => { setShowMore(false); setShowCalculator(true); }} />
+          <MoreTile icon={Info} label="Tutorial" onClick={() => { setShowMore(false); setShowTutorial(true); }} />
+          <MoreTile icon={Settings} label="Ajustes" onClick={() => { setShowMore(false); setShowSettings(true); }} />
+        </div>
+      </Modal>
+
+      <Modal isOpen={showSettings} onClose={() => setShowSettings(false)} title="Ajustes" className="sm:max-w-md">
         <h3 className="text-sm text-dm-muted tracking-wider uppercase mb-3">Tema de Color</h3>
         <div className="grid grid-cols-1 gap-2 text-sm mb-8">
           {THEMES.map((t) => (
@@ -229,15 +269,32 @@ function ViewLoading() {
   );
 }
 
-function HeaderButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+function HeaderButton({ label, onClick, className, children }: { label: string; onClick: () => void; className?: string; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} title={label} aria-label={label} className="text-dm-muted hover:text-dm-text transition-colors p-2">
+    <button type="button" onClick={onClick} title={label} aria-label={label} className={cn("text-dm-muted hover:text-dm-text active:text-dm-accent transition-colors p-2.5 sm:p-2", className)}>
       {children}
     </button>
   );
 }
 
-function NavButton({ active, onClick, label, icon: Icon }: { active: boolean; onClick: () => void; label: string; icon: React.ElementType }) {
+function MoreTile({ icon: Icon, label, active, onClick }: { icon: React.ElementType; label: string; active?: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "flex flex-col items-center justify-center gap-2 py-4 px-1 border rounded-lg transition-colors active:scale-95",
+        active ? "border-dm-accent bg-dm-accent/10 text-dm-accent" : "border-dm-border bg-dm-bg-alt/60 text-dm-text hover:border-dm-accent hover:text-dm-accent"
+      )}
+    >
+      <Icon size={24} strokeWidth={1.5} />
+      <span className="text-xs tracking-wide truncate max-w-full">{label}</span>
+    </button>
+  );
+}
+
+function NavButton({ active, onClick, label, icon: Icon, badge, indicatorId = "navIndicator" }: { active: boolean; onClick: () => void; label: string; icon: React.ElementType; badge?: boolean; indicatorId?: string }) {
   return (
     <button
       type="button"
@@ -248,17 +305,20 @@ function NavButton({ active, onClick, label, icon: Icon }: { active: boolean; on
         active ? "text-dm-accent" : "text-dm-muted hover:text-dm-accent"
       )}
     >
-      <Icon
-        size={22}
-        strokeWidth={active ? 2 : 1.5}
-        className={cn("mb-1 transition-transform duration-300", active && "drop-shadow-[0_0_8px_var(--theme-glow)] scale-110")}
-      />
-      <span className="max-w-full truncate text-[9px] sm:text-[10px] md:text-xs sm:uppercase tracking-normal sm:tracking-widest">
+      <span className="relative">
+        <Icon
+          size={22}
+          strokeWidth={active ? 2 : 1.5}
+          className={cn("mb-1 transition-transform duration-300", active && "drop-shadow-[0_0_8px_var(--theme-glow)] scale-110")}
+        />
+        {badge && <span className="absolute -top-0.5 -right-2 w-1.5 h-1.5 rounded-full bg-dm-accent" aria-hidden />}
+      </span>
+      <span className="max-w-full truncate text-[11px] sm:text-[10px] md:text-xs sm:uppercase tracking-normal sm:tracking-widest">
         {label}
       </span>
       {active && (
         <motion.div
-          layoutId="navIndicator"
+          layoutId={indicatorId}
           className="absolute bottom-0 left-[15%] right-[15%] h-[2px] bg-dm-accent shadow-[0_0_12px_var(--theme-accent)]"
           initial={false}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}

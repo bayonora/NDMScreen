@@ -135,6 +135,21 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Touch screens: iOS zooms the page when focusing a field under 16px, so small fields grow to
+   16px there. Unlayered, so it beats the text-xs/text-sm utilities; bigger text-* sizes are kept. */
+@media (pointer: coarse) {
+  :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]), select, textarea):not(
+      [class*="text-base"],
+      [class*="text-lg"],
+      [class*="text-xl"],
+      [class*="text-2xl"],
+      [class*="text-3xl"],
+      [class*="text-4xl"]
+    ) {
+    font-size: 16px;
+  }
+}
+
 /* Only while switching themes (class toggled from App), so normal interaction stays cheap. */
 .theme-transition *,
 .theme-transition *::before,
@@ -165,17 +180,23 @@ body {
 @keyframes dm-enter {
   from {
     opacity: var(--dm-enter-opacity, 1);
-    transform: scale(var(--dm-enter-scale, 1));
+    transform: translateY(var(--dm-enter-y, 0)) scale(var(--dm-enter-scale, 1));
   }
 }
 @utility animate-in {
-  animation: dm-enter 180ms ease-out;
+  animation: dm-enter var(--dm-enter-duration, 180ms) var(--dm-enter-ease, ease-out);
 }
 @utility fade-in {
   --dm-enter-opacity: 0;
 }
 @utility zoom-in-95 {
   --dm-enter-scale: 0.95;
+}
+/* Bottom sheets on phones rise from the bottom edge. */
+@utility slide-in-from-bottom {
+  --dm-enter-y: 100%;
+  --dm-enter-duration: 260ms;
+  --dm-enter-ease: cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-in {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Search, BookOpen, Users, Sparkles, Target, Map as MapIcon, Store as StoreIcon, StickyNote, Package, User, ExternalLink, Skull } from "lucide-react";
-import { Overlay } from "./ui/Modal";
+import { Search, X, BookOpen, Users, Sparkles, Target, Map as MapIcon, Store as StoreIcon, StickyNote, Package, User, ExternalLink, Skull } from "lucide-react";
+import { Overlay, useModalLayer } from "./ui/Modal";
 import { StatBlock } from "./StatBlock";
 import { Markdown } from "./ui/Markdown";
 import { useStore, actions, Tab } from "../store/useStore";
@@ -41,6 +41,9 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
   const [previewResult, setPreviewResult] = useState<SearchResult | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Phones show only a search icon; tapping it opens this full-screen search.
+  const [mobileOpen, setMobileOpen] = useState(false);
+  useModalLayer(mobileOpen, () => setMobileOpen(false));
 
   // Close when clicking outside
   useEffect(() => {
@@ -207,6 +210,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
 
   const handleSelect = (res: SearchResult) => {
     setIsOpen(false);
+    setMobileOpen(false);
     setQuery("");
     
     if (res.tab === "quests" || res.tab === "shops") {
@@ -223,14 +227,42 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
     if (res.action) res.action();
     onNavigate(res.tab);
     setIsOpen(false);
+    setMobileOpen(false);
     setQuery("");
     setPreviewResult(null);
   };
 
+  const openMobile = () => {
+    setMobileOpen(true);
+    setIsOpen(true);
+    fetchSpells();
+    // Focus inside the tap handler's frame so phones open the keyboard.
+    requestAnimationFrame(() => document.getElementById("global-search-input")?.focus());
+  };
+
 
   return (
-    <div className="relative w-full max-w-md" ref={containerRef}>
-      <div className="relative">
+    <>
+    <button
+      type="button"
+      onClick={openMobile}
+      aria-label="Buscar"
+      title="Buscar"
+      className="sm:hidden p-2.5 text-dm-muted hover:text-dm-text active:text-dm-accent transition-colors"
+    >
+      <Search size={20} />
+    </button>
+    <div
+      ref={containerRef}
+      className={cn(
+        "relative w-full max-w-md",
+        mobileOpen
+          ? "fixed inset-0 z-50 max-w-none flex flex-col bg-dm-bg-darker px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[env(safe-area-inset-bottom)] animate-in fade-in"
+          : "hidden sm:block"
+      )}
+    >
+      <div className="flex items-center gap-2">
+      <div className="relative flex-1">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-4 w-4 text-dm-muted" />
         </div>
@@ -238,7 +270,8 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
           id="global-search-input"
           type="text"
           className="block w-full pl-10 pr-3 py-2 border border-dm-border rounded-md leading-5 bg-dm-bg-alt text-dm-text placeholder-dm-muted focus:outline-none focus:ring-1 focus:ring-dm-accent focus:border-dm-accent sm:text-sm transition-colors"
-          placeholder="Buscar personajes, notas, mapas... (Ctrl+K)"
+          placeholder={mobileOpen ? "Buscar personajes, notas, conjuros..." : "Buscar personajes, notas, mapas... (Ctrl+K)"}
+          enterKeyHint="search"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -247,6 +280,20 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
           onFocus={() => { setIsOpen(true); fetchSpells(); }}
         />
       </div>
+      {mobileOpen && (
+        <button
+          type="button"
+          onClick={() => { setMobileOpen(false); setIsOpen(false); }}
+          aria-label="Cerrar búsqueda"
+          className="p-2 -mr-1 text-dm-muted hover:text-dm-accent"
+        >
+          <X size={22} />
+        </button>
+      )}
+      </div>
+      {mobileOpen && query.trim().length < 2 && (
+        <p className="mt-6 text-center text-sm text-dm-muted">Escribe al menos 2 letras para buscar en toda la campaña.</p>
+      )}
 
       <AnimatePresence>
         {isOpen && query.trim().length >= 2 && (
@@ -255,7 +302,10 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 mt-1 w-full bg-dm-bg shadow-lg max-h-96 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto sm:text-sm border border-dm-border"
+            className={cn(
+              "z-50 mt-1 w-full bg-dm-bg shadow-lg rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto overscroll-contain sm:text-sm border border-dm-border",
+              mobileOpen ? "relative mt-3 min-h-0 flex-1 max-h-max mb-3" : "absolute max-h-96"
+            )}
           >
             {results.length === 0 ? (
               <div className="px-4 py-3 text-sm text-dm-muted text-center">
@@ -269,7 +319,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
                     onClick={() => handleSelect(res)}
                     onMouseEnter={() => setSelectedIndex(idx)}
                     className={cn(
-                      "cursor-pointer select-none relative py-2 pl-3 pr-9 border-l-2 transition-colors",
+                      "cursor-pointer select-none relative py-3 sm:py-2 pl-3 pr-2 sm:pr-9 border-l-2 transition-colors",
                       selectedIndex === idx
                         ? "bg-dm-bg-alt border-dm-accent text-dm-text-bright"
                         : "border-transparent text-dm-text hover:bg-dm-bg-hover hover:border-dm-muted"
@@ -406,6 +456,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
           </div>
       </Overlay>
     </div>
+    </>
   );
 }
 

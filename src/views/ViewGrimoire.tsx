@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useDeferredValue } from "react";
 import { useSpellStore } from "../store/useSpellStore";
-import { Search, Loader2, Sparkles, BookOpen, Star, Shield, Cloud, Eye, Brain, Flame, Ghost, Skull, FlaskConical } from "lucide-react";
+import { Search, Loader2, Sparkles, BookOpen, Star, Shield, Cloud, Eye, Brain, Flame, Ghost, Skull, FlaskConical, SlidersHorizontal } from "lucide-react";
 import { cn, normalizeSearchText } from "../lib/utils";
 import { Markdown } from "../components/ui/Markdown";
 import { useStore, actions } from "../store/useStore";
@@ -48,6 +48,8 @@ export function ViewGrimoire() {
   const [schoolFilter, setSchoolFilter] = useState("");
   const [classFilter, setClassFilter] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("name_asc");
+  const [showFilters, setShowFilters] = useState(false);
+  const activeFilterCount = [levelFilter, schoolFilter, classFilter].filter(Boolean).length + (sortOrder !== "name_asc" ? 1 : 0);
 
   useEffect(() => {
     fetchSpells();
@@ -112,20 +114,41 @@ export function ViewGrimoire() {
           <div className="bg-dm-bg-alt border border-dm-border rounded-sm p-3 sm:p-6 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-dm-accent" />
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-4">
-              <div className="relative col-span-2 md:col-span-1">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-4 w-4 text-dm-muted" />
+              <div className="col-span-2 md:col-span-1 flex gap-2">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-dm-muted" />
+                  </div>
+                  <input
+                    type="search"
+                    placeholder="Buscar..."
+                    aria-label="Buscar conjuros"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2 bg-dm-bg border border-dm-border rounded-sm text-sm focus:outline-none focus:border-dm-accent focus:ring-1 focus:ring-dm-accent"
+                  />
                 </div>
-                <input
-                  type="search"
-                  placeholder="Buscar..."
-                  aria-label="Buscar conjuros"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 bg-dm-bg border border-dm-border rounded-sm text-sm focus:outline-none focus:border-dm-accent focus:ring-1 focus:ring-dm-accent"
-                />
+                {/* Phones: the four filters fold away behind this button to leave room for the list. */}
+                <button
+                  type="button"
+                  onClick={() => setShowFilters((v) => !v)}
+                  aria-expanded={showFilters}
+                  className={cn(
+                    "md:hidden relative shrink-0 flex items-center gap-1.5 px-3 border rounded-sm text-xs uppercase tracking-wider transition-colors",
+                    showFilters || activeFilterCount ? "border-dm-accent text-dm-accent" : "border-dm-border text-dm-muted"
+                  )}
+                >
+                  <SlidersHorizontal size={16} />
+                  Filtros
+                  {activeFilterCount > 0 && (
+                    <span className="min-w-5 h-5 px-1 rounded-full bg-dm-accent text-dm-bg-darker text-[11px] font-bold flex items-center justify-center">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
               </div>
 
+              <div className={cn("col-span-2 md:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4", !showFilters && "hidden md:grid")}>
               <select aria-label="Nivel" value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} className={selectClass}>
                 <option value="">Nivel</option>
                 <option value="0">Trucos</option>
@@ -154,6 +177,16 @@ export function ViewGrimoire() {
                 <option value="level_desc">Nivel ↓</option>
                 <option value="favorites">Solo guardados</option>
               </select>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => { setLevelFilter(""); setSchoolFilter(""); setClassFilter(""); setSortOrder("name_asc"); }}
+                  className="md:hidden col-span-2 py-2 text-xs uppercase tracking-wider text-dm-muted hover:text-dm-accent"
+                >
+                  Limpiar filtros
+                </button>
+              )}
+              </div>
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useStore, actions } from "../store/useStore";
 import { Character, StatusEffect } from "../types";
 import { Input, Button, Textarea } from "../components/ui/Input";
@@ -24,6 +24,14 @@ export function ViewInitiative() {
   const [isGraveyardOpen, setIsGraveyardOpen] = useState(false);
   const [statusModal, setStatusModal] = useState<{ open: boolean; combatantId: string; effect?: StatusEffect }>({ open: false, combatantId: "" });
   const [viewCharModal, setViewCharModal] = useState<{ open: boolean; char?: Character }>({ open: false });
+  const [hpModalId, setHpModalId] = useState<string | null>(null);
+  const rowRefs = useRef(new Map<string, HTMLDivElement>());
+
+  // Keep the active combatant on screen as turns advance (long lists on phones).
+  useEffect(() => {
+    if (!isCombatActive || !activeCombatantId) return;
+    rowRefs.current.get(activeCombatantId)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [isCombatActive, activeCombatantId]);
   // Subscribed so the open stat block re-renders when the character is edited (e.g. tags).
   useStore((state) => state.players);
   useStore((state) => state.npcs);
@@ -85,7 +93,7 @@ export function ViewInitiative() {
           </>
         }
       >
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="hidden sm:flex items-center gap-2 flex-wrap">
           {!isCombatActive ? (
             <Button onClick={handleStartCombat} disabled={combatants.length === 0} className="whitespace-nowrap">
               <Play size={14} className="mr-1" /> Iniciar Combate
@@ -136,8 +144,9 @@ export function ViewInitiative() {
                   exit={{ opacity: 0, scale: 0.9, x: 20 }}
                   transition={{ duration: 0.3 }}
                   key={c.id} 
+                  ref={(el: HTMLDivElement | null) => { if (el) rowRefs.current.set(c.id, el); else rowRefs.current.delete(c.id); }}
                   className={cn(
-                    "flex items-center px-2 sm:px-6 py-3 sm:py-4 border-b transition-colors relative overflow-hidden group",
+                    "flex items-center px-2 sm:px-6 py-2.5 sm:py-4 border-b transition-colors relative overflow-hidden group",
                     isDead ? "border-dm-danger/30" : "border-dm-bg-card",
                     isActive ? "bg-dm-bg-card" : "hover:bg-dm-bg",
                     isFull && !isDead ? "shadow-[inset_0_0_10px_color-mix(in_srgb,var(--theme-accent)_3%,transparent)]" : "",
@@ -196,7 +205,7 @@ export function ViewInitiative() {
                           {char.name}
                         </button>
                         
-                        <div className="flex flex-wrap gap-1 items-center ml-2">
+                        <div className="flex flex-wrap gap-1 items-center sm:ml-2">
                           {c.statuses.map(s => (
                             <button 
                               key={s.id}
@@ -209,14 +218,14 @@ export function ViewInitiative() {
                           ))}
                           <button 
                             onClick={() => setStatusModal({ open: true, combatantId: c.id })}
-                            className="w-5 h-5 rounded-sm border border-dm-border flex items-center justify-center text-[12px] opacity-40 hover:opacity-100 hover:text-dm-accent hover:border-dm-accent"
+                            className="w-7 h-7 sm:w-5 sm:h-5 rounded-sm border border-dm-border flex items-center justify-center text-sm sm:text-[12px] opacity-60 sm:opacity-40 hover:opacity-100 hover:text-dm-accent hover:border-dm-accent"
                             title="Añadir Estado"
                           >
                             +
                           </button>
                         </div>
                       </div>
-                      <span className={cn("text-[10px] uppercase font-bold", isActive ? "opacity-100 text-dm-accent" : "opacity-30")}>
+                      <span className={cn("text-[10px] uppercase font-bold", isActive ? "opacity-100 text-dm-accent" : "opacity-30 hidden sm:inline")}>
                         {isActive ? "▶ TURNO ACTIVO" : (char.type === "player" ? "Jugador" : char.type === "creature" ? "Criatura" : "NPC")}
                       </span>
                     </div>
@@ -224,19 +233,35 @@ export function ViewInitiative() {
                     <div className="flex items-center gap-4 sm:gap-6 shrink-0 md:mt-0 justify-between w-full md:w-auto">
                       <div className="flex-1 md:w-48 flex flex-col justify-center md:items-end md:pr-4">
                         <div className="flex items-center gap-1 text-sm font-mono mb-1 justify-start md:justify-end w-full">
-                            <Heart size={14} className={cn(
-                              "mr-auto shrink-0 transition-colors", 
-                              isDead ? "text-dm-muted-alt" : 
-                              isCritical ? "text-dm-danger animate-bounce" : 
-                              isBadlyWounded ? "text-dm-danger animate-pulse" :
-                              isActive ? "text-red-500" : "text-dm-danger"
-                            )} />
-                            <MathInput 
+                            <button
+                              type="button"
+                              onClick={() => setHpModalId(c.id)}
+                              title="Daño / curación"
+                              aria-label={`Daño o curación para ${char.name}`}
+                              className="mr-auto -m-1.5 p-1.5 shrink-0 rounded-sm hover:bg-dm-bg-hover"
+                            >
+                              <Heart size={14} className={cn(
+                                "transition-colors",
+                                isDead ? "text-dm-muted-alt" :
+                                isCritical ? "text-dm-danger animate-bounce" :
+                                isBadlyWounded ? "text-dm-danger animate-pulse" :
+                                isActive ? "text-red-500" : "text-dm-danger"
+                              )} />
+                            </button>
+                            <MathInput
                               value={c.hpCurrent}
                               onValueChange={(val) => actions.updateCombatant(c.id, { hpCurrent: val })}
-                              className="w-20 h-6 p-0 md:text-right text-left border-none bg-transparent text-dm-text text-xl font-bold focus:bg-dm-border rounded-sm"
+                              className="hidden sm:block w-20 h-6 p-0 md:text-right text-left border-none bg-transparent text-dm-text text-xl font-bold focus:bg-dm-border rounded-sm"
                             />
-                            <span className="opacity-50 text-base select-none shrink-0">/ {char.hpMax}</span>
+                            <button
+                              type="button"
+                              onClick={() => setHpModalId(c.id)}
+                              className="sm:hidden flex items-baseline gap-1 px-2 -my-1 py-1 rounded-sm border border-transparent active:border-dm-accent"
+                            >
+                              <span className="text-dm-text text-xl font-bold">{c.hpCurrent}</span>
+                              <span className="opacity-50 text-base">/ {char.hpMax}</span>
+                            </button>
+                            <span className="hidden sm:inline opacity-50 text-base select-none shrink-0">/ {char.hpMax}</span>
                         </div>
                         <div className={cn("w-full md:w-32 h-1.5 bg-dm-bg-hover rounded-full relative overflow-hidden border", (isCritical || isBadlyWounded) ? "border-dm-danger" : "border-dm-border", isCritical ? "animate-pulse" : "")}>
                           <div 
@@ -255,7 +280,7 @@ export function ViewInitiative() {
 
                       <div className="w-12 sm:w-16 flex items-center justify-center">
                         <div className="flex items-center justify-center p-1 relative" title="Clase de Armadura">
-                          <Shield size={36} className={cn("opacity-80", isActive ? "text-dm-accent" : "text-dm-border-focus")} />
+                          <Shield size={34} className={cn("opacity-80", isActive ? "text-dm-accent" : "text-dm-border-focus")} />
                           <span className="absolute text-[13px] font-bold mt-[-2px]">{char.ac}</span>
                         </div>
                       </div>
@@ -290,7 +315,32 @@ export function ViewInitiative() {
         </div>
       </div>
 
+      {/* Phones: combat controls sit at the bottom, within thumb reach. */}
+      {combatants.length > 0 && (
+        <div className="sm:hidden shrink-0 flex items-stretch gap-2 px-3 py-2 border-t border-dm-border bg-dm-bg/95 backdrop-blur">
+          {!isCombatActive ? (
+            <Button onClick={handleStartCombat} className="flex-1 h-12 text-sm">
+              <Play size={16} className="mr-2" /> Iniciar Combate
+            </Button>
+          ) : (
+            <>
+              <div className="flex flex-col items-center justify-center px-3 border border-dm-accent/40 bg-dm-accent/10 text-dm-accent leading-none">
+                <span className="text-[9px] uppercase tracking-widest">Ronda</span>
+                <span className="text-lg font-bold">{round}</span>
+              </div>
+              <Button onClick={handleNextTurn} className="flex-1 h-12 text-sm">
+                <SkipForward size={16} className="mr-2" /> Siguiente Turno
+              </Button>
+              <Button onClick={handleEndCombat} variant="danger" className="h-12 w-12 px-0" aria-label="Finalizar combate" title="Finalizar combate">
+                <Square size={16} />
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+
       <AddCombatantModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
+      <HpAdjustModal combatantId={hpModalId} onClose={() => setHpModalId(null)} />
       
       <StatusModal 
         isOpen={statusModal.open} 
@@ -606,3 +656,77 @@ function GraveyardModal({ isOpen, onClose, onViewChar }: { isOpen: boolean, onCl
 
 
 
+
+const HP_QUICK = [1, 2, 5, 10];
+
+/** Damage / healing pad: phones adjust HP here without fiddling with a tiny inline field. */
+function HpAdjustModal({ combatantId, onClose }: { combatantId: string | null; onClose: () => void }) {
+  const combatant = useStore((state) => state.combatants.find((c) => c.id === combatantId));
+  const [amount, setAmount] = useState("");
+  const char = combatant ? ((combatant.isTemp && combatant.tempData) ? combatant.tempData : actions.getCharacter(combatant.characterId)) : undefined;
+
+  useEffect(() => setAmount(""), [combatantId]);
+
+  const value = Math.max(0, parseInt(amount, 10) || 0);
+  const apply = (hp: number) => {
+    if (!combatant) return;
+    actions.updateCombatant(combatant.id, { hpCurrent: hp });
+    setAmount("");
+  };
+  const damage = (n: number) => combatant && apply(Math.max(0, combatant.hpCurrent - n));
+  const heal = (n: number) => combatant && char && apply(Math.min(char.hpMax, Math.max(0, combatant.hpCurrent) + n));
+
+  return (
+    <Modal isOpen={!!combatant && !!char} onClose={onClose} title={char?.name || "Puntos de Vida"} className="sm:max-w-sm">
+      {combatant && char && (
+        <div className="flex flex-col gap-4">
+          <div className="text-center">
+            <div className="text-[10px] uppercase tracking-widest text-dm-muted">Puntos de Vida</div>
+            <div className="font-mono">
+              <span className="text-4xl font-bold text-dm-text-bright">{combatant.hpCurrent}</span>
+              <span className="text-xl opacity-50"> / {char.hpMax}</span>
+            </div>
+          </div>
+
+          <Input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            placeholder="Cantidad"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))}
+            className="h-12 text-center text-2xl font-bold"
+            aria-label="Cantidad"
+          />
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="danger" className="h-12 text-sm" disabled={!value} onClick={() => damage(value)}>
+              Daño
+            </Button>
+            <Button className="h-12 text-sm !bg-green-700 !border-green-700 !text-white hover:!bg-green-600" disabled={!value} onClick={() => heal(value)}>
+              Curar
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2">
+            {HP_QUICK.map((n) => (
+              <Button key={`d${n}`} variant="secondary" className="h-10 !text-dm-danger" onClick={() => damage(n)}>−{n}</Button>
+            ))}
+            {HP_QUICK.map((n) => (
+              <Button key={`h${n}`} variant="secondary" className="h-10 !text-green-500" onClick={() => heal(n)}>+{n}</Button>
+            ))}
+          </div>
+
+          <div className="flex gap-2 pt-3 border-t border-dm-border">
+            <Button variant="secondary" className="flex-1 h-10" disabled={amount === ""} onClick={() => apply(value)}>
+              Fijar a {amount === "" ? "…" : value}
+            </Button>
+            <Button variant="secondary" className="flex-1 h-10" onClick={() => apply(char.hpMax)}>
+              Curar todo
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}

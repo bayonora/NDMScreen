@@ -58,7 +58,7 @@ export function CalculatorModal({ isOpen, onClose }: { isOpen: boolean, onClose:
   if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Calculadora" className="max-w-xs">
+    <Modal isOpen={isOpen} onClose={onClose} title="Calculadora" className="sm:max-w-xs">
       <div className="flex flex-col gap-2">
         <div className="bg-black/50 border border-dm-border p-3 rounded-md text-right min-h-16 flex flex-col justify-center overflow-hidden">
           <div className="text-sm text-dm-muted truncate">{expression || '\u00A0'}</div>
