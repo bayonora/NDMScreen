@@ -131,7 +131,14 @@ export type Note = {
   id: string;
   title: string;
   content: string;
+  /** Color id (an old Tailwind class string, kept for compatibility). See NOTE_COLORS. */
   color: string;
+  /** NoteCategory id ("pnj", "lugar"...); missing means "general". */
+  category?: string;
+  tags?: string[];
+  pinned?: boolean;
+  createdAt?: number;
+  updatedAt?: number;
 };
 
 export type CustomItem = {

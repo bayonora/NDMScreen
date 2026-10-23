@@ -76,8 +76,10 @@ class SmartMouseSensor extends MouseSensor {
     {
       eventName: 'onMouseDown' as const,
       handler: ({ nativeEvent: event }: any) => {
+        // `isPrimary` only exists on pointer events; a plain mousedown leaves it undefined,
+        // so only reject it when it is explicitly false.
         if (
-          !event.isPrimary ||
+          event.isPrimary === false ||
           event.button !== 0 ||
           isInteractiveElement(event.target)
         ) {

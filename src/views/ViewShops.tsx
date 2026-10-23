@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useStore, actions } from "../store/useStore";
 import { ViewHeader, ToolbarButton } from "../components/ui/ViewHeader";
@@ -17,6 +17,13 @@ import { readFileAsDataURL } from "../lib/utils";
 export function ViewShops() {
   const shops = useStore((state) => state.shops);
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
+  // Opened from the global search ("Ir a la tienda").
+  const openShopId = useStore((state) => state.uiState.openShopId);
+  useEffect(() => {
+    if (!openShopId) return;
+    setSelectedShopId(openShopId);
+    actions.updateUI({ openShopId: undefined });
+  }, [openShopId]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editShopData, setEditShopData] = useState<Shop | null>(null);
   const [deleteShopId, setDeleteShopId] = useState<string | null>(null);
@@ -66,6 +73,7 @@ export function ViewShops() {
           onReorder={(newShops) => actions.reorderShops(newShops)}
           renderItem={(s) => (
             <div 
+              data-search-id={s.id}
               className="bg-dm-bg-darker group active:scale-[0.98] border border-dm-border overflow-hidden cursor-pointer hover:border-dm-accent hover:shadow-[0_0_15px_var(--theme-glow)] transition-all duration-300 flex flex-col shadow-lg shadow-black/80 relative"
               onClick={() => setSelectedShopId(s.id)}
             >
@@ -197,6 +205,7 @@ function ShopInventory({ shop }: { shop: Shop }) {
           {shop.items.map((item) => (
             <div 
               key={item.id} 
+              data-search-id={item.id}
               className={cn(
                 "flex items-center justify-between gap-2 p-3 sm:p-4 border transition-all shadow-md shadow-black/30",
                 item.hidden 

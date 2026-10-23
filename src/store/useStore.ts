@@ -20,6 +20,17 @@ type UIState = {
   highlightedQuestId?: string;
   highlightedSpellId?: string;
   highlightedMonsterId?: string;
+  /** Element (data-search-id) to scroll to and highlight once its view shows. See lib/searchFocus. */
+  searchFocusId?: string;
+  /** Shop to open when the Tiendas tab shows (from the global search). */
+  openShopId?: string;
+  /** Map or place to open when the Mapas tab shows (from the global search). */
+  mapsFocusId?: string;
+  /** Note to open when the Notas tab shows (from the global search). */
+  highlightedNoteId?: string;
+  notesSort?: "manual" | "recent" | "alpha";
+  /** Category filter of the Notas view; undefined shows every note. */
+  notesCategory?: string;
   /** Sub-tab of the Objetos view. */
   itemsTab?: "items" | "loot" | "srd";
   /** Catalog entry to open when the Objetos tab shows (from the global search). */
@@ -372,7 +383,9 @@ export const actions = {
     });
   },
   addCreature: (c: Omit<Creature, "id" | "type">) => {
-    store.setState({ creatures: [...(store.getState().creatures || []), { ...c, id: uuidv4(), type: "creature" }] });
+    const id = uuidv4();
+    store.setState({ creatures: [...(store.getState().creatures || []), { ...c, id, type: "creature" }] });
+    return id;
   },
   updateCreature: (id: string, c: Partial<Creature>) => {
     store.setState({
@@ -586,12 +599,26 @@ export const actions = {
 
   // Notes
   addNote: (note: Omit<Note, "id">) => {
-    store.setState({ notes: [...(store.getState().notes || []), { ...note, id: uuidv4() }] });
+    const now = Date.now();
+    const id = uuidv4();
+    store.setState({ notes: [...(store.getState().notes || []), { ...note, id, createdAt: now, updatedAt: now }] });
+    return id;
   },
-  updateNote: (id: string, note: Partial<Note>) => {
+  /** `touch` bumps updatedAt; off for things like pinning that shouldn't count as an edit. */
+  updateNote: (id: string, note: Partial<Note>, touch = true) => {
     store.setState({
-      notes: (store.getState().notes || []).map((n) => (n.id === id ? { ...n, ...note } : n)),
+      notes: (store.getState().notes || []).map((n) => (n.id === id ? { ...n, ...note, ...(touch ? { updatedAt: Date.now() } : {}) } : n)),
     });
+  },
+  /** Inserts a copy right after the original and returns its id. */
+  duplicateNote: (id: string) => {
+    const notes = store.getState().notes || [];
+    const i = notes.findIndex((n) => n.id === id);
+    if (i < 0) return null;
+    const now = Date.now();
+    const copy = { ...notes[i], id: uuidv4(), title: notes[i].title ? `${notes[i].title} (copia)` : "", pinned: false, createdAt: now, updatedAt: now };
+    store.setState({ notes: [...notes.slice(0, i + 1), copy, ...notes.slice(i + 1)] });
+    return copy.id;
   },
   deleteNote: (id: string) => {
     store.setState({ notes: (store.getState().notes || []).filter((n) => n.id !== id) });

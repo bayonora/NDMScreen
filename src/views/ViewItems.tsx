@@ -162,7 +162,7 @@ export function ViewItems() {
               renderItem={(item) => {
                 const color = item.color || DEFAULT_COLOR;
                 return (
-                  <div className="bg-dm-bg-darker active:scale-[0.98] border border-dm-border flex flex-col h-full shadow-lg hover:border-dm-accent transition-colors group relative cursor-pointer" onClick={() => setViewingItem(item)}>
+                  <div data-search-id={item.id} className="bg-dm-bg-darker active:scale-[0.98] border border-dm-border flex flex-col h-full shadow-lg hover:border-dm-accent transition-colors group relative cursor-pointer" onClick={() => setViewingItem(item)}>
                     {item.image ? (
                       <div className="h-40 w-full overflow-hidden border-b border-dm-accent/10 relative">
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -208,7 +208,7 @@ export function ViewItems() {
               renderItem={(table) => {
                 const color = table.color || DEFAULT_COLOR;
                 return (
-                  <div className="bg-dm-bg-darker active:scale-[0.98] border border-dm-border flex flex-col shadow-lg hover:border-dm-accent transition-colors group relative cursor-pointer min-h-48 h-full" onClick={() => setViewingTable(table)}>
+                  <div data-search-id={table.id} className="bg-dm-bg-darker active:scale-[0.98] border border-dm-border flex flex-col shadow-lg hover:border-dm-accent transition-colors group relative cursor-pointer min-h-48 h-full" onClick={() => setViewingTable(table)}>
                     <div className="h-2" style={{ backgroundColor: color }} />
                     <div className="p-4 flex-1 flex flex-col">
                       <h3 className="text-lg font-bold mb-2 break-words" style={{ color }}>{table.name}</h3>

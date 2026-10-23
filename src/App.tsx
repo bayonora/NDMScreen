@@ -13,6 +13,8 @@ import { CalculatorModal } from "./components/CalculatorModal";
 import { DiceRollerModal, D20Icon } from "./components/DiceRollerModal";
 import { WelcomeModal, FullTutorialModal } from "./components/Tutorial";
 import { GlobalSearch } from "./components/GlobalSearch";
+import { RollToastHost } from "./components/RollToasts";
+import { useSearchFocus } from "./lib/searchFocus";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { TitleTorch } from "./components/TitleTorch";
 import { ImportModal } from "./components/ImportModal";
@@ -56,6 +58,7 @@ export default function App() {
   const theme = useStore((state) => state.uiState.theme) || "clasico";
   const activeTab = useStore((state) => state.uiState.activeTab) || "party";
   const setActiveTab = (tab: Tab) => actions.updateUI({ activeTab: tab });
+  useSearchFocus();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -158,6 +161,7 @@ export default function App() {
           </Suspense>
         </ErrorBoundary>
       </main>
+      <RollToastHost />
 
       <nav className="shrink-0 bg-dm-bg-darker border-t border-dm-accent/10 z-40 select-none pb-[env(safe-area-inset-bottom,0px)]">
         {/* Phones: the main tabs plus "Más", which opens a sheet with the rest and the tools. */}

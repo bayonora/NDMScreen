@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, useDeferredValue } from "react";
-import { Search, Loader2, Skull, Star, SlidersHorizontal, Swords, UserPlus, Check, Minus, Plus, Dices, Copy } from "lucide-react";
+import { Search, Loader2, Skull, Star, SlidersHorizontal, Swords, UserPlus, Check, Minus, Plus, Dices, Copy, ArrowRight } from "lucide-react";
+import { focusSearchResult } from "../lib/searchFocus";
 import { copyMonster } from "../lib/monsterClipboard";
 import { useMonsterStore } from "../store/useMonsterStore";
 import { useStore, actions, store } from "../store/useStore";
@@ -265,7 +266,8 @@ function MonsterActions({ monster }: { monster: Monster }) {
   const [autoRoll, setAutoRoll] = useState(true);
   const [manualInit, setManualInit] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  // Id of the copy saved in Grupo › Criaturas, so the button can take the user there.
+  const [savedId, setSavedId] = useState<string | null>(null);
   const dexMod = abilityModifier(monster.stats.DEX);
 
   const addToCombat = () => {
@@ -292,9 +294,11 @@ function MonsterActions({ monster }: { monster: Monster }) {
     setTimeout(() => setCopied("idle"), 2500);
   };
 
-  const saveToCreatures = () => {
-    actions.addCreature(monsterToCreature(monster));
-    setSaved(true);
+  const saveToCreatures = () => setSavedId(actions.addCreature(monsterToCreature(monster)));
+  const showSaved = () => {
+    if (!savedId) return;
+    actions.updateUI({ activeTab: "party", partyTab: "creatures" });
+    focusSearchResult(savedId);
   };
 
   return (
@@ -363,15 +367,14 @@ function MonsterActions({ monster }: { monster: Monster }) {
         </button>
         <button
           type="button"
-          onClick={saveToCreatures}
-          disabled={saved}
-          title="Guarda una copia editable en Grupo › Criaturas, para adaptarla a tu campaña"
+          onClick={savedId ? showSaved : saveToCreatures}
+          title={savedId ? "Guardada. Abre Grupo › Criaturas y la resalta" : "Guarda una copia editable en Grupo › Criaturas, para adaptarla a tu campaña"}
           className={cn(
             "flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 border text-xs uppercase tracking-wider rounded-sm transition-colors",
-            saved ? "border-dm-accent text-dm-accent" : "border-dm-border text-dm-muted hover:text-dm-accent hover:border-dm-accent"
+            savedId ? "border-dm-accent text-dm-accent bg-dm-accent/10 hover:bg-dm-accent hover:text-dm-bg-darker" : "border-dm-border text-dm-muted hover:text-dm-accent hover:border-dm-accent"
           )}
         >
-          {saved ? <Check size={16} /> : <UserPlus size={16} />} {saved ? "Guardada en tus criaturas" : "Guardar en tus criaturas"}
+          {savedId ? <><Check size={16} /> Guardada · Ver en Criaturas <ArrowRight size={14} /></> : <><UserPlus size={16} /> Guardar en tus criaturas</>}
         </button>
         <button
           type="button"

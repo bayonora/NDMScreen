@@ -143,7 +143,8 @@ export function ViewInitiative() {
                   }}
                   exit={{ opacity: 0, scale: 0.9, x: 20 }}
                   transition={{ duration: 0.3 }}
-                  key={c.id} 
+                  key={c.id}
+                  data-search-id={c.id}
                   ref={(el: HTMLDivElement | null) => { if (el) rowRefs.current.set(c.id, el); else rowRefs.current.delete(c.id); }}
                   className={cn(
                     "flex items-center px-2 sm:px-6 py-2.5 sm:py-4 border-b transition-colors relative overflow-hidden group",

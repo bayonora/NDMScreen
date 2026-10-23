@@ -132,6 +132,7 @@ export function ViewParty() {
               items={current}
               onReorder={reorder}
               renderItem={(c) => (
+                <div data-search-id={c.id}>
                 <StatBlock
                   character={c}
                   onEdit={handleEdit}
@@ -140,6 +141,7 @@ export function ViewParty() {
                   onConvertToCreature={tab === "npcs" ? handleConvertToCreature : undefined}
                   onConvertToNPC={tab === "creatures" ? handleConvertToNPC : undefined}
                 />
+                </div>
               )}
             />
             {current.length === 0 && (
