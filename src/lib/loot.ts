@@ -76,6 +76,86 @@ export function rollTable(entries: LootEntry[]): { roll: number; index: number }
   return { roll, index: ranges.findIndex((r) => roll >= r.from && roll <= r.to) };
 }
 
+// ------------------------------------------------------------------ chances (%) → die faces
+
+export const STANDARD_DICE = [4, 6, 8, 10, 12, 20, 100];
+/** How far (in percentage points) the die may stray from the typed chances in automatic mode. */
+const AUTO_TOLERANCE = 1;
+
+/** Splits `n` faces by the given chances (largest remainder), giving each result at least 1 face. */
+export function distribute(percents: number[], n: number): number[] {
+  const count = percents.length;
+  if (!count) return [];
+  const sum = percents.reduce((a, b) => a + b, 0) || count;
+  const exact = percents.map((p) => ((sum ? p : 1) / sum) * n);
+  const out = exact.map((x) => Math.max(1, Math.floor(x)));
+  let left = n - out.reduce((a, b) => a + b, 0);
+  const order = exact.map((x, i) => ({ i, r: x - Math.floor(x) })).sort((a, b) => b.r - a.r);
+  for (let k = 0; left > 0; k = (k + 1) % count, left--) out[order[k].i]++;
+  // Too many faces handed out because of the "at least 1" rule: take them from the biggest ones.
+  while (left < 0) {
+    const big = out.indexOf(Math.max(...out));
+    if (out[big] <= 1) break;
+    out[big]--;
+    left++;
+  }
+  return out;
+}
+
+/** Largest gap, in percentage points, between the typed chances and what `weights` give. */
+export function chanceError(percents: number[], weights: number[]) {
+  const sum = percents.reduce((a, b) => a + b, 0) || 1;
+  const total = weights.reduce((a, b) => a + b, 0) || 1;
+  return Math.max(0, ...percents.map((p, i) => Math.abs((p / sum) * 100 - (weights[i] / total) * 100)));
+}
+
+/**
+ * Die faces per result for the chances: a fixed die, or in automatic mode the smallest standard
+ * die (d4…d100) that keeps every chance within ±1 point. d100 is the usual fallback, like the
+ * Dungeon Master's Guide tables.
+ */
+export function weightsForChances(percents: number[], die: number | "auto"): { faces: number; weights: number[] } {
+  if (!percents.length) return { faces: 0, weights: [] };
+  if (die !== "auto") {
+    const faces = Math.max(die, percents.length);
+    return { faces, weights: distribute(percents, faces) };
+  }
+  for (const n of STANDARD_DICE) {
+    if (n < percents.length) continue;
+    const w = distribute(percents, n);
+    if (chanceError(percents, w) <= AUTO_TOLERANCE) return { faces: n, weights: w };
+  }
+  const faces = Math.max(100, percents.length);
+  return { faces, weights: distribute(percents, faces) };
+}
+
+/** Sets one result's chance and rescales the others so everything still adds up to 100 %. */
+export function setChance(percents: number[], index: number, value: number): number[] {
+  const v = Math.max(0, Math.min(100, value));
+  const others = percents.reduce((sum, p, i) => (i === index ? sum : sum + p), 0);
+  const rest = 100 - v;
+  const n = percents.length - 1;
+  return percents.map((p, i) => (i === index ? v : n === 0 ? v : others > 0 ? (p / others) * rest : rest / n));
+}
+
+/** Chances after adding a result: it gets an equal share and the others shrink in proportion. */
+export function chancesWithNew(percents: number[]): number[] {
+  const share = 100 / (percents.length + 1);
+  const sum = percents.reduce((a, b) => a + b, 0) || 1;
+  return [...percents.map((p) => (p / sum) * (100 - share)), share];
+}
+
+/** Chances that add up to 100 again (after removing a result, for example). */
+export function normalizeChances(percents: number[]): number[] {
+  const sum = percents.reduce((a, b) => a + b, 0);
+  return sum > 0 ? percents.map((p) => (p / sum) * 100) : percents.map(() => 100 / (percents.length || 1));
+}
+
+/** "33,3" — chances are shown with at most one decimal. */
+export function formatChance(p: number) {
+  return (Math.round(p * 10) / 10).toString().replace(".", ",");
+}
+
 /** What gets saved: the weighted entries plus the expanded lines for compatibility. */
 export function tablePayload(entries: LootEntry[]): Pick<LootTable, "entries" | "items"> {
   const clean = entries.filter((e) => e.text.trim()).map((e) => ({ ...e, text: e.text.trim(), weight: Math.max(1, Math.min(MAX_WEIGHT, Math.round(e.weight))) }));

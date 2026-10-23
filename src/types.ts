@@ -161,6 +161,8 @@ export type LootEntry = {
   id: string;
   text: string;
   weight: number;
+  /** The chance the DM typed (0–100). `weight` is derived from it for the table's die. */
+  percent?: number;
   /** Link to the item it stands for, so the result can open its sheet. */
   ref?: { kind: "srd" | "homebrew"; id: string };
 };
@@ -177,6 +179,8 @@ export type LootTable = {
   items: string[];
   /** Weighted results with item links. When missing, they are derived from `items`. */
   entries?: LootEntry[];
+  /** Die chosen in the editor (faces). Missing = automatic (smallest die that fits the chances). */
+  die?: number;
 };
 
 export type QuestStatus = "active" | "completed" | "failed";

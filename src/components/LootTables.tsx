@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { X, Plus, Minus, Trash2, Search, Gem, Package, Hammer, Type, List, AlignLeft, Hexagon, Pencil, ArrowRight, Check } from "lucide-react";
+import { X, Plus, Trash2, Search, Gem, Package, Hammer, Type, List, AlignLeft, Hexagon, Pencil, ArrowRight, Check } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { Overlay } from "./ui/Modal";
 import { ColorPicker, DEFAULT_COLOR } from "./ui/ColorPicker";
@@ -10,7 +10,8 @@ import { useItemCatalogStore } from "../store/useItemCatalogStore";
 import { cn, normalizeSearchText } from "../lib/utils";
 import { rarityInfo, rarityLabel, categoryLabel } from "../data/itemLabels";
 import {
-  MAX_WEIGHT, tableEntries, linesToEntries, entriesToLines, totalWeight, entryRanges, formatRange, formatPercent, rollTable, tablePayload,
+  tableEntries, linesToEntries, entriesToLines, totalWeight, entryRanges, formatRange, formatPercent, rollTable, tablePayload,
+  STANDARD_DICE, weightsForChances, setChance, chancesWithNew, normalizeChances, chanceError, formatChance,
 } from "../lib/loot";
 import type { LootEntry, LootTable } from "../types";
 
@@ -66,10 +67,13 @@ export function LootTableEditor({ table, onClose, onSave }: EditorProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState(DEFAULT_COLOR);
+  // In list mode each entry's `percent` is what the DM typed; die faces are derived from it.
   const [entries, setEntries] = useState<LootEntry[]>([]);
+  const [die, setDie] = useState<number | "auto">("auto");
   const [mode, setMode] = useState<"list" | "text">("list");
   const [text, setText] = useState("");
   const [newText, setNewText] = useState("");
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [picking, setPicking] = useState(false);
   const fetchCatalog = useItemCatalogStore((s) => s.fetchItems);
   const look = useEntryLook();
@@ -80,37 +84,72 @@ export function LootTableEditor({ table, onClose, onSave }: EditorProps) {
     setName(table?.name ?? "");
     setDescription(table?.description ?? "");
     setColor(table?.color ?? DEFAULT_COLOR);
-    setEntries(table ? tableEntries(table).map((e) => ({ ...e })) : []);
+    const loaded = table ? tableEntries(table) : [];
+    const sum = totalWeight(loaded);
+    setEntries(loaded.map((e) => ({ ...e, percent: e.percent ?? (sum ? (e.weight / sum) * 100 : 0) })));
+    // Keep a table's die as it was: the one chosen, automatic if chances were typed, or its
+    // current size for tables made before chances existed (so nothing changes just by opening it).
+    setDie(table?.die ?? (loaded.some((e) => e.percent !== undefined) || !sum ? "auto" : sum));
     setMode("list");
     setNewText("");
+    setDrafts({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, table?.id]);
 
+  const chances = entries.map((e) => e.percent ?? 0);
+  const fit = weightsForChances(chances, die);
+  const listEntries = entries.map((e, i) => ({ ...e, weight: fit.weights[i] ?? 1 }));
   // In text mode the textarea is the source of truth; entries are rebuilt from it (keeping links).
-  const current = mode === "text" ? linesToEntries(text.split("\n"), entries) : entries;
+  const current = mode === "text" ? linesToEntries(text.split("\n"), entries) : listEntries;
   const total = totalWeight(current);
   const ranges = entryRanges(current);
+  const offTarget = mode === "list" && die !== "auto" && chanceError(chances, fit.weights) > 1;
+  const dieOptions = [...new Set([...STANDARD_DICE, ...(typeof die === "number" ? [die] : [])])].sort((a, b) => a - b);
 
   const switchMode = (m: "list" | "text") => {
     if (m === mode) return;
-    if (m === "text") setText(entriesToLines(entries).join("\n"));
-    else setEntries(linesToEntries(text.split("\n"), entries));
+    if (m === "text") setText(entriesToLines(listEntries).join("\n"));
+    else {
+      // Back from text: the lines are exact units, so the die is fixed to their count.
+      const rebuilt = linesToEntries(text.split("\n"), entries);
+      const sum = totalWeight(rebuilt);
+      setEntries(rebuilt.map((e) => ({ ...e, percent: sum ? (e.weight / sum) * 100 : 0 })));
+      setDie(sum || "auto");
+      setDrafts({});
+    }
     setMode(m);
   };
 
-  const setWeight = (id: string, w: number) =>
-    setEntries((list) => list.map((e) => (e.id === id ? { ...e, weight: Math.max(1, Math.min(MAX_WEIGHT, w)) } : e)));
+  const withChances = (list: LootEntry[], percents: number[]) => list.map((e, i) => ({ ...e, percent: percents[i] }));
   const setEntryText = (id: string, t: string) => setEntries((list) => list.map((e) => (e.id === id ? { ...e, text: t } : e)));
-  const remove = (id: string) => setEntries((list) => list.filter((e) => e.id !== id));
+  const remove = (id: string) =>
+    setEntries((list) => {
+      const rest = list.filter((e) => e.id !== id);
+      return withChances(rest, normalizeChances(rest.map((e) => e.percent ?? 0)));
+    });
 
-  /** Adds a result; if it's already in the table, it just gets one more face of the die. */
+  const commitChance = (id: string) => {
+    const raw = drafts[id];
+    setDrafts(({ [id]: _, ...rest }) => rest);
+    if (raw === undefined) return;
+    const value = Number(raw.replace(",", ".").replace("%", "").trim());
+    if (!Number.isFinite(value)) return;
+    setEntries((list) => {
+      const i = list.findIndex((e) => e.id === id);
+      return withChances(list, setChance(list.map((e) => e.percent ?? 0), i, value));
+    });
+  };
+
+  /** Adds a result with an equal share; adding one that's already there raises its chance a step. */
   const addEntry = (entry: Omit<LootEntry, "id" | "weight">, origin?: string) => {
     setEntries((list) => {
-      const same = list.find((e) =>
+      const percents = list.map((e) => e.percent ?? 0);
+      const i = list.findIndex((e) =>
         entry.ref ? e.ref?.kind === entry.ref.kind && e.ref.id === entry.ref.id : !e.ref && e.text.trim().toLowerCase() === entry.text.trim().toLowerCase()
       );
-      if (same) return list.map((e) => (e === same ? { ...e, weight: Math.min(MAX_WEIGHT, e.weight + 1) } : e));
-      return [...list, { ...entry, text: distinctText(list, entry.text, origin), id: uuidv4(), weight: 1 }];
+      if (i >= 0) return withChances(list, setChance(percents, i, percents[i] + 100 / Math.max(fit.faces, list.length)));
+      const next = [...list, { ...entry, text: distinctText(list, entry.text, origin), id: uuidv4(), weight: 1 }];
+      return withChances(next, chancesWithNew(percents));
     });
   };
 
@@ -123,7 +162,9 @@ export function LootTableEditor({ table, onClose, onSave }: EditorProps) {
   const save = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    onSave({ name: name.trim(), description, color, ...tablePayload(current) });
+    const sum = totalWeight(current);
+    const saved = mode === "text" ? current.map((x) => ({ ...x, percent: sum ? (x.weight / sum) * 100 : 0 })) : current;
+    onSave({ name: name.trim(), description, color, ...tablePayload(saved), die: mode === "text" ? sum || undefined : die === "auto" ? undefined : die });
   };
 
   return (
@@ -150,9 +191,27 @@ export function LootTableEditor({ table, onClose, onSave }: EditorProps) {
 
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                <h3 className="text-xs uppercase tracking-widest text-dm-muted">
-                  Resultados <span className="text-dm-accent font-bold normal-case tracking-normal ml-1">{total > 0 ? `d${total}` : ""}</span>
-                </h3>
+                <div className="flex items-center gap-3">
+                  <h3 className="text-xs uppercase tracking-widest text-dm-muted">Resultados</h3>
+                  {mode === "list" ? (
+                    <label className="flex items-center gap-1.5 text-xs text-dm-muted">
+                      Dado
+                      <select
+                        value={String(die)}
+                        onChange={(e) => setDie(e.target.value === "auto" ? "auto" : Number(e.target.value))}
+                        className="bg-dm-bg border border-dm-border px-1.5 py-1 text-xs text-dm-accent font-bold focus:border-dm-accent outline-none"
+                        title="Auto elige el dado más pequeño que respeta tus porcentajes (±1 %)"
+                      >
+                        <option value="auto">Auto{die === "auto" && fit.faces ? ` (d${fit.faces})` : ""}</option>
+                        {dieOptions.map((n) => (
+                          <option key={n} value={n} disabled={n < entries.length}>d{n}</option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : (
+                    total > 0 && <span className="text-xs text-dm-accent font-bold">d{total}</span>
+                  )}
+                </div>
                 <SegmentedTabs<"list" | "text">
                   value={mode}
                   onChange={switchMode}
@@ -186,20 +245,31 @@ export function LootTableEditor({ table, onClose, onSave }: EditorProps) {
                               className="flex-1 min-w-0 basis-40 bg-transparent border border-transparent hover:border-dm-border focus:border-dm-accent px-1.5 py-1 text-sm text-dm-text-bright outline-none"
                             />
                             <div className="flex items-center gap-1 ml-auto sm:ml-0">
-                              <div className="flex items-center border border-dm-border bg-dm-bg" role="group" aria-label={`Peso de ${e.text}`}>
-                                <button type="button" onClick={() => setWeight(e.id, e.weight - 1)} disabled={e.weight <= 1} className="p-1.5 text-dm-muted hover:text-dm-accent disabled:opacity-30" aria-label="Menos probable"><Minus size={12} /></button>
+                              <label className="flex items-center border border-dm-border bg-dm-bg focus-within:border-dm-accent" title="Probabilidad de este resultado">
                                 <input
-                                  type="number"
-                                  min={1}
-                                  max={MAX_WEIGHT}
-                                  value={e.weight}
-                                  onChange={(ev) => setWeight(e.id, Number(ev.target.value) || 1)}
-                                  aria-label="Peso"
-                                  className="w-9 bg-transparent text-center text-sm text-dm-text-bright tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                                  inputMode="decimal"
+                                  value={drafts[e.id] ?? formatChance(e.percent ?? 0)}
+                                  onChange={(ev) => setDrafts((d) => ({ ...d, [e.id]: ev.target.value }))}
+                                  onBlur={() => commitChance(e.id)}
+                                  onFocus={(ev) => ev.target.select()}
+                                  onKeyDown={(ev) => {
+                                    if (ev.key === "Enter") {
+                                      ev.preventDefault();
+                                      (ev.target as HTMLInputElement).blur();
+                                    }
+                                  }}
+                                  aria-label={`Probabilidad de ${e.text} (%)`}
+                                  className="w-12 bg-transparent text-right text-sm text-dm-text-bright tabular-nums outline-none py-1"
                                 />
-                                <button type="button" onClick={() => setWeight(e.id, e.weight + 1)} disabled={e.weight >= MAX_WEIGHT} className="p-1.5 text-dm-muted hover:text-dm-accent disabled:opacity-30" aria-label="Más probable"><Plus size={12} /></button>
-                              </div>
-                              <span className="w-14 text-right text-xs text-dm-muted tabular-nums">{formatPercent(e.weight, total)}</span>
+                                <span className="pl-0.5 pr-2 text-xs text-dm-muted">%</span>
+                              </label>
+                              <span
+                                className="w-14 text-right text-[11px] text-dm-muted tabular-nums leading-tight"
+                                title={`Ocupa ${e.weight} ${e.weight === 1 ? "cara" : "caras"} del d${total} (${e.weight} ${e.weight === 1 ? "línea" : "líneas"} en el modo Texto)`}
+                              >
+                                ×{e.weight}
+                                {Math.abs((e.weight / total) * 100 - (e.percent ?? 0)) >= 0.5 && <span className="block text-dm-muted-alt">{formatPercent(e.weight, total)}</span>}
+                              </span>
                               <button type="button" onClick={() => remove(e.id)} className="p-1.5 text-dm-muted-alt hover:text-dm-danger" aria-label={`Quitar ${e.text}`}><X size={14} /></button>
                             </div>
                           </li>
@@ -208,6 +278,11 @@ export function LootTableEditor({ table, onClose, onSave }: EditorProps) {
                     </ul>
                   )}
 
+                  {offTarget && (
+                    <p className="mt-2 text-[11px] text-dm-danger">
+                      Con un d{fit.faces} no se pueden respetar exactamente esos porcentajes (debajo de cada «×» ves el real). Usa «Auto» o un dado mayor.
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-2 mt-3">
                     <button type="button" onClick={() => setPicking(true)} className="flex items-center gap-1.5 px-3 py-2 border border-dm-accent/50 text-dm-accent text-xs uppercase tracking-wider font-bold hover:bg-dm-accent/10">
                       <Plus size={14} /> Añadir objetos
@@ -381,7 +456,7 @@ function LootItemPicker({ open, entries, onClose, onAdd }: {
           {matches.length === 0 && catalog.length > 0 && <li className="p-4 text-sm text-dm-muted text-center">Nada coincide con «{q}».</li>}
         </ul>
         <div className="px-4 py-3 border-t border-dm-border flex items-center gap-2">
-          <span className="text-xs text-dm-muted">Cada clic añade una cara más al dado de ese objeto.</span>
+          <span className="text-xs text-dm-muted">Cada clic añade el objeto; si ya está en la tabla, sube su probabilidad.</span>
           <button type="button" onClick={onClose} className={cn(primaryButtonClass, "ml-auto")}>Listo</button>
         </div>
       </div>
