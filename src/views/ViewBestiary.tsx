@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, useDeferredValue } from "react";
-import { Search, Loader2, Skull, Star, SlidersHorizontal, Swords, UserPlus, Check, Minus, Plus, Dices } from "lucide-react";
+import { Search, Loader2, Skull, Star, SlidersHorizontal, Swords, UserPlus, Check, Minus, Plus, Dices, Copy } from "lucide-react";
+import { copyMonster } from "../lib/monsterClipboard";
 import { useMonsterStore } from "../store/useMonsterStore";
 import { useStore, actions, store } from "../store/useStore";
 import { cn, formatMod, normalizeSearchText } from "../lib/utils";
@@ -285,6 +286,12 @@ function MonsterActions({ monster }: { monster: Monster }) {
     );
   };
 
+  const [copied, setCopied] = useState<"idle" | "ok" | "fail">("idle");
+  const copySheet = async () => {
+    setCopied((await copyMonster(monster)) ? "ok" : "fail");
+    setTimeout(() => setCopied("idle"), 2500);
+  };
+
   const saveToCreatures = () => {
     actions.addCreature(monsterToCreature(monster));
     setSaved(true);
@@ -345,6 +352,17 @@ function MonsterActions({ monster }: { monster: Monster }) {
           )}
         >
           {saved ? <Check size={16} /> : <UserPlus size={16} />} {saved ? "Guardada en Criaturas" : "Guardar en Criaturas"}
+        </button>
+        <button
+          type="button"
+          onClick={copySheet}
+          title="Copia la ficha como tabla para pegarla en Google Docs, Word…"
+          className={cn(
+            "flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 border text-xs uppercase tracking-wider rounded-sm transition-colors",
+            copied === "ok" ? "border-dm-accent text-dm-accent" : "border-dm-border text-dm-muted hover:text-dm-accent hover:border-dm-accent"
+          )}
+        >
+          {copied === "ok" ? <Check size={16} /> : <Copy size={16} />} {copied === "ok" ? "Ficha copiada" : copied === "fail" ? "No se pudo copiar" : "Copiar ficha"}
         </button>
       </div>
       {feedback && <p className="text-xs text-dm-accent" role="status">{feedback}</p>}
