@@ -24,6 +24,7 @@ import { categoryLabel, rarityLabel } from "../data/itemLabels";
 import { noteCategory, noteLabel, noteTint, toggleTaskAt } from "../lib/notes";
 import { tableEntries, entryRanges, formatRange, totalWeight, rollTable, formatPercent } from "../lib/loot";
 import { focusSearchResult } from "../lib/searchFocus";
+import { useShops, isBuiltinShop } from "../lib/shops";
 
 // ---------------------------------------------------------------------------------------------
 // Results
@@ -154,7 +155,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
   const quests = useStore((s) => s.quests);
   const maps = useStore((s) => s.maps);
   const locations = useStore((s) => s.locations);
-  const shops = useStore((s) => s.shops);
+  const shops = useShops().visible;
   const notes = useStore((s) => s.notes);
   const customItems = useStore((s) => s.customItems);
   const lootTables = useStore((s) => s.lootTables);
@@ -238,7 +239,8 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
       push({ kind: "shop", id: s.id, type: "Tienda", label: s.name, subLabel: s.ownerName, icon: StoreIcon, tab: "shops" }, match(q, terms, [s.name, s.ownerName]));
       (s.items || []).forEach((it) => push(
         { kind: "shopItem", id: it.id, parentId: s.id, type: "En tienda", label: it.name, subLabel: [s.name, it.price, it.hidden && "oculto"].filter(Boolean).join(" · "), icon: Coins, tab: "shops" },
-        match(q, terms, [it.name], [it.description]), -1
+        // The fixed shops mostly repeat the SRD catalog, so their items rank lower.
+        match(q, terms, [it.name], [it.description]), isBuiltinShop(s.id) ? -3 : -1
       ));
     });
 
@@ -613,7 +615,7 @@ function useQuickLookContent(res: SearchResult, onDrill: (r: SearchResult) => vo
   const quests = useStore((s) => s.quests);
   const maps = useStore((s) => s.maps);
   const locations = useStore((s) => s.locations);
-  const shops = useStore((s) => s.shops);
+  const shops = useShops().all;
   const notes = useStore((s) => s.notes);
   const customItems = useStore((s) => s.customItems);
   const lootTables = useStore((s) => s.lootTables);
@@ -807,7 +809,11 @@ function useQuickLookContent(res: SearchResult, onDrill: (r: SearchResult) => vo
               {it.price && <span className={cn(chip, "font-mono font-bold text-dm-accent")}><Coins size={12} /> {it.price}</span>}
               {it.hidden && <span className={cn(chip, "text-dm-muted")}><EyeOff size={12} /> Oculto a los jugadores</span>}
             </div>
-            {it.description ? <p className={rawText}>{it.description}</p> : <p className="text-sm italic text-dm-muted">Sin descripción.</p>}
+            {it.description ? (
+              <div className="text-sm leading-relaxed text-dm-text prose prose-invert prose-sm max-w-none prose-strong:text-dm-text-bright">
+                <Markdown units>{it.description}</Markdown>
+              </div>
+            ) : <p className="text-sm italic text-dm-muted">Sin descripción.</p>}
           </div>
         ),
         extra: <LinkChip icon={StoreIcon} label={`Ver ${s.name}`} onClick={() => onDrill({ key: `shop-${s.id}`, kind: "shop", id: s.id, type: "Tienda", label: s.name, score: 0, icon: StoreIcon, tab: "shops" })} />,
