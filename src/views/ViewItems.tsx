@@ -9,6 +9,7 @@ import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { SortableGrid } from "../components/SortableGrid";
 import { Markdown } from "../components/ui/Markdown";
 import { Measured } from "../components/ui/Measured";
+import { Combobox } from "../components/ui/Combobox";
 import { Overlay } from "../components/ui/Modal";
 import { ViewHeader, ToolbarButton, SegmentedTabs } from "../components/ui/ViewHeader";
 import { ImportExportActions, arrayOrKey } from "../components/ImportExportActions";
@@ -363,22 +364,31 @@ export function ViewItems() {
                 <div className="grid grid-cols-2 gap-x-3">
                   <div>
                     <label className={labelClass} htmlFor="item-category">Categoría</label>
-                    <input id="item-category" type="text" list="item-category-options" value={editingItem.category || ""} onChange={(e) => setEditingItem({ ...editingItem, category: e.target.value })} className={fieldClass} placeholder="Ej. Poción" />
-                    <datalist id="item-category-options">
-                      {CATEGORY_SUGGESTIONS.map((c) => <option key={c} value={c} />)}
-                    </datalist>
+                    <Combobox
+                      id="item-category"
+                      value={editingItem.category || ""}
+                      onChange={(category) => setEditingItem({ ...editingItem, category })}
+                      options={CATEGORY_OPTIONS}
+                      placeholder="Ej. Poción"
+                      className="mb-4"
+                      inputClassName={cn(fieldClass, "mb-0")}
+                    />
                   </div>
                   <div>
                     <label className={labelClass} htmlFor="item-rarity">Rareza</label>
-                    <input id="item-rarity" type="text" list="item-rarity-options" value={editingItem.rarity || ""} onChange={(e) => {
-                      const rarity = e.target.value;
-                      // Picking a standard rarity also paints the card with its color.
-                      const match = RARITIES.find((r) => r.label.toLowerCase() === rarity.trim().toLowerCase());
-                      setEditingItem({ ...editingItem, rarity, color: match ? match.color : editingItem.color });
-                    }} className={fieldClass} placeholder="Ej. Rara" />
-                    <datalist id="item-rarity-options">
-                      {RARITIES.filter((r) => r.key !== "varies").map((r) => <option key={r.key} value={r.label} />)}
-                    </datalist>
+                    <Combobox
+                      id="item-rarity"
+                      value={editingItem.rarity || ""}
+                      onChange={(rarity) => {
+                        // Picking a standard rarity also paints the card with its color.
+                        const match = RARITIES.find((r) => r.label.toLowerCase() === rarity.trim().toLowerCase());
+                        setEditingItem({ ...editingItem, rarity, color: match ? match.color : editingItem.color });
+                      }}
+                      options={RARITY_OPTIONS}
+                      placeholder="Ej. Rara"
+                      className="mb-4"
+                      inputClassName={cn(fieldClass, "mb-0")}
+                    />
                   </div>
                   <div>
                     <label className={labelClass} htmlFor="item-value">Valor</label>
@@ -544,10 +554,11 @@ export function ViewItems() {
   );
 }
 
-const CATEGORY_SUGGESTIONS = [
+const CATEGORY_OPTIONS = [
   "Arma", "Armadura", "Escudo", "Poción", "Anillo", "Vara", "Pergamino", "Bastón", "Varita", "Objeto maravilloso", "Artefacto",
   "Equipo de aventuras", "Herramienta", "Montura", "Vehículo", "Tesoro",
-];
+].map((value) => ({ value }));
+const RARITY_OPTIONS = RARITIES.filter((r) => r.key !== "varies").map((r) => ({ value: r.label, color: r.color }));
 
 /** Weight, damage, properties and AC of a homebrew item, when it has any. */
 function ItemStats({ item }: { item: CustomItem }) {
