@@ -207,18 +207,29 @@ export function ItemCatalog({ onOpenHomebrew }: { onOpenHomebrew: (id: string) =
           {groups.length === 0 && <div className="p-8 text-center text-dm-muted border border-dm-border bg-dm-bg-alt rounded-sm">No se encontraron objetos con esos filtros.</div>}
           {groups.map((g) => (
             <section key={g.key} className="border border-dm-border bg-dm-bg-alt rounded-sm shadow-xl">
-              <h3 className="sticky top-0 z-10 flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 bg-dm-bg border-b border-dm-accent/30 text-sm sm:text-base font-display uppercase tracking-widest text-dm-accent">
-                {g.label}
-                <span className="text-[11px] font-sans tracking-wider text-dm-muted">{g.count}</span>
+              {/* Negative top = the scroll panel's padding, so the header sticks flush to its top edge
+                  instead of floating below it with rows showing through the gap. */}
+              <h3 className="sticky -top-3 sm:-top-6 z-20 flex items-center justify-between gap-2 pl-3 pr-3 sm:pr-4 py-3 bg-dm-bg-darker border-b-2 border-dm-accent/60 shadow-[0_6px_12px_-6px_rgba(0,0,0,0.8)] text-base sm:text-lg font-display uppercase tracking-widest text-dm-accent">
+                <span className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-1 self-stretch bg-dm-accent rounded-full" aria-hidden />
+                  <span className="truncate">{g.label}</span>
+                </span>
+                <span className="shrink-0 px-2 py-0.5 rounded-sm bg-dm-accent/15 text-[11px] font-sans font-bold tracking-wider text-dm-accent">{g.count}</span>
               </h3>
               {g.subs.map((sub) => (
                 <div key={sub.label}>
                   {sub.label && sub.label !== g.label && (
-                    <h4 className="px-3 sm:px-4 pt-3 pb-1 text-[11px] uppercase tracking-widest font-bold text-dm-muted">{sub.label}</h4>
+                    <h4 className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-dm-accent/10 border-y border-dm-accent/25 text-xs uppercase tracking-widest font-bold text-dm-accent">
+                      <span className="w-2 h-2 rotate-45 bg-dm-accent shrink-0" aria-hidden />
+                      {sub.label}
+                      <span className="ml-auto text-[11px] font-normal tracking-wider text-dm-muted">{sub.items.length}</span>
+                    </h4>
                   )}
-                  {sub.items.map((it) => (
-                    <CatalogRow key={it.index} item={it} onClick={() => setSelected(it)} />
-                  ))}
+                  <div>
+                    {sub.items.map((it) => (
+                      <CatalogRow key={it.index} item={it} onClick={() => setSelected(it)} />
+                    ))}
+                  </div>
                 </div>
               ))}
             </section>
