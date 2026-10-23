@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useStore, actions } from "../store/useStore";
 import { Character, StatusEffect } from "../types";
 import { Input, Button, Textarea } from "../components/ui/Input";
@@ -9,6 +9,7 @@ import { cn } from "../lib/utils";
 import { StatBlock } from "../components/StatBlock";
 import { motion, AnimatePresence } from "motion/react";
 import { MathInput } from "../components/MathInput";
+import { HpPad, AnchoredPanel } from "../components/HpPad";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 
 export function ViewInitiative() {
@@ -24,7 +25,9 @@ export function ViewInitiative() {
   const [isGraveyardOpen, setIsGraveyardOpen] = useState(false);
   const [statusModal, setStatusModal] = useState<{ open: boolean; combatantId: string; effect?: StatusEffect }>({ open: false, combatantId: "" });
   const [viewCharModal, setViewCharModal] = useState<{ open: boolean; char?: Character }>({ open: false });
-  const [hpModalId, setHpModalId] = useState<string | null>(null);
+  const [hpPad, setHpPad] = useState<{ id: string; anchor: HTMLElement } | null>(null);
+  const closeHpPad = useCallback(() => setHpPad(null), []);
+  const toggleHpPad = (id: string, anchor: HTMLElement) => setHpPad((p) => (p?.id === id ? null : { id, anchor }));
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
 
   // Keep the active combatant on screen as turns advance (long lists on phones).
@@ -236,7 +239,7 @@ export function ViewInitiative() {
                         <div className="flex items-center gap-1 text-sm font-mono mb-1 justify-start md:justify-end w-full">
                             <button
                               type="button"
-                              onClick={() => setHpModalId(c.id)}
+                              onClick={(e) => toggleHpPad(c.id, e.currentTarget)}
                               title="Daño / curación"
                               aria-label={`Daño o curación para ${char.name}`}
                               className="mr-auto -m-1.5 p-1.5 shrink-0 rounded-sm hover:bg-dm-bg-hover"
@@ -251,15 +254,17 @@ export function ViewInitiative() {
                             </button>
                             <MathInput
                               value={c.hpCurrent}
+                              relative
+                              title="Escribe la vida nueva, −5 para restar o +5 para sumar"
                               onValueChange={(val) =>
                                 // Lowering HP counts as damage, so temporary HP go first.
-                                val < c.hpCurrent ? actions.damageCombatant(c.id, c.hpCurrent - val) : actions.updateCombatant(c.id, { hpCurrent: val })
+                                val < c.hpCurrent ? actions.damageCombatant(c.id, c.hpCurrent - val) : actions.updateCombatant(c.id, { hpCurrent: char.hpMax ? Math.min(char.hpMax, val) : val })
                               }
                               className="hidden sm:block w-20 h-6 p-0 md:text-right text-left border-none bg-transparent text-dm-text text-xl font-bold focus:bg-dm-border rounded-sm"
                             />
                             <button
                               type="button"
-                              onClick={() => setHpModalId(c.id)}
+                              onClick={(e) => toggleHpPad(c.id, e.currentTarget)}
                               className="sm:hidden flex items-baseline gap-1 px-2 -my-1 py-1 rounded-sm border border-transparent active:border-dm-accent"
                             >
                               <span className="text-dm-text text-xl font-bold">{c.hpCurrent}</span>
@@ -348,7 +353,7 @@ export function ViewInitiative() {
       )}
 
       <AddCombatantModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
-      <HpAdjustModal combatantId={hpModalId} onClose={() => setHpModalId(null)} />
+      <HpPadPanel combatantId={hpPad?.id ?? null} anchor={hpPad?.anchor ?? null} onClose={closeHpPad} />
       
       <StatusModal 
         isOpen={statusModal.open} 
@@ -665,94 +670,34 @@ function GraveyardModal({ isOpen, onClose, onViewChar }: { isOpen: boolean, onCl
 
 
 
-const HP_QUICK = [1, 2, 5, 10];
-
-/** Damage / healing pad: phones adjust HP here without fiddling with a tiny inline field. */
-function HpAdjustModal({ combatantId, onClose }: { combatantId: string | null; onClose: () => void }) {
+/** Quick HP editor next to the combatant's HP: damage, healing, temporary HP and full restore. */
+function HpPadPanel({ combatantId, anchor, onClose }: { combatantId: string | null; anchor: HTMLElement | null; onClose: () => void }) {
   const combatant = useStore((state) => state.combatants.find((c) => c.id === combatantId));
   // Re-render when the character's temporary HP change.
   useStore((state) => state.players);
   useStore((state) => state.npcs);
   useStore((state) => state.creatures);
-  const [amount, setAmount] = useState("");
   const char = combatant ? ((combatant.isTemp && combatant.tempData) ? combatant.tempData : actions.getCharacter(combatant.characterId)) : undefined;
+  if (!combatant || !char) return null;
 
-  useEffect(() => setAmount(""), [combatantId]);
-
-  const value = Math.max(0, parseInt(amount, 10) || 0);
-  const apply = (hp: number) => {
-    if (!combatant) return;
-    actions.updateCombatant(combatant.id, { hpCurrent: hp });
-    setAmount("");
-  };
-  const damage = (n: number) => {
-    if (!combatant) return;
-    actions.damageCombatant(combatant.id, n);
-    setAmount("");
-  };
-  const setTemp = (n: number) => {
-    if (!char) return;
-    actions.updateCharacter(char, { hpTemp: n || undefined });
-    setAmount("");
-  };
-  const heal = (n: number) => combatant && char && apply(Math.min(char.hpMax, Math.max(0, combatant.hpCurrent) + n));
+  const max = char.hpMax || 0;
+  const setHp = (hp: number) => actions.updateCombatant(combatant.id, { hpCurrent: Math.max(0, max ? Math.min(max, hp) : hp) });
+  const setTemp = (n: number) => actions.updateCharacter(char, { hpTemp: n || undefined });
 
   return (
-    <Modal isOpen={!!combatant && !!char} onClose={onClose} title={char?.name || "Puntos de Vida"} className="sm:max-w-sm">
-      {combatant && char && (
-        <div className="flex flex-col gap-4">
-          <div className="text-center">
-            <div className="text-[10px] uppercase tracking-widest text-dm-muted">Puntos de Vida</div>
-            <div className="font-mono">
-              <span className="text-4xl font-bold text-dm-text-bright">{combatant.hpCurrent}</span>
-              <span className="text-xl opacity-50"> / {char.hpMax}</span>
-              {!!char.hpTemp && <span className="text-xl text-sky-400 font-bold"> +{char.hpTemp}</span>}
-            </div>
-            {!!char.hpTemp && <div className="text-[11px] text-sky-400/80">El daño gasta primero los {char.hpTemp} PV temporales</div>}
-          </div>
-
-          <Input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            placeholder="Cantidad"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))}
-            className="h-12 text-center text-2xl font-bold"
-            aria-label="Cantidad"
-          />
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="danger" className="h-12 text-sm" disabled={!value} onClick={() => damage(value)}>
-              Daño
-            </Button>
-            <Button className="h-12 text-sm !bg-green-700 !border-green-700 !text-white hover:!bg-green-600" disabled={!value} onClick={() => heal(value)}>
-              Curar
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2">
-            {HP_QUICK.map((n) => (
-              <Button key={`d${n}`} variant="secondary" className="h-10 !text-dm-danger" onClick={() => damage(n)}>−{n}</Button>
-            ))}
-            {HP_QUICK.map((n) => (
-              <Button key={`h${n}`} variant="secondary" className="h-10 !text-green-500" onClick={() => heal(n)}>+{n}</Button>
-            ))}
-          </div>
-
-          <div className="flex gap-2 pt-3 border-t border-dm-border">
-            <Button variant="secondary" className="flex-1 h-10" disabled={amount === ""} onClick={() => apply(value)}>
-              Fijar a {amount === "" ? "…" : value}
-            </Button>
-            <Button variant="secondary" className="flex-1 h-10 !text-sky-400" disabled={amount === ""} onClick={() => setTemp(value)} title="Fija los PV temporales a esta cantidad (0 los quita)">
-              PV temp.
-            </Button>
-            <Button variant="secondary" className="flex-1 h-10" onClick={() => apply(char.hpMax)}>
-              Curar todo
-            </Button>
-          </div>
-        </div>
-      )}
-    </Modal>
+    <AnchoredPanel anchor={anchor} onClose={onClose}>
+      <HpPad
+        title={char.name}
+        cur={combatant.hpCurrent}
+        max={max}
+        temp={char.hpTemp || 0}
+        onDamage={(n) => actions.damageCombatant(combatant.id, n)}
+        onHeal={(n) => setHp(Math.max(0, combatant.hpCurrent) + n)}
+        onSet={setHp}
+        onTemp={setTemp}
+        onRestore={() => { setHp(max); setTemp(0); }}
+        onDone={onClose}
+      />
+    </AnchoredPanel>
   );
 }

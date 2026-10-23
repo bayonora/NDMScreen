@@ -1,14 +1,18 @@
-import { useState, useEffect, InputHTMLAttributes, FocusEvent, KeyboardEvent } from 'react';
+import { useState, useEffect, useRef, InputHTMLAttributes, FocusEvent, KeyboardEvent } from 'react';
 import { cn } from '../lib/utils';
+import { evaluateExpr, isRelative } from '../lib/mathExpr';
 
 interface MathInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
   value: number;
   onValueChange: (val: number) => void;
+  /** "-5" / "+5" change the current value instead of replacing it. */
+  relative?: boolean;
 }
 
-export function MathInput({ value, onValueChange, className, onBlur, onKeyDown, onFocus, ...props }: MathInputProps) {
+export function MathInput({ value, onValueChange, relative, className, onBlur, onKeyDown, onFocus, ...props }: MathInputProps) {
   const [localValue, setLocalValue] = useState<string>(value.toString());
   const [isFocused, setIsFocused] = useState(false);
+  const cancelled = useRef(false);
 
   useEffect(() => {
     if (!isFocused) {
@@ -16,28 +20,9 @@ export function MathInput({ value, onValueChange, className, onBlur, onKeyDown, 
     }
   }, [value, isFocused]);
 
-  const evaluateMath = (expr: string): number | null => {
-    try {
-      if (!/^[0-9+\-*/.\s]+$/.test(expr)) return null;
-      
-      // Protection against dividing by zero visually like 40/0
-      if (/\/\s*0+(?!\.)/.test(expr)) return null;
-
-      // eslint-disable-next-line no-new-func
-      const result = new Function(`return ${expr}`)();
-      
-      // Strict mathematically finite check (Blocks Infinity and NaN)
-      if (typeof result === 'number' && Number.isFinite(result)) {
-        return Math.floor(result);
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  };
-
   const commit = () => {
-    const val = evaluateMath(localValue);
+    let val = evaluateExpr(localValue);
+    if (val !== null && relative && isRelative(localValue)) val = value + val;
     if (val !== null) {
       onValueChange(val);
       setLocalValue(val.toString());
@@ -48,12 +33,18 @@ export function MathInput({ value, onValueChange, className, onBlur, onKeyDown, 
 
   const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
     setIsFocused(false);
-    commit();
+    if (cancelled.current) { cancelled.current = false; setLocalValue(value.toString()); } else commit();
     if (onBlur) onBlur(e);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    }
+    if (e.key === 'Escape') {
+      // Drop the edit: leave the field without applying it.
+      e.stopPropagation();
+      cancelled.current = true;
       e.currentTarget.blur();
     }
     if (onKeyDown) onKeyDown(e);
@@ -65,7 +56,7 @@ export function MathInput({ value, onValueChange, className, onBlur, onKeyDown, 
       type="text"
       value={localValue}
       onChange={(e) => setLocalValue(e.target.value)}
-      onFocus={(e) => { setIsFocused(true); if (onFocus) onFocus(e); }}
+      onFocus={(e) => { setIsFocused(true); e.currentTarget.select(); if (onFocus) onFocus(e); }}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
       className={cn("outline-none transition-colors", className)}

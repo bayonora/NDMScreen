@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Heart, Swords, Dices, Minus, Plus, RotateCcw, Shield, ArrowRight } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Heart, Swords, Dices, Minus, Plus, ArrowRight } from "lucide-react";
+import { HpPad, AnchoredPanel } from "./HpPad";
 import { useStore, actions } from "../store/useStore";
 import { useModalLayer } from "./ui/Modal";
 import { Character } from "../types";
@@ -67,24 +68,19 @@ export function HpTracker({ character, open, onOpenChange, hitDice, compact }: {
   const cur = Math.min(max, character.hpCurrent ?? max);
   const temp = character.hpTemp || 0;
   const pct = max ? Math.max(0, Math.min(100, (cur / max) * 100)) : 0;
-  const [amount, setAmount] = useState("");
-  useEffect(() => { if (open) setAmount(""); }, [open]);
-
-  const n = Math.max(0, parseInt(amount, 10) || 0);
-  const set = (hp: number, t: number) => { actions.setCharacterHp(character, hp, t); setAmount(""); };
-  const damage = () => {
-    if (!n) return;
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const close = useCallback(() => onOpenChange(false), [onOpenChange]);
+  const set = (hp: number, t: number) => actions.setCharacterHp(character, hp, t);
+  const damage = (n: number) => {
     const absorbed = Math.min(temp, n);
     set(cur - (n - absorbed), temp - absorbed);
   };
-  const heal = () => n && set(cur + n, temp);
-  const setTemp = () => set(cur, n);
-  const restore = () => { set(max, 0); onOpenChange(false); };
 
   const trigger = (
     <button
       type="button"
       onClick={() => onOpenChange(!open)}
+      ref={triggerRef}
       title="Puntos de golpe: pulsa para aplicar daño o curación"
       aria-label={`Puntos de golpe ${cur} de ${max}${temp ? `, ${temp} temporales` : ""}`}
       className={cn("w-full text-left rounded-sm group", compact ? "py-0.5" : "px-2 py-1.5 bg-dm-bg-hover border border-dm-border hover:border-dm-accent/60 transition-colors")}
@@ -106,59 +102,22 @@ export function HpTracker({ character, open, onOpenChange, hitDice, compact }: {
   );
 
   return (
-    <Popover open={open} onOpenChange={onOpenChange} trigger={trigger} align="left" panelClassName="w-64 p-3 space-y-3">
-      <div className="flex items-baseline justify-between">
-        <span className="text-[10px] uppercase tracking-widest text-dm-muted">Puntos de golpe</span>
-        <span className="tabular-nums">
-          <b className="text-lg text-dm-text-bright">{cur}</b> <span className="text-dm-muted">/ {max}</span>
-          {temp > 0 && <span className="text-sky-400 font-semibold"> +{temp}</span>}
-        </span>
-      </div>
-      <form onSubmit={(e) => { e.preventDefault(); damage(); }}>
-        <input
-          autoFocus
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          placeholder="Cantidad"
-          aria-label="Cantidad"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))}
-          className="w-full h-10 px-3 bg-dm-bg border border-dm-border rounded-sm text-center text-lg font-bold tabular-nums focus:outline-none focus:border-dm-accent"
+    <>
+      {trigger}
+      <AnchoredPanel anchor={open ? triggerRef.current : null} onClose={close}>
+        <HpPad
+          cur={cur}
+          max={max}
+          temp={temp}
+          onDamage={damage}
+          onHeal={(n) => set(cur + n, temp)}
+          onSet={(hp) => set(hp, temp)}
+          onTemp={(n) => set(cur, n)}
+          onRestore={() => set(max, 0)}
+          onDone={close}
         />
-      </form>
-      <div className="grid grid-cols-3 gap-1.5">
-        <PopButton onClick={damage} disabled={!n} tone="danger" title="Intro también aplica daño. Los PV temporales se gastan primero."><Minus size={14} /> Daño</PopButton>
-        <PopButton onClick={heal} disabled={!n} tone="accent"><Plus size={14} /> Curar</PopButton>
-        <PopButton onClick={setTemp} tone="sky" title="Fija los PV temporales a esta cantidad (0 los quita)"><Shield size={14} /> Temp.</PopButton>
-      </div>
-      <button
-        type="button"
-        onClick={restore}
-        className="w-full flex items-center justify-center gap-2 py-1.5 text-xs uppercase tracking-wider text-dm-muted border-t border-dm-border pt-2.5 hover:text-dm-accent transition-colors"
-      >
-        <RotateCcw size={13} /> Restaurar al máximo
-      </button>
-    </Popover>
-  );
-}
-
-function PopButton({ onClick, disabled, tone, title, children }: { onClick: () => void; disabled?: boolean; tone: "danger" | "accent" | "sky"; title?: string; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      className={cn(
-        "flex items-center justify-center gap-1 py-2 text-xs font-bold uppercase tracking-wide border rounded-sm transition-colors disabled:opacity-40 disabled:pointer-events-none",
-        tone === "danger" && "border-dm-danger/60 text-dm-danger hover:bg-dm-danger hover:text-dm-text-bright",
-        tone === "accent" && "border-dm-accent/60 text-dm-accent hover:bg-dm-accent hover:text-dm-bg-darker",
-        tone === "sky" && "border-sky-400/50 text-sky-400 hover:bg-sky-400 hover:text-dm-bg-darker"
-      )}
-    >
-      {children}
-    </button>
+      </AnchoredPanel>
+    </>
   );
 }
 
