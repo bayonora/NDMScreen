@@ -3,6 +3,7 @@ import { useSpellStore } from "../store/useSpellStore";
 import { Search, Loader2, Sparkles, BookOpen, Star, Shield, Cloud, Eye, Brain, Flame, Ghost, Skull, FlaskConical, SlidersHorizontal } from "lucide-react";
 import { cn, normalizeSearchText } from "../lib/utils";
 import { Markdown } from "../components/ui/Markdown";
+import { Measured } from "../components/ui/Measured";
 import { useStore, actions } from "../store/useStore";
 import { Modal } from "../components/ui/Modal";
 import { ViewHeader } from "../components/ui/ViewHeader";
@@ -229,7 +230,7 @@ export function ViewGrimoire() {
                           <span>{schoolName(spell)}</span>
                           <span>{spell.casting_time}</span>
                           <span className="hidden sm:inline">{spell.duration}</span>
-                          <span>{spell.range}</span>
+                          <span><Measured text={spell.range} /></span>
                           <span className="opacity-70">{spell.components?.join(", ")}</span>
                         </div>
                       </div>
@@ -270,16 +271,16 @@ export function ViewGrimoire() {
               <span><strong>Escuela:</strong> {schoolName(selectedSpell)}</span>
               <span><strong>Tiempo:</strong> {selectedSpell.casting_time}</span>
               <span><strong>Duración:</strong> {selectedSpell.duration}</span>
-              <span><strong>Rango:</strong> {selectedSpell.range}</span>
+              <span><strong>Rango:</strong> <Measured text={selectedSpell.range} /></span>
               <span><strong>Componentes:</strong> {selectedSpell.components?.join(", ")}</span>
             </div>
 
             <div className="text-sm text-dm-text leading-relaxed space-y-3 prose prose-invert prose-sm max-w-none prose-strong:text-dm-accent">
-              <Markdown>{selectedSpell.desc?.join("\n\n") || ""}</Markdown>
+              <Markdown units>{selectedSpell.desc?.join("\n\n") || ""}</Markdown>
               {selectedSpell.higher_level && selectedSpell.higher_level.length > 0 && (
                 <div className="mt-4">
                   <strong className="text-dm-accent">A niveles superiores: </strong>
-                  <Markdown>{selectedSpell.higher_level.join("\n\n")}</Markdown>
+                  <Markdown units>{selectedSpell.higher_level.join("\n\n")}</Markdown>
                 </div>
               )}
             </div>
