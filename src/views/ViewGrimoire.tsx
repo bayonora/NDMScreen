@@ -48,9 +48,9 @@ export function ViewGrimoire() {
   const [levelFilter, setLevelFilter] = useState("");
   const [schoolFilter, setSchoolFilter] = useState("");
   const [classFilter, setClassFilter] = useState("");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("name_asc");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("level_asc");
   const [showFilters, setShowFilters] = useState(false);
-  const activeFilterCount = [levelFilter, schoolFilter, classFilter].filter(Boolean).length + (sortOrder !== "name_asc" ? 1 : 0);
+  const activeFilterCount = [levelFilter, schoolFilter, classFilter].filter(Boolean).length + (sortOrder !== "level_asc" ? 1 : 0);
 
   useEffect(() => {
     fetchSpells();
@@ -88,13 +88,32 @@ export function ViewGrimoire() {
       .map(({ spell }) => spell);
 
     return result.sort((a, b) => {
-      if (sortOrder === "level_asc" || sortOrder === "level_desc") {
+      if (sortOrder !== "name_asc") {
         const diff = (a.level ?? 99) - (b.level ?? 99);
-        if (diff !== 0) return sortOrder === "level_asc" ? diff : -diff;
+        if (diff !== 0) return sortOrder === "level_desc" ? -diff : diff;
       }
       return a.name.localeCompare(b.name);
     });
   }, [searchIndex, deferredSearch, levelFilter, schoolFilter, classFilter, sortOrder, favoriteSpells]);
+
+  // School → level → spells. Schools in alphabetical order (Spanish); by name: no level sub-groups.
+  const groups = useMemo(() => {
+    const schools = Object.entries(SCHOOL_NAMES).sort((a, b) => a[1].localeCompare(b[1], "es"));
+    const keys = [...schools.map(([k]) => k), ""];
+    return keys
+      .map((key) => {
+        const spells = filteredSpells.filter((s) => (key ? s.school?.index === key : !SCHOOL_NAMES[s.school?.index]));
+        const subs: { label: string; spells: Spell[] }[] = [];
+        for (const sp of spells) {
+          const label = sortOrder === "name_asc" ? "" : sp.level === 0 ? "Trucos" : `Nivel ${sp.level}`;
+          const last = subs[subs.length - 1];
+          if (last && last.label === label) last.spells.push(sp);
+          else subs.push({ label, spells: [sp] });
+        }
+        return { key: key || "none", label: key ? SCHOOL_NAMES[key] : "Sin escuela", count: spells.length, subs };
+      })
+      .filter((g) => g.count > 0);
+  }, [filteredSpells, sortOrder]);
 
   const isFavorite = !!selectedSpell && favoriteSpells.includes(selectedSpell.index);
 
@@ -173,15 +192,15 @@ export function ViewGrimoire() {
               </select>
 
               <select aria-label="Orden" value={sortOrder} onChange={(e) => setSortOrder(e.target.value as SortOrder)} className={selectClass}>
+                <option value="level_asc">Por nivel ↑</option>
+                <option value="level_desc">Por nivel ↓</option>
                 <option value="name_asc">Por nombre</option>
-                <option value="level_asc">Nivel ↑</option>
-                <option value="level_desc">Nivel ↓</option>
                 <option value="favorites">Solo guardados</option>
               </select>
               {activeFilterCount > 0 && (
                 <button
                   type="button"
-                  onClick={() => { setLevelFilter(""); setSchoolFilter(""); setClassFilter(""); setSortOrder("name_asc"); }}
+                  onClick={() => { setLevelFilter(""); setSchoolFilter(""); setClassFilter(""); setSortOrder("level_asc"); }}
                   className="md:hidden col-span-2 py-2 text-xs uppercase tracking-wider text-dm-muted hover:text-dm-accent"
                 >
                   Limpiar filtros
@@ -204,45 +223,65 @@ export function ViewGrimoire() {
             </div>
           )}
 
-          {!isLoading && !error && (
-            <div className="flex flex-col border border-dm-border bg-dm-bg-alt rounded-sm shadow-xl">
-              {filteredSpells.length === 0 ? (
-                <div className="p-8 text-center text-dm-muted">No se encontraron conjuros con esos filtros.</div>
-              ) : (
-                filteredSpells.map((spell) => {
-                  const SchoolIcon = SCHOOL_ICONS[spell.school?.index] || Sparkles;
-                  return (
-                    <button
-                      type="button"
-                      key={spell.index}
-                      id={`spell-${spell.index}`}
-                      onClick={() => setSelectedSpell(spell)}
-                      className="text-left p-3 sm:p-4 transition-colors border-b border-dm-border last:border-b-0 hover:bg-dm-bg-hover [content-visibility:auto] [contain-intrinsic-size:auto_96px]"
-                    >
-                      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-1 xl:gap-2 mb-1.5">
-                        <h3 className="text-base sm:text-lg font-bold text-dm-text-bright flex items-center gap-2 min-w-0">
-                          <SchoolIcon className="w-4 h-4 text-dm-accent shrink-0" />
-                          <span className="truncate">{spell.name}</span>
-                          {favoriteSpells.includes(spell.index) && <Star size={14} className="text-dm-accent shrink-0" fill="currentColor" strokeWidth={0} />}
-                        </h3>
-                        <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1 text-xs text-dm-muted items-center">
-                          <span className="font-semibold text-dm-accent">{translateLevel(spell.level)}</span>
-                          <span>{schoolName(spell)}</span>
-                          <span>{spell.casting_time}</span>
-                          <span className="hidden sm:inline">{spell.duration}</span>
-                          <span><Measured text={spell.range} /></span>
-                          <span className="opacity-70">{spell.components?.join(", ")}</span>
-                        </div>
-                      </div>
-                      <p className="text-sm text-dm-text-muted leading-relaxed line-clamp-2">
-                        {spell.desc?.join(" ").replace(/\*/g, "")}
-                      </p>
-                    </button>
-                  );
-                })
-              )}
-            </div>
+          {!isLoading && !error && filteredSpells.length === 0 && (
+            <div className="p-8 text-center text-dm-muted border border-dm-border bg-dm-bg-alt rounded-sm">No se encontraron conjuros con esos filtros.</div>
           )}
+
+          {!isLoading && !error && groups.map((g) => {
+            const SchoolIcon = SCHOOL_ICONS[g.key] || Sparkles;
+            return (
+              <section key={g.key} className="border border-dm-border bg-dm-bg-alt rounded-sm shadow-xl">
+                {/* Negative top = the scroll panel's padding, so the header sticks flush to its top edge. */}
+                <h3 className="sticky -top-3 sm:-top-6 z-20 flex items-center justify-between gap-2 pl-3 pr-3 sm:pr-4 py-3 bg-dm-bg-darker border-b-2 border-dm-accent/60 shadow-[0_6px_12px_-6px_rgba(0,0,0,0.8)] text-base sm:text-lg font-display uppercase tracking-widest text-dm-accent">
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-1 self-stretch bg-dm-accent rounded-full" aria-hidden />
+                    <SchoolIcon className="w-5 h-5 shrink-0" aria-hidden />
+                    <span className="truncate">{g.label}</span>
+                  </span>
+                  <span className="shrink-0 px-2 py-0.5 rounded-sm bg-dm-accent/15 text-[11px] font-sans font-bold tracking-wider text-dm-accent">{g.count}</span>
+                </h3>
+                {g.subs.map((sub) => (
+                  <div key={sub.label || "all"}>
+                    {sub.label && (
+                      <h4 className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-dm-accent/10 border-y border-dm-accent/25 text-xs uppercase tracking-widest font-bold text-dm-accent">
+                        <span className="w-2 h-2 rotate-45 bg-dm-accent shrink-0" aria-hidden />
+                        {sub.label}
+                        <span className="ml-auto text-[11px] font-normal tracking-wider text-dm-muted">{sub.spells.length}</span>
+                      </h4>
+                    )}
+                    <div className="flex flex-col">
+                      {sub.spells.map((spell) => (
+                        <button
+                          type="button"
+                          key={spell.index}
+                          id={`spell-${spell.index}`}
+                          onClick={() => setSelectedSpell(spell)}
+                          className="text-left p-3 sm:p-4 transition-colors border-t border-dm-border/60 first:border-t-0 hover:bg-dm-bg-hover [content-visibility:auto] [contain-intrinsic-size:auto_96px]"
+                        >
+                          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-1 xl:gap-2 mb-1.5">
+                            <h3 className="text-base sm:text-lg font-bold text-dm-text-bright flex items-center gap-2 min-w-0">
+                              <span className="truncate">{spell.name}</span>
+                              {favoriteSpells.includes(spell.index) && <Star size={14} className="text-dm-accent shrink-0" fill="currentColor" strokeWidth={0} />}
+                            </h3>
+                            <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1 text-xs text-dm-muted items-center">
+                              <span className="font-semibold text-dm-accent">{translateLevel(spell.level)}</span>
+                              <span>{spell.casting_time}</span>
+                              <span className="hidden sm:inline">{spell.duration}</span>
+                              <span><Measured text={spell.range} /></span>
+                              <span className="opacity-70">{spell.components?.join(", ")}</span>
+                            </div>
+                          </div>
+                          <p className="text-sm text-dm-text-muted leading-relaxed line-clamp-2">
+                            {spell.desc?.join(" ").replace(/\*/g, "")}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </section>
+            );
+          })}
         </div>
       </div>
 
