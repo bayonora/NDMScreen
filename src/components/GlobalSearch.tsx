@@ -5,6 +5,9 @@ import { StatBlock } from "./StatBlock";
 import { Markdown } from "./ui/Markdown";
 import { useStore, actions, Tab } from "../store/useStore";
 import { useSpellStore } from "../store/useSpellStore";
+import { useMonsterStore } from "../store/useMonsterStore";
+import { MonsterStatBlock } from "./MonsterStatBlock";
+import { monsterKind } from "../data/monsterLabels";
 import { cn, normalizeSearchText } from "../lib/utils";
 import { SCHOOL_NAMES } from "../data/spellLabels";
 import { motion, AnimatePresence } from "motion/react";
@@ -36,6 +39,9 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
   );
   const spells = useSpellStore((s) => s.spells);
   const fetchSpells = useSpellStore((s) => s.fetchSpells);
+  const monsters = useMonsterStore((s) => s.monsters);
+  const fetchMonsters = useMonsterStore((s) => s.fetchMonsters);
+  const loadReference = () => { fetchSpells(); fetchMonsters(); };
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [previewResult, setPreviewResult] = useState<SearchResult | null>(null);
@@ -86,7 +92,17 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, selectedIndex, query, storeState, spells]);
+  }, [isOpen, selectedIndex, query, storeState, spells, monsters]);
+
+  // Strict match for reference lists (spells, bestiary): whole name, a whole word, or a long enough prefix.
+  const scoreName = (q: string, name: string) => {
+    const t = normalizeSearchText(name);
+    if (t === q) return 100;
+    if (t.split(/\s+/).includes(q)) return 80;
+    if (q.includes(" ") && t.includes(q)) return 60;
+    if (q.length > 3 && t.startsWith(q)) return 30;
+    return 0;
+  };
 
   const scoreString = (q: string, text: string) => {
     if (!text || !q) return 0;
@@ -201,8 +217,14 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
       if (score > 0) res.push({ id: s.index, type: "Conjuro", label: s.name, subLabel: s.level === 0 ? "Truco" : `Nivel ${s.level}`, tab: "spells", score, icon: <BookOpen size={16} /> });
     });
 
+    // Search the bestiary (Spanish or English name)
+    monsters.forEach(m => {
+      const score = Math.max(scoreName(q, m.name), m.name_en ? scoreName(q, m.name_en) - 5 : 0);
+      if (score > 0) res.push({ id: m.index, type: "Bestiario", label: m.name, subLabel: `Desafío ${m.cr} · ${monsterKind(m)}`, tab: "bestiary", score, icon: <Skull size={16} /> });
+    });
+
     return res.sort((a, b) => b.score - a.score).slice(0, 10);
-  }, [query, storeState, spells]);
+  }, [query, storeState, spells, monsters]);
 
   useEffect(() => {
     setSelectedIndex(0);
@@ -235,7 +257,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
   const openMobile = () => {
     setMobileOpen(true);
     setIsOpen(true);
-    fetchSpells();
+    loadReference();
     // Focus inside the tap handler's frame so phones open the keyboard.
     requestAnimationFrame(() => document.getElementById("global-search-input")?.focus());
   };
@@ -270,14 +292,14 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
           id="global-search-input"
           type="text"
           className="block w-full pl-10 pr-3 py-2 border border-dm-border rounded-md leading-5 bg-dm-bg-alt text-dm-text placeholder-dm-muted focus:outline-none focus:ring-1 focus:ring-dm-accent focus:border-dm-accent sm:text-sm transition-colors"
-          placeholder={mobileOpen ? "Buscar personajes, notas, conjuros..." : "Buscar personajes, notas, mapas... (Ctrl+K)"}
+          placeholder={mobileOpen ? "Buscar personajes, notas, conjuros, monstruos..." : "Buscar personajes, notas, monstruos... (Ctrl+K)"}
           enterKeyHint="search"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
             setIsOpen(true);
           }}
-          onFocus={() => { setIsOpen(true); fetchSpells(); }}
+          onFocus={() => { setIsOpen(true); loadReference(); }}
         />
       </div>
       {mobileOpen && (
@@ -446,6 +468,28 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
                           setQuery("");
                        }} className="px-4 py-2 bg-dm-accent text-dm-bg-alt font-semibold rounded-sm hover:bg-dm-accent-hover transition-colors flex items-center gap-2">
                          <BookOpen size={16} /> Ir al Grimorio
+                       </button>
+                     </div>
+                   </div>
+                 );
+              }
+              if (res.tab === "bestiary") {
+                 const m = monsters.find(x => x.index === res.id);
+                 if (m) return (
+                   <div className="bg-dm-bg border border-dm-border rounded-sm p-4 sm:p-6 max-w-2xl w-full shadow-2xl text-dm-text space-y-4">
+                     <h2 className="text-2xl font-bold text-dm-accent flex items-center gap-2"><Skull /> {m.name}</h2>
+                     <div className="max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+                       <MonsterStatBlock monster={m} showLore={false} />
+                     </div>
+                     <div className="flex justify-end pt-2">
+                       <button onClick={() => {
+                          actions.updateUI({ highlightedMonsterId: m.index });
+                          onNavigate("bestiary");
+                          setPreviewResult(null);
+                          setIsOpen(false);
+                          setQuery("");
+                       }} className="px-4 py-2 bg-dm-accent text-dm-bg-alt font-semibold rounded-sm hover:bg-dm-accent-hover transition-colors flex items-center gap-2">
+                         <Skull size={16} /> Ir al Bestiario
                        </button>
                      </div>
                    </div>

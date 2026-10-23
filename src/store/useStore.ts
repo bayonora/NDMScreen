@@ -4,7 +4,7 @@ import { Player, NPC, Creature, Character, Combatant, MapData, LocationData, Sho
 import { v4 as uuidv4 } from "uuid";
 import { mergeDedupe, downloadJSON } from "../lib/utils";
 
-export type Tab = "party" | "initiative" | "quests" | "maps" | "shops" | "notes" | "items" | "spells";
+export type Tab = "party" | "initiative" | "quests" | "maps" | "shops" | "notes" | "items" | "spells" | "bestiary";
 
 // Collections that can be imported/exported on their own from their section.
 export type CollectionKey = "players" | "npcs" | "creatures" | "maps" | "locations" | "shops" | "notes" | "customItems" | "lootTables" | "quests";
@@ -19,6 +19,7 @@ type UIState = {
   partyTab?: "players" | "npcs" | "creatures";
   highlightedQuestId?: string;
   highlightedSpellId?: string;
+  highlightedMonsterId?: string;
   collapsedCharacters?: string[];
   theme?: string;
 };
@@ -37,6 +38,7 @@ type StoreState = {
   lootTables: LootTable[];
   quests: Quest[];
   favoriteSpells: string[];
+  favoriteMonsters: string[];
   uiState: UIState;
   isHydrated: boolean;
 };
@@ -55,6 +57,7 @@ const DEFAULT_STATE: StoreState = {
   lootTables: [],
   quests: [],
   favoriteSpells: [],
+  favoriteMonsters: [],
   uiState: {
     combatActive: false,
     activeCombatantId: null,
@@ -114,6 +117,7 @@ class Store {
         this.state.lootTables = this.state.lootTables || [];
         this.state.quests = this.state.quests || [];
         this.state.favoriteSpells = this.state.favoriteSpells || [];
+        this.state.favoriteMonsters = this.state.favoriteMonsters || [];
 
         // Heal ghosts
         const isGhost = (c: any) => {
@@ -224,7 +228,8 @@ class Store {
           customItems: Array.isArray(parsed.customItems) ? parsed.customItems : [],
           lootTables: Array.isArray(parsed.lootTables) ? parsed.lootTables : [],
           quests: Array.isArray(parsed.quests) ? parsed.quests : [],
-          favoriteSpells: Array.isArray(parsed.favoriteSpells) ? parsed.favoriteSpells : []
+          favoriteSpells: Array.isArray(parsed.favoriteSpells) ? parsed.favoriteSpells : [],
+          favoriteMonsters: Array.isArray(parsed.favoriteMonsters) ? parsed.favoriteMonsters : [],
         });
       }
  else {
@@ -245,6 +250,7 @@ class Store {
           lootTables: mergeDedupe(state.lootTables || [], parsed.lootTables),
           quests: mergeDedupe(state.quests || [], parsed.quests),
           favoriteSpells: Array.from(new Set([...(state.favoriteSpells || []), ...(Array.isArray(parsed.favoriteSpells) ? parsed.favoriteSpells : [])])),
+          favoriteMonsters: Array.from(new Set([...(state.favoriteMonsters || []), ...(Array.isArray(parsed.favoriteMonsters) ? parsed.favoriteMonsters : [])])),
         });
       }
       alert("Datos importados correctamente.");
@@ -273,6 +279,12 @@ export const actions = {
     } else {
       store.setState({ favoriteSpells: [...current, spellId] });
     }
+  },
+  toggleFavoriteMonster: (monsterId: string) => {
+    const current = store.getState().favoriteMonsters || [];
+    store.setState({
+      favoriteMonsters: current.includes(monsterId) ? current.filter((id) => id !== monsterId) : [...current, monsterId],
+    });
   },
   // Reorder Actions
   reorderPlayers: (players: Player[]) => store.setState({ players }),

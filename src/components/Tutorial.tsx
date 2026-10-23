@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Shield, Map as MapIcon, Package, ScrollText, Target, Sword, Settings, HelpCircle, ChevronRight, Users, Store, Backpack, BookOpen } from "lucide-react";
+import { X, Shield, Map as MapIcon, Package, ScrollText, Target, Sword, Settings, HelpCircle, ChevronRight, Users, Store, Backpack, BookOpen, Skull } from "lucide-react";
 import { useStore, actions } from "../store/useStore";
 import { Button } from "./ui/Input";
 import { cn } from "../lib/utils";
@@ -33,7 +33,7 @@ export function WelcomeModal() {
         <ul className="space-y-4 text-sm text-dm-text mb-8 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
           <li className="flex items-start gap-3 bg-dm-bg-alt p-3 border border-dm-border rounded-sm">
             <Users size={20} className="text-dm-accent shrink-0 mt-0.5" />
-            <span><strong>Grupo, Combate y Magia:</strong> Gestiona actores, lánzalos a un Tracker de Iniciativa dinámico y consulta un Grimorio 5e integrado.</span>
+            <span><strong>Grupo, Combate y Magia:</strong> Gestiona actores, lánzalos a un Tracker de Iniciativa dinámico y consulta un Grimorio y un Bestiario 5e integrados.</span>
           </li>
           <li className="flex items-start gap-3 bg-dm-bg-alt p-3 border border-dm-border rounded-sm">
             <MapIcon size={20} className="text-dm-accent shrink-0 mt-0.5" />
@@ -203,8 +203,24 @@ const TUTORIAL_SECTIONS = [
     )
   },
   {
+    id: "bestiary",
+    title: "9. El Bestiario",
+    icon: <Skull size={18} />,
+    content: (
+      <div className="space-y-4 text-sm text-dm-text leading-relaxed">
+        <p>Las más de 300 criaturas del SRD 5.1 en español, con su bloque de estadísticas completo.</p>
+        <ul className="list-disc pl-5 space-y-2 text-dm-muted">
+          <li><strong className="text-dm-accent">Buscar y filtrar:</strong> Busca por nombre (también en inglés, como "owlbear") y filtra por Desafío, Tipo o Tamaño.</li>
+          <li><strong className="text-dm-accent">Añadir a combate:</strong> Desde la ficha, elige cuántas quieres y lánzalas al Tracker de Iniciativa. La iniciativa se tira sola (d20 + Destreza) y cada copia se numera.</li>
+          <li><strong className="text-dm-accent">Guardar en Criaturas:</strong> Crea una copia editable en Grupo › Criaturas para adaptarla a tu campaña.</li>
+          <li><strong className="text-dm-accent">Guardados:</strong> Marca con la estrella las que más uses y filtra por "Solo guardados".</li>
+        </ul>
+      </div>
+    )
+  },
+  {
     id: "global",
-    title: "9. Sistema Global y Herramientas",
+    title: "10. Sistema Global y Herramientas",
     icon: <Settings size={18} />,
     content: (
       <div className="space-y-4 text-sm text-dm-text leading-relaxed">
