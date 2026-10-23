@@ -142,8 +142,18 @@ export type CustomItem = {
   value?: string;
   image?: string;
   color?: string;
+  /** Free text: "Poción", "Arma (cualquier espada)", "Equipo de aventuras"... */
   category?: string;
+  /** Free text: "Común", "Rara", "Infrecuente – muy rara"... */
   rarity?: string;
+  /** e.g. "requiere sintonización por un mago"; empty when not needed. */
+  attunement?: string;
+  weight?: string;
+  damage?: string;
+  properties?: string;
+  armorClass?: string;
+  /** Where it was copied from, when it comes from the SRD catalog. */
+  source?: string;
 };
 
 export type LootTable = {

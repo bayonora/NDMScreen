@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "motion/react";
-import { Package, Plus, X, Image as ImageIcon, Hexagon, Trash2, Coins, Dices } from "lucide-react";
-import { useStore, actions } from "../store/useStore";
+import { Package, Plus, X, Image as ImageIcon, Hexagon, Trash2, Coins, Dices, Link2 } from "lucide-react";
+import { useStore, actions, store } from "../store/useStore";
+import { ItemCatalog } from "../components/ItemCatalog";
+import { RARITIES } from "../data/itemLabels";
 import { CustomItem, LootTable } from "../types";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { SortableGrid } from "../components/SortableGrid";
@@ -14,11 +16,11 @@ import { cn, compressImage, downloadJSON } from "../lib/utils";
 // Rarity colors are fixed on purpose (they mean the same in every theme).
 const LOOT_COLORS = [
   { id: "default", color: "#c1a063", label: "Predeterminado" },
-  { id: "verde", color: "#10b981", label: "Verde (Poco Común)" },
-  { id: "celeste", color: "#38bdf8", label: "Celeste (Raro)" },
-  { id: "azul", color: "#3b82f6", label: "Azul (Muy Raro)" },
-  { id: "morado", color: "#a855f7", label: "Morado (Épico)" },
-  { id: "dorado", color: "#fbbf24", label: "Dorado (Legendario)" },
+  { id: "verde", color: "#10b981", label: "Verde (Infrecuente)" },
+  { id: "celeste", color: "#38bdf8", label: "Celeste (Rara)" },
+  { id: "azul", color: "#3b82f6", label: "Azul (Muy rara)" },
+  { id: "morado", color: "#a855f7", label: "Morado (Épico / rareza variable)" },
+  { id: "dorado", color: "#fbbf24", label: "Dorado (Legendaria)" },
   { id: "carmesi", color: "#dc2626", label: "Carmesí (Artefacto)" },
 ];
 const DEFAULT_COLOR = LOOT_COLORS[0].color;
@@ -33,7 +35,7 @@ const primaryButtonClass = "px-4 py-2 bg-dm-accent text-dm-bg-darker hover:bg-dm
 export function ViewItems() {
   const customItems = useStore((state) => state.customItems);
   const lootTables = useStore((state) => state.lootTables);
-  const [activeTab, setActiveTab] = useState<"items" | "loot">("items");
+  const [activeTab, setActiveTab] = useState<"items" | "loot" | "srd">("items");
   const [editingItem, setEditingItem] = useState<CustomItem | null>(null);
   const [viewingItem, setViewingItem] = useState<CustomItem | null>(null);
   const [editingTable, setEditingTable] = useState<EditingTable | null>(null);
@@ -88,7 +90,7 @@ export function ViewItems() {
 
   const handleSaveItem = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingItem || !editingItem.name) return;
+    if (!editingItem || !editingItem.name.trim() || !editingItem.shortDescription?.trim()) return;
     const { id, ...data } = editingItem;
     if (id) actions.updateCustomItem(id, data);
     else actions.addCustomItem(data);
@@ -123,15 +125,23 @@ export function ViewItems() {
   };
 
   const isItems = activeTab === "items";
+  const isCatalog = activeTab === "srd";
+
+  // From the catalog: jump to Homebrew with the freshly copied item open in the editor.
+  const openHomebrew = (id: string) => {
+    setActiveTab("items");
+    const item = store.getState().customItems.find((i) => i.id === id);
+    if (item) setEditingItem(item);
+  };
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <ViewHeader
         icon={Package}
         title="Objetos y Botín"
-        shortTitle={isItems ? "Objetos" : "Botín"}
+        shortTitle={isItems ? "Homebrew" : isCatalog ? "Objetos" : "Botín"}
         actions={
-          <>
+          isCatalog ? undefined : <>
             {isItems ? (
               <ImportExportActions
                 key="items"
@@ -165,18 +175,21 @@ export function ViewItems() {
           </>
         }
       >
-        <SegmentedTabs<"items" | "loot">
+        <SegmentedTabs<"items" | "loot" | "srd">
           value={activeTab}
           onChange={setActiveTab}
           options={[
-            { value: "items", label: `Objetos (${customItems.length})` },
-            { value: "loot", label: `Tablas de Botín (${lootTables.length})` },
+            { value: "items", label: `Homebrew (${customItems.length})` },
+            { value: "loot", label: <><span className="sm:hidden">Botín</span><span className="hidden sm:inline">Tablas de Botín</span> ({lootTables.length})</> },
+            { value: "srd", label: "Objetos" },
           ]}
         />
       </ViewHeader>
 
       <div className="flex-1 overflow-y-auto p-3 sm:p-6 custom-scrollbar pb-12 sm:pb-16 text-dm-text">
-        {isItems ? (
+        {isCatalog ? (
+          <ItemCatalog onOpenHomebrew={openHomebrew} />
+        ) : isItems ? (
           <>
             <SortableGrid
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
@@ -199,7 +212,10 @@ export function ViewItems() {
                       <div className="h-2" style={{ backgroundColor: color }} />
                     )}
                     <div className="p-4 flex-1 flex flex-col">
-                      <h3 className="text-lg font-bold mb-2 break-words" style={{ color }}>{item.name}</h3>
+                      <h3 className="text-lg font-bold mb-1 break-words" style={{ color }}>{item.name}</h3>
+                      {!item.image && (item.category || item.rarity) && (
+                        <p className="text-[11px] uppercase tracking-wider text-dm-muted mb-2 truncate">{[item.category, item.rarity].filter(Boolean).join(" · ")}</p>
+                      )}
                       <p className="text-sm text-dm-text-muted mb-4 line-clamp-3 flex-1 break-words">{item.shortDescription || item.description}</p>
                       {item.value && (
                         <div className="flex items-center gap-1.5 mt-auto pt-4 border-t border-dm-border w-full justify-end opacity-80 group-hover:opacity-100 transition-opacity">
@@ -214,7 +230,8 @@ export function ViewItems() {
             />
             {customItems.length === 0 && (
               <div className="flex flex-col items-center justify-center h-64 text-dm-muted border-2 border-dashed border-dm-border text-center px-4">
-                <p>No hay objetos únicos guardados.</p>
+                <p>No hay objetos homebrew guardados.</p>
+                <p className="text-sm mt-2">Crea uno con «Nuevo» o copia uno del manual desde la pestaña <button type="button" onClick={() => setActiveTab("srd")} className="text-dm-accent hover:underline">Objetos</button>.</p>
               </div>
             )}
           </>
@@ -272,17 +289,28 @@ export function ViewItems() {
                 <p className="text-dm-muted italic text-sm mb-4 border-b break-words border-dm-border pb-4">{viewingItem.shortDescription}</p>
               )}
 
+              {(viewingItem.category || viewingItem.rarity || viewingItem.attunement) && (
+                <div className="flex flex-wrap gap-2 mb-4 text-xs">
+                  {viewingItem.category && <span className="px-2 py-1 rounded-sm bg-dm-bg-hover border border-dm-border text-dm-muted uppercase tracking-wider">{viewingItem.category}</span>}
+                  {viewingItem.rarity && <span className="px-2 py-1 rounded-sm border border-dm-border font-semibold" style={{ color: viewingItem.color || DEFAULT_COLOR }}>{viewingItem.rarity}</span>}
+                  {viewingItem.attunement && <span className="px-2 py-1 rounded-sm border border-dm-border text-dm-text-muted flex items-center gap-1"><Link2 size={12} />{viewingItem.attunement[0].toUpperCase() + viewingItem.attunement.slice(1)}</span>}
+                </div>
+              )}
+
               {viewingItem.value && (
-                <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full border border-dm-border bg-dm-bg-darker shadow-inner self-start">
+                <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full border border-dm-border bg-dm-bg-darker shadow-inner self-start">
                   <Coins size={16} style={{ color: viewingItem.color || DEFAULT_COLOR }} />
                   <span className="font-mono font-bold tracking-wider" style={{ color: viewingItem.color || DEFAULT_COLOR }}>{viewingItem.value}</span>
                 </div>
               )}
 
+              <ItemStats item={viewingItem} />
+
               <h3 className="text-xs uppercase tracking-widest text-dm-muted mb-2">Descripción Completa</h3>
-              <div className="text-dm-text text-sm leading-relaxed mb-8 flex-1 break-words select-text [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5">
+              <div className="text-dm-text text-sm leading-relaxed mb-8 flex-1 break-words select-text [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:text-dm-text-bright [&_table]:block [&_table]:overflow-x-auto [&_table]:my-3 [&_table]:text-xs [&_table]:border [&_table]:border-dm-border [&_th]:text-dm-accent [&_th]:text-left [&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-1 [&_tr]:border-b [&_tr]:border-dm-border">
                 <Markdown>{viewingItem.description || "Sin descripción detallada."}</Markdown>
               </div>
+              {viewingItem.source && <p className="text-[11px] text-dm-muted -mt-6 mb-6">Basado en: {viewingItem.source}</p>}
 
               <div className="flex gap-3 pt-6 border-t border-dm-border mt-auto">
                 <button type="button" onClick={() => { setEditingItem(viewingItem); setViewingItem(null); }} className={cn(primaryButtonClass, "flex-1 py-3")}>
@@ -310,17 +338,63 @@ export function ViewItems() {
               <label className={labelClass} htmlFor="item-name">Nombre (Obligatorio)</label>
               <input id="item-name" type="text" value={editingItem.name} onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })} className={fieldClass} required />
 
+              <label className={cn(labelClass, "flex justify-between")} htmlFor="item-short">
+                <span>Resumen (Obligatorio, se ve en la lista)</span>
+                <span className="text-dm-muted-alt">{(editingItem.shortDescription || "").length}/100</span>
+              </label>
+              <input id="item-short" type="text" maxLength={100} required value={editingItem.shortDescription || ""} onChange={(e) => setEditingItem({ ...editingItem, shortDescription: e.target.value })} className={fieldClass} placeholder="Una espada forjada en el fuego de..." />
+
               <span className={labelClass}>Color / Rareza</span>
               <ColorPicker value={editingItem.color} onChange={(color) => setEditingItem({ ...editingItem, color })} />
 
-              <label className={cn(labelClass, "flex justify-between")} htmlFor="item-short">
-                <span>Resumen (Se ve en la lista)</span>
-                <span className="text-dm-muted-alt">{(editingItem.shortDescription || "").length}/100</span>
-              </label>
-              <input id="item-short" type="text" maxLength={100} value={editingItem.shortDescription || ""} onChange={(e) => setEditingItem({ ...editingItem, shortDescription: e.target.value })} className={fieldClass} placeholder="Una espada forjada en el fuego de..." />
-
-              <label className={labelClass} htmlFor="item-value">Valor (Ej. 500 po)</label>
-              <input id="item-value" type="text" value={editingItem.value || ""} onChange={(e) => setEditingItem({ ...editingItem, value: e.target.value })} className={fieldClass} />
+              <fieldset className="border border-dm-border p-3 pb-0 mb-4">
+                <legend className="px-1 text-xs uppercase tracking-widest text-dm-muted">Detalles (opcionales)</legend>
+                <div className="grid grid-cols-2 gap-x-3">
+                  <div>
+                    <label className={labelClass} htmlFor="item-category">Categoría</label>
+                    <input id="item-category" type="text" list="item-category-options" value={editingItem.category || ""} onChange={(e) => setEditingItem({ ...editingItem, category: e.target.value })} className={fieldClass} placeholder="Ej. Poción" />
+                    <datalist id="item-category-options">
+                      {CATEGORY_SUGGESTIONS.map((c) => <option key={c} value={c} />)}
+                    </datalist>
+                  </div>
+                  <div>
+                    <label className={labelClass} htmlFor="item-rarity">Rareza</label>
+                    <input id="item-rarity" type="text" list="item-rarity-options" value={editingItem.rarity || ""} onChange={(e) => {
+                      const rarity = e.target.value;
+                      // Picking a standard rarity also paints the card with its color.
+                      const match = RARITIES.find((r) => r.label.toLowerCase() === rarity.trim().toLowerCase());
+                      setEditingItem({ ...editingItem, rarity, color: match ? match.color : editingItem.color });
+                    }} className={fieldClass} placeholder="Ej. Rara" />
+                    <datalist id="item-rarity-options">
+                      {RARITIES.filter((r) => r.key !== "varies").map((r) => <option key={r.key} value={r.label} />)}
+                    </datalist>
+                  </div>
+                  <div>
+                    <label className={labelClass} htmlFor="item-value">Valor</label>
+                    <input id="item-value" type="text" value={editingItem.value || ""} onChange={(e) => setEditingItem({ ...editingItem, value: e.target.value })} className={fieldClass} placeholder="Ej. 500 po" />
+                  </div>
+                  <div>
+                    <label className={labelClass} htmlFor="item-weight">Peso</label>
+                    <input id="item-weight" type="text" value={editingItem.weight || ""} onChange={(e) => setEditingItem({ ...editingItem, weight: e.target.value })} className={fieldClass} placeholder="Ej. 3 lb" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className={labelClass} htmlFor="item-attunement">Sintonización</label>
+                    <input id="item-attunement" type="text" value={editingItem.attunement || ""} onChange={(e) => setEditingItem({ ...editingItem, attunement: e.target.value })} className={fieldClass} placeholder="Ej. requiere sintonización (vacío si no la necesita)" />
+                  </div>
+                  <div>
+                    <label className={labelClass} htmlFor="item-damage">Daño</label>
+                    <input id="item-damage" type="text" value={editingItem.damage || ""} onChange={(e) => setEditingItem({ ...editingItem, damage: e.target.value })} className={fieldClass} placeholder="Ej. 1d8 cortante" />
+                  </div>
+                  <div>
+                    <label className={labelClass} htmlFor="item-ac">Clase de Armadura</label>
+                    <input id="item-ac" type="text" value={editingItem.armorClass || ""} onChange={(e) => setEditingItem({ ...editingItem, armorClass: e.target.value })} className={fieldClass} placeholder="Ej. +2" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className={labelClass} htmlFor="item-properties">Propiedades</label>
+                    <input id="item-properties" type="text" value={editingItem.properties || ""} onChange={(e) => setEditingItem({ ...editingItem, properties: e.target.value })} className={fieldClass} placeholder="Ej. Sutil, ligera" />
+                  </div>
+                </div>
+              </fieldset>
 
               <label className={labelClass} htmlFor="item-desc">Descripción Completa</label>
               <textarea id="item-desc" value={editingItem.description || ""} onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })} className={cn(fieldClass, "h-40 sm:h-48 resize-y font-sans text-sm")} placeholder="Historia detallada, estadísticas de daño, peso..." />
@@ -456,6 +530,33 @@ export function ViewItems() {
         message="¿Estás seguro de que quieres eliminar esto? Esta acción no se puede deshacer."
       />
     </div>
+  );
+}
+
+const CATEGORY_SUGGESTIONS = [
+  "Arma", "Armadura", "Escudo", "Poción", "Anillo", "Vara", "Pergamino", "Bastón", "Varita", "Objeto maravilloso", "Artefacto",
+  "Equipo de aventuras", "Herramienta", "Montura", "Vehículo", "Tesoro",
+];
+
+/** Weight, damage, properties and AC of a homebrew item, when it has any. */
+function ItemStats({ item }: { item: CustomItem }) {
+  const stats: [string, string | undefined][] = [
+    ["Peso", item.weight],
+    ["Daño", item.damage],
+    ["Clase de Armadura", item.armorClass],
+    ["Propiedades", item.properties],
+  ];
+  const shown = stats.filter(([, v]) => v);
+  if (shown.length === 0) return null;
+  return (
+    <dl className="grid grid-cols-2 gap-2 mb-6">
+      {shown.map(([label, value]) => (
+        <div key={label} className={cn("bg-dm-bg-darker border border-dm-border px-3 py-2", label === "Propiedades" && "col-span-2")}>
+          <dt className="text-[10px] uppercase tracking-widest font-bold text-dm-muted">{label}</dt>
+          <dd className="text-sm text-dm-text-bright break-words">{value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

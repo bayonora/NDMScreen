@@ -580,8 +580,11 @@ export const actions = {
   },
   
   // Custom Items
+  /** Adds a homebrew item and returns its new id. */
   addCustomItem: (item: Omit<CustomItem, "id">) => {
-    store.setState({ customItems: [...(store.getState().customItems || []), { ...item, id: uuidv4() }] });
+    const id = uuidv4();
+    store.setState({ customItems: [...(store.getState().customItems || []), { ...item, id }] });
+    return id;
   },
   updateCustomItem: (id: string, item: Partial<CustomItem>) => {
     store.setState({
