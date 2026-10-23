@@ -4061,6 +4061,11 @@
   },
   {
     "index": "detectar-el-bien-y-el-mal",
+    "school": {
+      "index": "divination",
+      "name": "Adivinación",
+      "url": "/api/magic-schools/divination"
+    },
     "name": "Detectar el bien y el mal",
     "desc": [
       "Hasta el final del conjuro sabes si hay aberraciones celestiales elementales feéricos demonios o muertos vivientes en un radio de 30 pies a tu alrededor así como su ubicación exacta. De forma similar percibes si hay un lugar u objeto a 30 pies de ti que haya sido consagrado o desecrado mágicamente.",
@@ -4948,6 +4953,11 @@
   },
   {
     "index": "druidcraft",
+    "school": {
+      "index": "transmutation",
+      "name": "Transmutación",
+      "url": "/api/magic-schools/transmutation"
+    },
     "name": "Artesanía druídica",
     "desc": [
       "Susurrando a los espíritus de la naturaleza, creas uno de los siguientes efectos dentro del 'alcance':",
@@ -5923,6 +5933,11 @@
   },
   {
     "index": "detectar-trampas",
+    "school": {
+      "index": "divination",
+      "name": "Adivinación",
+      "url": "/api/magic-schools/divination"
+    },
     "name": "Detectar Trampas",
     "desc": [
       "Puedes sentir la presencia de cualquier trampa dentro del alcance que esté en tu línea de visión. En lo que a este conjuro respecta una trampa incluye cualquier objeto que fuera a causar un efecto súbito o inesperado que tú consideres dañino o indeseable y que fuera creado con ese propósito. Por tanto el conjuro detectará un área afectada por el conjuro alarma, un glifo custodio, o una trampa mecánica como un pozo, pero no revelará una zona endeble del suelo, un techo inestable, o un socavón oculto.",
@@ -10821,7 +10836,7 @@
     "casting_time": "1 acción",
     "level": 8,
     "school": {
-      "index": "abjuracion",
+      "index": "abjuration",
       "name": "Abjuración",
       "url": "/api/magic-schools/abjuration"
     },
@@ -11994,7 +12009,7 @@
     "casting_time": "1 acción",
     "level": 0,
     "school": {
-      "index": "transmutación",
+      "index": "transmutation",
       "name": "Transmutación",
       "url": "/api/magic-schools/transmutation"
     },
@@ -12169,7 +12184,7 @@
       "size": 100
     },
     "school": {
-      "index": "abjuracion",
+      "index": "abjuration",
       "name": "Abjuración",
       "url": "/api/magic-schools/abjuration"
     },
@@ -12820,7 +12835,7 @@
     "casting_time": "1 acción",
     "level": 3,
     "school": {
-      "index": "abjuración",
+      "index": "abjuration",
       "name": "Abjuración",
       "url": "/api/magic-schools/abjuration"
     },
@@ -13890,7 +13905,7 @@
       "size": 20
     },
     "school": {
-      "index": "ilusion",
+      "index": "illusion",
       "name": "Ilusión",
       "url": "/api/magic-schools/illusion"
     },
@@ -14192,7 +14207,7 @@
     "casting_time": "1 acción",
     "level": 1,
     "school": {
-      "index": "adivinacion",
+      "index": "divination",
       "name": "Adivinación",
       "url": "/api/magic-schools/divination"
     },
@@ -15170,9 +15185,9 @@
     "casting_time": "1 acción",
     "level": 0,
     "school": {
-      "index": "transmutación",
+      "index": "transmutation",
       "name": "Transmutación",
-      "url": "/api/magic-schools/transmutación"
+      "url": "/api/magic-schools/transmutation"
     },
     "classes": [
       {
@@ -15278,6 +15293,11 @@
   },
   {
     "index": "time-stop",
+    "school": {
+      "index": "transmutation",
+      "name": "Transmutación",
+      "url": "/api/magic-schools/transmutation"
+    },
     "name": "Parar el Tiempo",
     "desc": [
       "Detienes brevemente el paso del tiempo para todo el mundo menos para ti. No pasa el tiempo para ninguna de las otras criaturas, pero tú puedes llevar a cabo 1d4 + 1 turnos seguidos en los cuales puedes usar acciones y moverte de forma normal.",

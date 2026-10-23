@@ -142,8 +142,29 @@ export type CustomItem = {
   value?: string;
   image?: string;
   color?: string;
+  /** Free text: "Poción", "Arma (cualquier espada)", "Equipo de aventuras"... */
   category?: string;
+  /** Free text: "Común", "Rara", "Infrecuente – muy rara"... */
   rarity?: string;
+  /** e.g. "requiere sintonización por un mago"; empty when not needed. */
+  attunement?: string;
+  weight?: string;
+  damage?: string;
+  properties?: string;
+  armorClass?: string;
+  /** Where it was copied from, when it comes from the SRD catalog. */
+  source?: string;
+};
+
+/** One result of a loot table. `weight` = how many faces of the die it takes. */
+export type LootEntry = {
+  id: string;
+  text: string;
+  weight: number;
+  /** The chance the DM typed (0–100). `weight` is derived from it for the table's die. */
+  percent?: number;
+  /** Link to the item it stands for, so the result can open its sheet. */
+  ref?: { kind: "srd" | "homebrew"; id: string };
 };
 
 export type LootTable = {
@@ -151,7 +172,15 @@ export type LootTable = {
   name: string;
   description?: string;
   color?: string;
+  /**
+   * Every result as a line, repeated by weight (["Poción", "Poción", "Espada"]). Older tables only
+   * have this; it is still saved so exports keep working with older versions of the app.
+   */
   items: string[];
+  /** Weighted results with item links. When missing, they are derived from `items`. */
+  entries?: LootEntry[];
+  /** Die chosen in the editor (faces). Missing = automatic (smallest die that fits the chances). */
+  die?: number;
 };
 
 export type QuestStatus = "active" | "completed" | "failed";

@@ -1,12 +1,29 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Search, X, BookOpen, Users, Sparkles, Target, Map as MapIcon, Store as StoreIcon, StickyNote, Package, User, ExternalLink, Skull } from "lucide-react";
+import { Search, X, BookOpen, Users, Sparkles, Target, Map as MapIcon, Store as StoreIcon, StickyNote, Package, User, ExternalLink, Skull, Gem, Hammer, Link2, Coins } from "lucide-react";
 import { Overlay, useModalLayer } from "./ui/Modal";
 import { StatBlock } from "./StatBlock";
 import { Markdown } from "./ui/Markdown";
+import { Measured } from "./ui/Measured";
 import { useStore, actions, Tab } from "../store/useStore";
 import { useSpellStore } from "../store/useSpellStore";
+import { useMonsterStore } from "../store/useMonsterStore";
+import { MonsterStatBlock } from "./MonsterStatBlock";
+import { monsterKind } from "../data/monsterLabels";
 import { cn, normalizeSearchText } from "../lib/utils";
 import { SCHOOL_NAMES } from "../data/spellLabels";
+import { useItemCatalogStore } from "../store/useItemCatalogStore";
+import { CatalogDetail } from "./ItemCatalog";
+import { categoryLabel, rarityLabel } from "../data/itemLabels";
+
+/** Strict match for reference lists: whole name, a whole word, several words, or a long enough prefix. */
+function referenceScore(q: string, name: string) {
+  const t = normalizeSearchText(name);
+  if (t === q) return 100;
+  if (t.split(/\s+/).includes(q)) return 80;
+  if (q.includes(" ") && t.includes(q)) return 60;
+  if (q.length > 3 && t.startsWith(q)) return 30;
+  return 0;
+}
 import { motion, AnimatePresence } from "motion/react";
 
 interface SearchResult {
@@ -36,6 +53,11 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
   );
   const spells = useSpellStore((s) => s.spells);
   const fetchSpells = useSpellStore((s) => s.fetchSpells);
+  const catalogItems = useItemCatalogStore((s) => s.items);
+  const fetchCatalogItems = useItemCatalogStore((s) => s.fetchItems);
+  const monsters = useMonsterStore((s) => s.monsters);
+  const fetchMonsters = useMonsterStore((s) => s.fetchMonsters);
+  const loadReference = () => { fetchSpells(); fetchCatalogItems(); fetchMonsters(); };
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [previewResult, setPreviewResult] = useState<SearchResult | null>(null);
@@ -86,7 +108,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, selectedIndex, query, storeState, spells]);
+  }, [isOpen, selectedIndex, query, storeState, spells, catalogItems, monsters]);
 
   const scoreString = (q: string, text: string) => {
     if (!text || !q) return 0;
@@ -172,10 +194,30 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
       });
     });
 
-    // Search Items
+    // Search homebrew items
     storeState.customItems.forEach(ci => {
-      const score = Math.max(scoreString(q, ci.name), scoreString(q, ci.description || ""));
-      if (score > 0) res.push({ id: ci.id, type: "Objeto", label: ci.name, subLabel: "Objeto Personalizado", tab: "items", score, icon: <Package size={16} /> });
+      const score = Math.max(referenceScore(q, ci.name), scoreString(q, ci.name), scoreString(q, ci.shortDescription || ""), scoreString(q, ci.description || ""));
+      if (score > 0) res.push({
+        id: ci.id, type: "Homebrew", label: ci.name,
+        subLabel: [ci.category, ci.rarity].filter(Boolean).join(" · ") || ci.shortDescription || "Objeto homebrew",
+        tab: "items", score, icon: <Hammer size={16} />,
+        action: () => actions.updateUI({ itemsTab: "items" }),
+      });
+    });
+
+    // Search the SRD item catalog (equipment and magic items), strict by name like spells
+    catalogItems.forEach(it => {
+      const score = referenceScore(q, it.name);
+      if (score > 0) res.push({
+        id: it.index,
+        type: it.kind === "magic" ? "Objeto mágico" : "Equipo",
+        label: it.name,
+        subLabel: it.kind === "magic" ? [it.item_type, rarityLabel(it)].filter(Boolean).join(" · ") : [categoryLabel(it), it.cost].filter(Boolean).join(" · "),
+        tab: "items",
+        score: score - 2, // the DM's own content first on ties
+        icon: it.kind === "magic" ? <Gem size={16} /> : <Package size={16} />,
+        action: () => actions.updateUI({ itemsTab: "srd", highlightedItemId: it.index }),
+      });
     });
 
     // Search Spells
@@ -201,8 +243,14 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
       if (score > 0) res.push({ id: s.index, type: "Conjuro", label: s.name, subLabel: s.level === 0 ? "Truco" : `Nivel ${s.level}`, tab: "spells", score, icon: <BookOpen size={16} /> });
     });
 
+    // Search the bestiary (Spanish or English name)
+    monsters.forEach(m => {
+      const score = Math.max(referenceScore(q, m.name), m.name_en ? referenceScore(q, m.name_en) - 5 : 0);
+      if (score > 0) res.push({ id: m.index, type: "Bestiario", label: m.name, subLabel: `Desafío ${m.cr} · ${monsterKind(m)}`, tab: "bestiary", score, icon: <Skull size={16} /> });
+    });
+
     return res.sort((a, b) => b.score - a.score).slice(0, 10);
-  }, [query, storeState, spells]);
+  }, [query, storeState, spells, catalogItems, monsters]);
 
   useEffect(() => {
     setSelectedIndex(0);
@@ -235,7 +283,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
   const openMobile = () => {
     setMobileOpen(true);
     setIsOpen(true);
-    fetchSpells();
+    loadReference();
     // Focus inside the tap handler's frame so phones open the keyboard.
     requestAnimationFrame(() => document.getElementById("global-search-input")?.focus());
   };
@@ -270,14 +318,14 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
           id="global-search-input"
           type="text"
           className="block w-full pl-10 pr-3 py-2 border border-dm-border rounded-md leading-5 bg-dm-bg-alt text-dm-text placeholder-dm-muted focus:outline-none focus:ring-1 focus:ring-dm-accent focus:border-dm-accent sm:text-sm transition-colors"
-          placeholder={mobileOpen ? "Buscar personajes, notas, conjuros..." : "Buscar personajes, notas, mapas... (Ctrl+K)"}
+          placeholder={mobileOpen ? "Buscar personajes, notas, conjuros, monstruos..." : "Buscar personajes, notas, monstruos... (Ctrl+K)"}
           enterKeyHint="search"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
             setIsOpen(true);
           }}
-          onFocus={() => { setIsOpen(true); fetchSpells(); }}
+          onFocus={() => { setIsOpen(true); loadReference(); }}
         />
       </div>
       {mobileOpen && (
@@ -404,14 +452,75 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
                    </div>
                  );
               }
-              if (res.tab === "items") {
+              const closeSearch = () => { setPreviewResult(null); setIsOpen(false); setMobileOpen(false); setQuery(""); };
+              if (res.tab === "items" && res.type === "Homebrew") {
                  const i = storeState.customItems.find(x => x.id === res.id);
-                 if (i) return (
-                   <div className="bg-dm-bg border border-dm-border rounded-sm p-6 max-w-sm w-full shadow-2xl text-dm-text space-y-2">
-                     <h2 className="text-xl font-bold text-dm-accent">{i.name}</h2>
-                     <div className="text-dm-accent font-bold text-lg">{i.value}</div>
-                     <p className="text-sm whitespace-pre-wrap">{i.description}</p>
-                     {i.image && <img src={i.image} alt={i.name} className="w-full rounded-sm my-2" />}
+                 if (i) {
+                   const color = i.color || "var(--theme-accent)";
+                   const stats = ([["Peso", i.weight], ["Daño", i.damage], ["Clase de Armadura", i.armorClass], ["Propiedades", i.properties]] as const).filter(([, v]) => v);
+                   return (
+                     <div className="bg-dm-bg border border-dm-border rounded-sm p-4 sm:p-6 max-w-xl w-full shadow-2xl text-dm-text space-y-3">
+                       {i.image && <img src={i.image} alt={i.name} className="w-full max-h-48 object-cover rounded-sm" />}
+                       <h2 className="text-2xl font-bold flex items-center gap-2" style={{ color }}><Hammer /> {i.name}</h2>
+                       {i.shortDescription && <p className="text-sm italic text-dm-muted">{i.shortDescription}</p>}
+                       <div className="flex flex-wrap gap-2 text-xs">
+                         {i.category && <span className="px-2 py-1 rounded-sm bg-dm-bg-hover border border-dm-border text-dm-muted uppercase tracking-wider">{i.category}</span>}
+                         {i.rarity && <span className="px-2 py-1 rounded-sm border border-dm-border font-semibold" style={{ color }}>{i.rarity}</span>}
+                         {i.attunement && <span className="px-2 py-1 rounded-sm border border-dm-border text-dm-text-muted flex items-center gap-1"><Link2 size={12} />{i.attunement}</span>}
+                         {i.value && <span className="px-2 py-1 rounded-sm border border-dm-border font-mono font-bold flex items-center gap-1" style={{ color }}><Coins size={12} />{i.value}</span>}
+                       </div>
+                       {stats.length > 0 && (
+                         <dl className="grid grid-cols-2 gap-2">
+                           {stats.map(([label, value]) => (
+                             <div key={label} className={cn("bg-dm-bg-hover border border-dm-border px-3 py-1.5", label === "Propiedades" && "col-span-2")}>
+                               <dt className="text-[10px] uppercase tracking-widest font-bold text-dm-muted">{label}</dt>
+                               <dd className="text-sm text-dm-text-bright"><Measured text={value} /></dd>
+                             </div>
+                           ))}
+                         </dl>
+                       )}
+                       {i.description && (
+                         <div className="text-sm leading-relaxed max-h-64 overflow-y-auto custom-scrollbar pr-2 prose prose-invert prose-sm max-w-none prose-strong:text-dm-text-bright">
+                           <Markdown units>{i.description}</Markdown>
+                         </div>
+                       )}
+                       <div className="flex justify-end pt-2">
+                         <button onClick={() => {
+                            actions.updateUI({ itemsTab: "items", editCustomItemId: i.id });
+                            onNavigate("items");
+                            closeSearch();
+                         }} className="px-4 py-2 bg-dm-accent text-dm-bg-alt font-semibold rounded-sm hover:bg-dm-accent-hover transition-colors flex items-center gap-2">
+                           <Hammer size={16} /> Editar en Homebrew
+                         </button>
+                       </div>
+                     </div>
+                   );
+                 }
+              }
+              if (res.tab === "items") {
+                 const it = catalogItems.find(x => x.index === res.id);
+                 if (it) return (
+                   <div className="bg-dm-bg border border-dm-border rounded-sm p-4 sm:p-6 max-w-2xl w-full shadow-2xl text-dm-text space-y-4">
+                     <h2 className="text-2xl font-bold text-dm-accent flex items-center gap-2">{it.kind === "magic" ? <Gem /> : <Package />} {it.name}</h2>
+                     <div className="max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+                       <CatalogDetail
+                         item={it}
+                         onOpenHomebrew={(id) => {
+                           actions.updateUI({ itemsTab: "items", editCustomItemId: id });
+                           onNavigate("items");
+                           closeSearch();
+                         }}
+                       />
+                     </div>
+                     <div className="flex justify-end">
+                       <button onClick={() => {
+                          actions.updateUI({ itemsTab: "srd", highlightedItemId: it.index });
+                          onNavigate("items");
+                          closeSearch();
+                       }} className="px-4 py-2 border border-dm-accent text-dm-accent font-semibold rounded-sm hover:bg-dm-accent/10 transition-colors flex items-center gap-2">
+                         <Package size={16} /> Ir a Objetos
+                       </button>
+                     </div>
                    </div>
                  );
               }
@@ -425,15 +534,15 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
                        <span><strong>Escuela:</strong> {s.school?.index ? SCHOOL_NAMES[s.school.index] : (s.school?.name || "Sin escuela")}</span>
                        <span><strong>Tiempo:</strong> {s.casting_time}</span>
                        <span><strong>Duración:</strong> {s.duration}</span>
-                       <span><strong>Rango:</strong> {s.range}</span>
+                       <span><strong>Rango:</strong> <Measured text={s.range} /></span>
                        <span><strong>Componentes:</strong> {s.components?.join(", ") || ""}</span>
                      </div>
                      <div className="text-sm leading-relaxed max-h-64 overflow-y-auto custom-scrollbar pr-2 space-y-2 prose prose-invert prose-sm max-w-none prose-strong:text-dm-accent">
-                       <Markdown>{s.desc?.join('\n\n') || ""}</Markdown>
+                       <Markdown units>{s.desc?.join('\n\n') || ""}</Markdown>
                        {s.higher_level && s.higher_level.length > 0 && (
                          <div className="mt-4">
                            <strong className="text-dm-accent">A niveles superiores: </strong>
-                           <Markdown>{s.higher_level.join('\n\n')}</Markdown>
+                           <Markdown units>{s.higher_level.join('\n\n')}</Markdown>
                          </div>
                        )}
                      </div>
@@ -446,6 +555,28 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
                           setQuery("");
                        }} className="px-4 py-2 bg-dm-accent text-dm-bg-alt font-semibold rounded-sm hover:bg-dm-accent-hover transition-colors flex items-center gap-2">
                          <BookOpen size={16} /> Ir al Grimorio
+                       </button>
+                     </div>
+                   </div>
+                 );
+              }
+              if (res.tab === "bestiary") {
+                 const m = monsters.find(x => x.index === res.id);
+                 if (m) return (
+                   <div className="bg-dm-bg border border-dm-border rounded-sm p-4 sm:p-6 max-w-2xl w-full shadow-2xl text-dm-text space-y-4">
+                     <h2 className="text-2xl font-bold text-dm-accent flex items-center gap-2"><Skull /> {m.name}</h2>
+                     <div className="max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+                       <MonsterStatBlock monster={m} showLore={false} />
+                     </div>
+                     <div className="flex justify-end pt-2">
+                       <button onClick={() => {
+                          actions.updateUI({ highlightedMonsterId: m.index });
+                          onNavigate("bestiary");
+                          setPreviewResult(null);
+                          setIsOpen(false);
+                          setQuery("");
+                       }} className="px-4 py-2 bg-dm-accent text-dm-bg-alt font-semibold rounded-sm hover:bg-dm-accent-hover transition-colors flex items-center gap-2">
+                         <Skull size={16} /> Ir al Bestiario
                        </button>
                      </div>
                    </div>
