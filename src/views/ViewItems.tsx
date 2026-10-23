@@ -1,34 +1,25 @@
-import React, { useState, useRef, useEffect } from "react";
-import { motion } from "motion/react";
-import { Package, Plus, X, Image as ImageIcon, Hexagon, Trash2, Coins, Dices, Link2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Package, Plus, X, Image as ImageIcon, Trash2, Coins, Dices, Link2 } from "lucide-react";
 import { useStore, actions, store } from "../store/useStore";
-import { ItemCatalog } from "../components/ItemCatalog";
+import { ItemCatalog, CatalogDetail } from "../components/ItemCatalog";
+import { LootTableEditor, LootTableViewer } from "../components/LootTables";
+import { useItemCatalogStore } from "../store/useItemCatalogStore";
+import { tableEntries, totalWeight } from "../lib/loot";
+import type { CatalogItem } from "../types/item";
 import { RARITIES } from "../data/itemLabels";
-import { CustomItem, LootTable } from "../types";
+import { CustomItem, LootEntry, LootTable } from "../types";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { SortableGrid } from "../components/SortableGrid";
 import { Markdown } from "../components/ui/Markdown";
 import { Measured } from "../components/ui/Measured";
 import { Combobox } from "../components/ui/Combobox";
 import { DescriptionEditor } from "../components/DescriptionEditor";
+import { ColorPicker, DEFAULT_COLOR } from "../components/ui/ColorPicker";
 import { Overlay } from "../components/ui/Modal";
 import { ViewHeader, ToolbarButton, SegmentedTabs } from "../components/ui/ViewHeader";
 import { ImportExportActions, arrayOrKey } from "../components/ImportExportActions";
 import { cn, compressImage, downloadJSON } from "../lib/utils";
 
-// Rarity colors are fixed on purpose (they mean the same in every theme).
-const LOOT_COLORS = [
-  { id: "default", color: "#c1a063", label: "Predeterminado" },
-  { id: "verde", color: "#10b981", label: "Verde (Infrecuente)" },
-  { id: "celeste", color: "#38bdf8", label: "Celeste (Rara)" },
-  { id: "azul", color: "#3b82f6", label: "Azul (Muy rara)" },
-  { id: "morado", color: "#a855f7", label: "Morado (Épico / rareza variable)" },
-  { id: "dorado", color: "#fbbf24", label: "Dorado (Legendaria)" },
-  { id: "carmesi", color: "#dc2626", label: "Carmesí (Artefacto)" },
-];
-const DEFAULT_COLOR = LOOT_COLORS[0].color;
-
-type EditingTable = { id: string; name: string; description: string; rawText: string; color: string };
 
 const panelClass = "relative bg-dm-bg/80 backdrop-blur-xl border border-dm-accent/20 rounded-xl w-full shadow-[0_8px_32px_rgba(0,0,0,0.8)] flex flex-col max-h-full sm:max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95";
 const labelClass = "block text-xs uppercase tracking-widest text-dm-muted mb-1";
@@ -51,55 +42,23 @@ export function ViewItems() {
     actions.updateUI({ editCustomItemId: undefined });
   }, [editCustomItemId]);
   const [viewingItem, setViewingItem] = useState<CustomItem | null>(null);
-  const [editingTable, setEditingTable] = useState<EditingTable | null>(null);
+  // undefined = editor closed, null = new table
+  const [editingTable, setEditingTable] = useState<LootTable | null | undefined>(undefined);
   const [viewingTable, setViewingTable] = useState<LootTable | null>(null);
+  const [catalogPreview, setCatalogPreview] = useState<CatalogItem | null>(null);
+  const catalogItems = useItemCatalogStore((s) => s.items);
   const [deleteData, setDeleteData] = useState<{ type: "item" | "table"; id: string } | null>(null);
 
-  const [rollingState, setRollingState] = useState<"idle" | "rolling" | "result">("idle");
-  const [currentRollNumber, setCurrentRollNumber] = useState(1);
-  const [finalItem, setFinalItem] = useState<{ index: number; text: string } | null>(null);
-  const rollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const stopRoll = () => {
-    if (rollTimer.current) clearInterval(rollTimer.current);
-    rollTimer.current = null;
+  // A loot result linked to an item opens that item's sheet.
+  const openLootItem = (entry: LootEntry) => {
+    if (entry.ref?.kind === "homebrew") {
+      const item = store.getState().customItems.find((i) => i.id === entry.ref!.id);
+      if (item) setViewingItem(item);
+    } else if (entry.ref?.kind === "srd") {
+      const item = catalogItems.find((i) => i.index === entry.ref!.id);
+      if (item) setCatalogPreview(item);
+    }
   };
-  useEffect(() => stopRoll, []);
-
-  const closeTable = () => {
-    stopRoll();
-    setViewingTable(null);
-    setRollingState("idle");
-    setFinalItem(null);
-  };
-
-  const startLootRoll = (table: LootTable) => {
-    if (!table.items || table.items.length === 0) return;
-    stopRoll();
-    setRollingState("rolling");
-    setFinalItem(null);
-
-    let ticks = 0;
-    rollTimer.current = setInterval(() => {
-      setCurrentRollNumber(Math.floor(Math.random() * table.items.length) + 1);
-      ticks++;
-      if (ticks >= 15) {
-        stopRoll();
-        const finalIndex = Math.floor(Math.random() * table.items.length);
-        setCurrentRollNumber(finalIndex + 1);
-        setFinalItem({ index: finalIndex + 1, text: table.items[finalIndex] });
-        setRollingState("result");
-      }
-    }, 100);
-  };
-
-  useEffect(() => {
-    if (rollingState !== "result" || !finalItem) return;
-    const t = setTimeout(() => {
-      document.getElementById(`loot-item-${finalItem.index}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 100);
-    return () => clearTimeout(t);
-  }, [rollingState, finalItem]);
 
   const handleSaveItem = (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,18 +69,10 @@ export function ViewItems() {
     setEditingItem(null);
   };
 
-  const handleSaveTable = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingTable || !editingTable.name) return;
-    const data = {
-      name: editingTable.name,
-      description: editingTable.description,
-      color: editingTable.color,
-      items: editingTable.rawText.split("\n").map((l) => l.trim()).filter(Boolean),
-    };
-    if (editingTable.id) actions.updateLootTable(editingTable.id, data);
+  const handleSaveTable = (data: Omit<LootTable, "id">) => {
+    if (editingTable) actions.updateLootTable(editingTable.id, data);
     else actions.addLootTable(data);
-    setEditingTable(null);
+    setEditingTable(undefined);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,7 +133,7 @@ export function ViewItems() {
               showLabel="always"
               onClick={() => {
                 if (isItems) setEditingItem({ id: "", name: "", shortDescription: "", description: "", value: "", image: "", color: DEFAULT_COLOR });
-                else setEditingTable({ id: "", name: "", description: "", rawText: "", color: DEFAULT_COLOR });
+                else setEditingTable(null);
               }}
             />
           </>
@@ -264,7 +215,11 @@ export function ViewItems() {
                       <p className="text-sm text-dm-text-muted mb-4 line-clamp-3 break-words">{table.description}</p>
                       <div className="mt-auto pt-4 border-t border-dm-border flex items-center gap-2 text-xs text-dm-muted uppercase tracking-widest font-bold group-hover:text-dm-accent transition-colors">
                         <Dices size={14} />
-                        <span>{table.items?.length || 0} Objetos</span>
+                        <span>{(() => {
+                          const entries = tableEntries(table);
+                          const total = totalWeight(entries);
+                          return `${entries.length} ${entries.length === 1 ? "resultado" : "resultados"}${total ? ` · d${total}` : ""}`;
+                        })()}</span>
                       </div>
                     </div>
                   </div>
@@ -454,95 +409,34 @@ export function ViewItems() {
         )}
       </Overlay>
 
-      {/* Edit loot table */}
-      <Overlay isOpen={!!editingTable} onClose={() => setEditingTable(null)} closeOnBackdrop={false}>
-        {editingTable && (
-          <form onSubmit={handleSaveTable} className={cn(panelClass, "max-w-2xl p-4 sm:p-6 h-full sm:h-[80vh]")}>
-            <button type="button" onClick={() => setEditingTable(null)} aria-label="Cerrar" className="absolute top-4 right-4 text-dm-muted hover:text-dm-text-bright"><X size={20} /></button>
-            <h2 className="text-xl text-dm-accent tracking-widest uppercase mb-2 font-light pr-8">
-              {editingTable.id ? "Editar Tabla de Botín" : "Nueva Tabla de Botín"}
-            </h2>
-            <p className="text-xs text-dm-muted mb-6 border-b border-dm-accent/10 pb-2">Cada línea de texto será un posible resultado (sin límite de líneas).</p>
+      <LootTableEditor table={editingTable} onClose={() => setEditingTable(undefined)} onSave={handleSaveTable} />
 
-            <label className={labelClass} htmlFor="table-name">Nombre de la Categoría/Tabla</label>
-            <input id="table-name" type="text" placeholder="Ej. Tesoro de Dragón Adulto (CR 11-16)" value={editingTable.name} onChange={(e) => setEditingTable({ ...editingTable, name: e.target.value })} className={fieldClass} required />
+      <LootTableViewer
+        table={viewingTable}
+        onClose={() => setViewingTable(null)}
+        onEdit={(table) => setEditingTable(table)}
+        onDelete={(table) => setDeleteData({ type: "table", id: table.id })}
+        onOpenItem={openLootItem}
+      />
 
-            <label className={labelClass} htmlFor="table-desc">Descripción (Opcional)</label>
-            <textarea id="table-desc" placeholder="Detalles, historia, en qué momento debe tirarse..." value={editingTable.description} onChange={(e) => setEditingTable({ ...editingTable, description: e.target.value })} className={cn(fieldClass, "font-sans text-sm resize-none h-20 sm:h-24")} />
-
-            <span className={labelClass}>Color / Rareza</span>
-            <ColorPicker value={editingTable.color} onChange={(color) => setEditingTable({ ...editingTable, color })} />
-
-            <label className={cn(labelClass, "flex justify-between")} htmlFor="table-items">
-              <span>Objetos (1 por línea)</span>
-              <span className="text-dm-muted-alt">{editingTable.rawText.split("\n").filter((l) => l.trim()).length} entradas</span>
-            </label>
-            <textarea
-              id="table-items"
-              value={editingTable.rawText}
-              onChange={(e) => setEditingTable({ ...editingTable, rawText: e.target.value })}
-              className={cn(fieldClass, "flex-1 min-h-32 font-mono text-sm resize-none whitespace-pre mb-6")}
-              placeholder={"1000 po\nPoción de Curación Mayor\nEspada Larga +1"}
-              required
-            />
-
-            <div className="flex justify-end pt-4 border-t border-dm-border">
-              <button type="submit" className={cn(primaryButtonClass, "px-6")}>Guardar Tabla</button>
+      {/* Sheet of a catalog item rolled on a loot table */}
+      <Overlay isOpen={!!catalogPreview} onClose={() => setCatalogPreview(null)} zIndex="z-[60]">
+        {catalogPreview && (
+          <div role="dialog" aria-modal="true" className={cn(panelClass, "max-w-2xl")}>
+            <div className="flex items-center justify-between gap-2 px-4 sm:px-6 pt-4 pb-3 border-b border-dm-accent/10">
+              <h2 className="text-xl sm:text-2xl text-dm-accent font-display uppercase tracking-widest break-words">{catalogPreview.name}</h2>
+              <button type="button" onClick={() => setCatalogPreview(null)} aria-label="Cerrar" className="text-dm-muted hover:text-dm-text-bright"><X size={20} /></button>
             </div>
-          </form>
-        )}
-      </Overlay>
-
-      {/* View / roll loot table */}
-      <Overlay isOpen={!!viewingTable} onClose={closeTable}>
-        {viewingTable && (
-          <div role="dialog" aria-modal="true" className={cn(panelClass, "max-w-2xl p-4 sm:p-6")}>
-            <div className="h-1 w-full absolute top-0 left-0" style={{ backgroundColor: viewingTable.color || DEFAULT_COLOR }} />
-            <button type="button" onClick={closeTable} aria-label="Cerrar" className="absolute top-4 right-4 text-dm-muted hover:text-dm-text-bright z-10"><X size={20} /></button>
-            <h2 className="text-xl sm:text-2xl text-dm-accent font-bold mb-2 pr-8 break-words">{viewingTable.name}</h2>
-            {viewingTable.description && <p className="text-sm text-dm-text-muted mb-4 sm:mb-6 border-b border-dm-accent/10 pb-4 whitespace-pre-wrap break-words">{viewingTable.description}</p>}
-
-            <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6">
-              <button type="button" onClick={() => startLootRoll(viewingTable)} disabled={rollingState === "rolling" || viewingTable.items.length === 0} className={cn(primaryButtonClass, "flex-1 sm:flex-none")}>
-                <Hexagon size={16} className={rollingState === "rolling" ? "animate-spin" : ""} /> Tirar (d{viewingTable.items.length})
-              </button>
-              <button type="button" onClick={() => { setEditingTable({ id: viewingTable.id, name: viewingTable.name, description: viewingTable.description || "", rawText: viewingTable.items.join("\n"), color: viewingTable.color || DEFAULT_COLOR }); closeTable(); }} className="px-4 py-2 border border-dm-border text-dm-muted hover:border-dm-accent hover:text-dm-accent transition-colors uppercase tracking-wider font-bold text-sm flex items-center justify-center sm:flex-1">
-                Editar
-              </button>
-              <button type="button" onClick={() => { setDeleteData({ type: "table", id: viewingTable.id }); closeTable(); }} className="px-4 py-2 border border-dm-border text-dm-muted hover:border-dm-danger hover:text-dm-danger transition-colors flex items-center justify-center shrink-0" title="Borrar Tabla" aria-label="Borrar Tabla">
-                <Trash2 size={18} />
-              </button>
+            <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar">
+              <CatalogDetail
+                item={catalogPreview}
+                onOpenHomebrew={(id) => {
+                  setCatalogPreview(null);
+                  setViewingTable(null);
+                  openHomebrew(id);
+                }}
+              />
             </div>
-
-            {rollingState !== "idle" && (
-              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="mb-4 sm:mb-6 p-4 sm:p-6 border border-dm-accent bg-black relative overflow-hidden rounded-sm flex flex-col items-center justify-center min-h-[110px] shrink-0">
-                {rollingState === "rolling" && (
-                  <div className="flex flex-col items-center w-full animate-pulse">
-                    <span className="text-4xl font-mono text-dm-accent">{currentRollNumber}</span>
-                    <span className="text-xs uppercase tracking-widest text-dm-muted mt-2">Tirando los dados...</span>
-                  </div>
-                )}
-                {rollingState === "result" && finalItem && (
-                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center w-full text-center">
-                    <span className="text-sm text-dm-muted font-mono mb-2">Resultado: #{finalItem.index}</span>
-                    <span className="text-xl sm:text-2xl text-dm-text-bright font-bold break-words">{finalItem.text}</span>
-                  </motion.div>
-                )}
-              </motion.div>
-            )}
-
-            <h3 className="text-xs uppercase tracking-widest text-dm-muted mb-2">Contenido ({viewingTable.items.length} objetos)</h3>
-            <ul className="space-y-1 bg-dm-bg-darker p-2 sm:p-4 border border-dm-border font-mono text-sm overflow-y-auto custom-scrollbar flex-1 min-h-24 relative scroll-smooth rounded-sm">
-              {viewingTable.items.map((item, idx) => {
-                const isSelected = rollingState === "result" && finalItem?.index === idx + 1;
-                return (
-                  <li id={`loot-item-${idx + 1}`} key={idx} className={cn("flex gap-3 sm:gap-4 p-2 border-b border-dm-accent/10 last:border-0 transition-all duration-500", isSelected ? "bg-dm-accent/20 border-l-4 border-l-dm-accent rounded-r-sm" : "hover:bg-dm-bg")}>
-                    <span className={cn("w-8 text-right shrink-0", isSelected ? "text-dm-text-bright font-bold" : "text-dm-accent opacity-50")}>{idx + 1}.</span>
-                    <span className={cn("transition-colors break-words min-w-0", isSelected ? "text-dm-accent font-bold" : "text-dm-text")}>{item}</span>
-                  </li>
-                );
-              })}
-            </ul>
           </div>
         )}
       </Overlay>
@@ -587,24 +481,5 @@ function ItemStats({ item }: { item: CustomItem }) {
         </div>
       ))}
     </dl>
-  );
-}
-
-function ColorPicker({ value, onChange }: { value?: string; onChange: (color: string) => void }) {
-  return (
-    <div className="flex flex-wrap gap-2 mb-4">
-      {LOOT_COLORS.map((c) => (
-        <button
-          key={c.id}
-          type="button"
-          onClick={() => onChange(c.color)}
-          className={cn("w-8 h-8 rounded-full border-2 transition-transform shadow-md", value === c.color ? "border-dm-text-bright scale-110" : "border-dm-bg-darker hover:scale-105")}
-          style={{ backgroundColor: c.color }}
-          title={c.label}
-          aria-label={c.label}
-          aria-pressed={value === c.color}
-        />
-      ))}
-    </div>
   );
 }

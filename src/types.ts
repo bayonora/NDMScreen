@@ -156,12 +156,27 @@ export type CustomItem = {
   source?: string;
 };
 
+/** One result of a loot table. `weight` = how many faces of the die it takes. */
+export type LootEntry = {
+  id: string;
+  text: string;
+  weight: number;
+  /** Link to the item it stands for, so the result can open its sheet. */
+  ref?: { kind: "srd" | "homebrew"; id: string };
+};
+
 export type LootTable = {
   id: string;
   name: string;
   description?: string;
   color?: string;
+  /**
+   * Every result as a line, repeated by weight (["Poción", "Poción", "Espada"]). Older tables only
+   * have this; it is still saved so exports keep working with older versions of the app.
+   */
   items: string[];
+  /** Weighted results with item links. When missing, they are derived from `items`. */
+  entries?: LootEntry[];
 };
 
 export type QuestStatus = "active" | "completed" | "failed";
