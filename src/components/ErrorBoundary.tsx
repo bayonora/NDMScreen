@@ -40,6 +40,29 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
+      // The view's code could not be downloaded (server down, or a new version was published while
+      // the app was open). Retrying the view doesn't help because the failed load is cached: reload.
+      const loadFailed = /dynamically imported module|Importing a module script failed|error loading dynamically imported module|ChunkLoadError/i.test(String(this.state.error));
+      if (loadFailed) {
+        return (
+          <div className="flex flex-col items-center justify-center h-full w-full p-8 text-center bg-dm-bg-darker text-dm-text">
+            <div className="w-24 h-24 mb-6 text-dm-accent flex items-center justify-center">
+              <RefreshCcw size={56} />
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-display text-dm-accent uppercase tracking-widest mb-4">No se pudo cargar esta sección</h2>
+            <p className="text-dm-muted max-w-md mb-8">
+              Puede que se haya perdido la conexión o que haya una versión nueva de la aplicación. Recarga la página para seguir; tus datos están guardados.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="flex items-center gap-2 bg-dm-bg-hover border border-dm-accent text-dm-accent px-6 py-3 rounded hover:bg-dm-accent hover:text-dm-bg-darker transition-colors uppercase tracking-widest text-sm font-bold shadow-[0_0_15px_var(--theme-glow)]"
+            >
+              <RefreshCcw size={16} />
+              Recargar página
+            </button>
+          </div>
+        );
+      }
       return (
         <div className="flex flex-col items-center justify-center h-full w-full p-8 text-center bg-dm-bg-darker text-dm-text">
           <div className="w-24 h-24 mb-6 text-dm-danger animate-pulse flex items-center justify-center">

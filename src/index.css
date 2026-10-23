@@ -204,6 +204,24 @@ body {
   }
 }
 
+/* Element reached from the global search ("Ir a…"): a short glow so the eye finds it. */
+@keyframes search-flash {
+  0%,
+  35% {
+    outline-color: var(--theme-accent);
+    box-shadow: 0 0 0 2px var(--theme-accent), 0 0 28px var(--theme-glow);
+  }
+  100% {
+    outline-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+.search-flash {
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+  animation: search-flash 2.4s ease-out;
+}
+
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useStore, actions, store } from "../store/useStore";
 import { ViewHeader } from "../components/ui/ViewHeader";
 import { ImportExportActions } from "../components/ImportExportActions";
@@ -64,6 +64,22 @@ export function ViewMaps() {
   
   // Navigation State
   const [path, setPath] = useState<string[]>([]);
+
+  // Opened from the global search: walk up the parents so the breadcrumbs make sense.
+  const mapsFocusId = useStore((state) => state.uiState.mapsFocusId);
+  useEffect(() => {
+    if (!mapsFocusId) return;
+    const chain: string[] = [];
+    const seen = new Set<string>();
+    let id: string | null | undefined = mapsFocusId;
+    while (id && !seen.has(id)) {
+      seen.add(id);
+      chain.unshift(id);
+      id = locations.find((l) => l.id === id)?.parentId;
+    }
+    setPath(chain);
+    actions.updateUI({ mapsFocusId: undefined });
+  }, [mapsFocusId]);
 
   
   const currentNodeId = path.length > 0 ? path[path.length - 1] : null;
@@ -284,6 +300,7 @@ export function ViewMaps() {
                    return (
                     <motion.div 
                       key={child.id}
+                      data-search-id={child.id}
                       layout
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}

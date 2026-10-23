@@ -13,13 +13,18 @@ interface DescriptionEditorProps {
   placeholder?: string;
   labelClassName?: string;
   textareaClassName?: string;
+  /** Extra toolbar buttons that insert text; `lineStart` puts it on a line of its own ("- [ ] "). */
+  snippets?: { icon: React.ElementType; label: string; text: string; lineStart?: boolean }[];
+  /** Enter inside a list continues it ("- ", "1. ", "- [ ] "); Enter on an empty item ends it. */
+  smartLists?: boolean;
+  autoFocus?: boolean;
 }
 
 /**
  * Markdown textarea with a small, muted toolbar: bold, italic, a grid editor for tables and a
  * preview. Nobody has to type "| --- |" by hand.
  */
-export function DescriptionEditor({ id, label, value, onChange, placeholder, labelClassName, textareaClassName }: DescriptionEditorProps) {
+export function DescriptionEditor({ id, label, value, onChange, placeholder, labelClassName, textareaClassName, snippets, smartLists, autoFocus }: DescriptionEditorProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [preview, setPreview] = useState(false);
   const [table, setTable] = useState<{ data: TableData; start: number; end: number; editing: boolean } | null>(null);
@@ -40,6 +45,47 @@ export function DescriptionEditor({ id, label, value, onChange, placeholder, lab
     const selected = value.slice(start, end) || sample;
     onChange(value.slice(0, start) + mark + selected + mark + value.slice(end));
     restoreCursor(start + mark.length, start + mark.length + selected.length);
+  };
+
+  const insert = (snippet: string, lineStart?: boolean) => {
+    const el = ref.current;
+    const start = el?.selectionStart ?? value.length;
+    const end = el?.selectionEnd ?? start;
+    if (!lineStart) {
+      onChange(value.slice(0, start) + snippet + value.slice(end));
+      return restoreCursor(start + snippet.length);
+    }
+    const lineBegin = value.lastIndexOf("\n", start - 1) + 1;
+    const nl = value.indexOf("\n", start);
+    const lineEnd = nl === -1 ? value.length : nl;
+    if (value.slice(lineBegin, lineEnd).trim()) {
+      onChange(value.slice(0, lineEnd) + "\n" + snippet + value.slice(lineEnd));
+      restoreCursor(lineEnd + 1 + snippet.length);
+    } else {
+      onChange(value.slice(0, lineBegin) + snippet + value.slice(lineEnd));
+      restoreCursor(lineBegin + snippet.length);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!smartLists || e.key !== "Enter" || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey || e.nativeEvent.isComposing) return;
+    const el = e.currentTarget;
+    if (el.selectionStart !== el.selectionEnd) return;
+    const pos = el.selectionStart;
+    const lineBegin = value.lastIndexOf("\n", pos - 1) + 1;
+    const line = value.slice(lineBegin, pos);
+    const m = line.match(/^(\s*)([-*+]|(\d+)([.)]))[ \t]+(\[[ xX]\][ \t]+)?/);
+    if (!m) return;
+    e.preventDefault();
+    if (!line.slice(m[0].length).trim()) {
+      // Empty item: end the list.
+      onChange(value.slice(0, lineBegin) + value.slice(pos));
+      return restoreCursor(lineBegin);
+    }
+    const bullet = m[3] ? `${Number(m[3]) + 1}${m[4]}` : m[2];
+    const next = `\n${m[1]}${bullet} ${m[5] ? "[ ] " : ""}`;
+    onChange(value.slice(0, pos) + next + value.slice(pos));
+    restoreCursor(pos + next.length);
   };
 
   const openTable = () => {
@@ -76,6 +122,11 @@ export function DescriptionEditor({ id, label, value, onChange, placeholder, lab
           <button type="button" className={tool} title="Negrita" aria-label="Negrita" disabled={preview} onClick={() => wrap("**", "texto")}><Bold size={14} /></button>
           <button type="button" className={tool} title="Cursiva" aria-label="Cursiva" disabled={preview} onClick={() => wrap("*", "texto")}><Italic size={14} /></button>
           <button type="button" className={tool} title="Insertar o editar una tabla (pon el cursor dentro de una tabla para editarla)" aria-label="Tabla" onClick={openTable}><Table2 size={14} /></button>
+          {snippets?.map(({ icon: Icon, label: snippetLabel, text, lineStart }) => (
+            <button key={snippetLabel} type="button" className={tool} title={snippetLabel} aria-label={snippetLabel} disabled={preview} onClick={() => insert(text, lineStart)}>
+              <Icon size={14} />
+            </button>
+          ))}
           <span className="w-px h-4 bg-dm-border mx-1" aria-hidden />
           <button
             type="button"
@@ -103,7 +154,7 @@ export function DescriptionEditor({ id, label, value, onChange, placeholder, lab
           {value.trim() ? <Markdown units>{value}</Markdown> : <p className="text-dm-muted italic">Nada que mostrar todavía.</p>}
         </div>
       ) : (
-        <textarea ref={ref} id={id} value={value} onChange={(e) => onChange(e.target.value)} className={cn(textareaClassName, "mb-0")} placeholder={placeholder} />
+        <textarea ref={ref} id={id} value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={handleKeyDown} autoFocus={autoFocus} className={cn(textareaClassName, "mb-0")} placeholder={placeholder} />
       )}
 
       <TableEditorModal

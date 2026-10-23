@@ -157,8 +157,11 @@ const TUTORIAL_SECTIONS = [
     icon: <BookOpen size={18} />,
     content: (
       <div className="space-y-4 text-sm text-dm-text leading-relaxed">
-        <p>Tu libreta de diseño de campaña con soporte Markdown avanzado.</p>
+        <p>Tu libreta de campaña para apuntar todo lo que surge en la mesa.</p>
         <ul className="list-disc pl-5 space-y-2 text-dm-muted">
+          <li><strong className="text-dm-accent">Nota rápida:</strong> Escribe en la barra superior (o pulsa <code className="text-dm-accent">N</code>) y Enter. Las palabras con <code className="text-dm-accent">#</code> se guardan como etiquetas.</li>
+          <li><strong className="text-dm-accent">Tipos y plantillas:</strong> PNJ, Lugar, Pista, Botín, Regla, Sesión o Gancho, cada uno con su plantilla. Filtra por tipo, busca con <code className="text-dm-accent">/</code> y fija arriba las importantes.</li>
+          <li><strong className="text-dm-accent">Dados y casillas:</strong> Cualquier tirada escrita como <code className="text-dm-accent">1d20+5</code> se lanza con un clic, y las casillas <code className="text-dm-accent">- [ ]</code> se marcan sin entrar a editar. Pulsa <code className="text-dm-accent">?</code> en Notas para ver la guía completa de formato y atajos.</li>
           <li><strong className="text-dm-accent">Organización Drag & Drop:</strong> Arrastra y suelta las tarjetas de tus notas para reordenarlas en el tablero visual como más te guste.</li>
           <li><strong className="text-dm-accent">Formato Markdown:</strong> Escribe texto enriquecido rápidamente usando símbolos estándar: <code className="text-dm-accent"># Título</code>, <code className="text-dm-accent">**Negrita**</code>, <code className="text-dm-accent">- Lista</code>. Se renderizará perfectamente, con soporte para tablas y saltos de línea.</li>
           <li><strong className="text-dm-accent">Codificación por Color:</strong> A cada nota puedes asignarle un color de fondo (Rojo, Verde, Morado...). Así reconoces tus archivos de un vistazo.</li>
