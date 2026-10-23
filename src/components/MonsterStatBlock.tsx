@@ -1,5 +1,6 @@
 import React from "react";
 import { Markdown } from "./ui/Markdown";
+import { Measured } from "./ui/Measured";
 import { formatMod } from "../lib/utils";
 import { Monster, MonsterEntry } from "../types/monster";
 import { formatXP, monsterSubtitle } from "../data/monsterLabels";
@@ -23,7 +24,7 @@ export function MonsterStatBlock({ monster: m, showLore = true }: { monster: Mon
 
       {showLore && m.desc && (
         <div className={`${proseClass} text-dm-text-muted border-l-2 border-dm-accent/40 pl-3`}>
-          <Markdown>{m.desc}</Markdown>
+          <Markdown units>{m.desc}</Markdown>
         </div>
       )}
 
@@ -31,7 +32,7 @@ export function MonsterStatBlock({ monster: m, showLore = true }: { monster: Mon
       <div className="space-y-1">
         <Property label="Clase de Armadura">{m.ac}{m.ac_desc ? ` (${m.ac_desc})` : ""}</Property>
         <Property label="Puntos de golpe">{m.hp}{m.hit_dice ? ` (${m.hit_dice})` : ""}</Property>
-        <Property label="Velocidad">{m.speed}</Property>
+        <Property label="Velocidad"><Measured text={m.speed} /></Property>
       </div>
 
       <Divider />
@@ -54,8 +55,8 @@ export function MonsterStatBlock({ monster: m, showLore = true }: { monster: Mon
         <Property label="Resistencias al daño">{m.damage_resistances}</Property>
         <Property label="Inmunidades al daño">{m.damage_immunities}</Property>
         <Property label="Inmunidades a estados">{m.condition_immunities}</Property>
-        <Property label="Sentidos">{m.senses}</Property>
-        <Property label="Idiomas">{m.languages}</Property>
+        <Property label="Sentidos">{m.senses && <Measured text={m.senses} />}</Property>
+        <Property label="Idiomas">{m.languages && <Measured text={m.languages} />}</Property>
         <Property label="Desafío">{m.cr}{m.xp !== undefined ? ` (${formatXP(m.xp)})` : ""}</Property>
       </div>
 
@@ -74,7 +75,7 @@ export function MonsterStatBlock({ monster: m, showLore = true }: { monster: Mon
         <div key={n.name} className="mt-4 p-3 bg-dm-bg-hover border border-dm-border rounded-sm">
           <h3 className="text-xs uppercase tracking-widest font-bold text-dm-accent mb-2">{n.name}</h3>
           <div className={`${proseClass} [&_p+p]:mt-2`}>
-            <Markdown>{n.desc}</Markdown>
+            <Markdown units>{n.desc}</Markdown>
           </div>
         </div>
       ))}
@@ -109,7 +110,7 @@ function Section({ title, entries, intro }: { title: string; entries?: MonsterEn
       <h3 className="text-base font-display uppercase tracking-widest text-dm-accent border-b border-dm-accent/40 pb-1 mb-2">{title}</h3>
       {intro && (
         <div className={`${proseClass} mb-2`}>
-          <Markdown>{intro}</Markdown>
+          <Markdown units>{intro}</Markdown>
         </div>
       )}
       <Entries entries={entries} />
@@ -122,7 +123,7 @@ function Entries({ entries }: { entries: MonsterEntry[] }) {
     <div className="space-y-2">
       {entries.map((e, i) => (
         <div key={`${e.name}-${i}`} className={proseClass}>
-          <Markdown>{`***${e.name}.*** ${e.desc}`}</Markdown>
+          <Markdown units>{`***${e.name}.*** ${e.desc}`}</Markdown>
         </div>
       ))}
     </div>
