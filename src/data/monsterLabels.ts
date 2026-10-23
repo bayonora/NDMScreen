@@ -62,17 +62,6 @@ function entriesToText(entries: MonsterEntry[] | undefined) {
  * campaign or dropped into the initiative tracker with its whole stat block.
  */
 export function monsterToCreature(m: Monster): Omit<Creature, "id" | "type"> {
-  const header = [
-    m.ac_desc && `CA: ${m.ac} (${m.ac_desc})`,
-    m.hit_dice && `Dados de golpe: ${m.hit_dice}`,
-    `Velocidad: ${m.speed}`,
-    m.saving_throws && `Tiradas de salvación: ${m.saving_throws}`,
-    m.damage_vulnerabilities && `Vulnerabilidades al daño: ${m.damage_vulnerabilities}`,
-    m.damage_resistances && `Resistencias al daño: ${m.damage_resistances}`,
-    m.damage_immunities && `Inmunidades al daño: ${m.damage_immunities}`,
-    m.condition_immunities && `Inmunidades a estados: ${m.condition_immunities}`,
-  ].filter(Boolean).join("\n");
-
   const actionBlocks = [entriesToText(m.actions)];
   if (m.reactions?.length) actionBlocks.push(`REACCIONES\n\n${entriesToText(m.reactions)}`);
   if (m.legendary_actions?.length) {
@@ -89,7 +78,15 @@ export function monsterToCreature(m: Monster): Omit<Creature, "id" | "type"> {
     skills: m.skills || "",
     senses: m.senses || "",
     languages: m.languages || "",
-    specialTraits: [header, entriesToText(m.traits)].filter(Boolean).join("\n\n"),
+    acDesc: m.ac_desc || undefined,
+    hitDice: m.hit_dice || undefined,
+    speed: m.speed || undefined,
+    savingThrows: m.saving_throws || undefined,
+    damageVulnerabilities: m.damage_vulnerabilities || undefined,
+    damageResistances: m.damage_resistances || undefined,
+    damageImmunities: m.damage_immunities || undefined,
+    conditionImmunities: m.condition_immunities || undefined,
+    specialTraits: entriesToText(m.traits),
     actions: actionBlocks.filter(Boolean).join("\n\n"),
   };
 }

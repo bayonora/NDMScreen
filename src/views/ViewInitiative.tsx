@@ -251,7 +251,10 @@ export function ViewInitiative() {
                             </button>
                             <MathInput
                               value={c.hpCurrent}
-                              onValueChange={(val) => actions.updateCombatant(c.id, { hpCurrent: val })}
+                              onValueChange={(val) =>
+                                // Lowering HP counts as damage, so temporary HP go first.
+                                val < c.hpCurrent ? actions.damageCombatant(c.id, c.hpCurrent - val) : actions.updateCombatant(c.id, { hpCurrent: val })
+                              }
                               className="hidden sm:block w-20 h-6 p-0 md:text-right text-left border-none bg-transparent text-dm-text text-xl font-bold focus:bg-dm-border rounded-sm"
                             />
                             <button
@@ -261,8 +264,12 @@ export function ViewInitiative() {
                             >
                               <span className="text-dm-text text-xl font-bold">{c.hpCurrent}</span>
                               <span className="opacity-50 text-base">/ {char.hpMax}</span>
+                              {!!char.hpTemp && <span className="text-sky-400 text-sm font-bold">+{char.hpTemp}</span>}
                             </button>
                             <span className="hidden sm:inline opacity-50 text-base select-none shrink-0">/ {char.hpMax}</span>
+                            {!!char.hpTemp && (
+                              <span className="hidden sm:inline text-sky-400 text-sm font-bold select-none shrink-0" title="Puntos de golpe temporales">+{char.hpTemp}</span>
+                            )}
                         </div>
                         <div className={cn("w-full md:w-32 h-1.5 bg-dm-bg-hover rounded-full relative overflow-hidden border", (isCritical || isBadlyWounded) ? "border-dm-danger" : "border-dm-border", isCritical ? "animate-pulse" : "")}>
                           <div 
@@ -352,7 +359,7 @@ export function ViewInitiative() {
       <GraveyardModal isOpen={isGraveyardOpen} onClose={() => setIsGraveyardOpen(false)} onViewChar={(char) => setViewCharModal({ open: true, char })} />
       <Overlay isOpen={viewCharModal.open && !!viewedChar} onClose={() => setViewCharModal({ open: false })}>
         <div className="relative max-w-md w-full max-h-full sm:max-h-[90vh] overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95">
-          {viewedChar && <StatBlock character={viewedChar} />}
+          {viewedChar && <StatBlock character={viewedChar} hideCollapse />}
         </div>
       </Overlay>
     </div>
@@ -663,6 +670,10 @@ const HP_QUICK = [1, 2, 5, 10];
 /** Damage / healing pad: phones adjust HP here without fiddling with a tiny inline field. */
 function HpAdjustModal({ combatantId, onClose }: { combatantId: string | null; onClose: () => void }) {
   const combatant = useStore((state) => state.combatants.find((c) => c.id === combatantId));
+  // Re-render when the character's temporary HP change.
+  useStore((state) => state.players);
+  useStore((state) => state.npcs);
+  useStore((state) => state.creatures);
   const [amount, setAmount] = useState("");
   const char = combatant ? ((combatant.isTemp && combatant.tempData) ? combatant.tempData : actions.getCharacter(combatant.characterId)) : undefined;
 
@@ -674,7 +685,16 @@ function HpAdjustModal({ combatantId, onClose }: { combatantId: string | null; o
     actions.updateCombatant(combatant.id, { hpCurrent: hp });
     setAmount("");
   };
-  const damage = (n: number) => combatant && apply(Math.max(0, combatant.hpCurrent - n));
+  const damage = (n: number) => {
+    if (!combatant) return;
+    actions.damageCombatant(combatant.id, n);
+    setAmount("");
+  };
+  const setTemp = (n: number) => {
+    if (!char) return;
+    actions.updateCharacter(char, { hpTemp: n || undefined });
+    setAmount("");
+  };
   const heal = (n: number) => combatant && char && apply(Math.min(char.hpMax, Math.max(0, combatant.hpCurrent) + n));
 
   return (
@@ -686,7 +706,9 @@ function HpAdjustModal({ combatantId, onClose }: { combatantId: string | null; o
             <div className="font-mono">
               <span className="text-4xl font-bold text-dm-text-bright">{combatant.hpCurrent}</span>
               <span className="text-xl opacity-50"> / {char.hpMax}</span>
+              {!!char.hpTemp && <span className="text-xl text-sky-400 font-bold"> +{char.hpTemp}</span>}
             </div>
+            {!!char.hpTemp && <div className="text-[11px] text-sky-400/80">El daño gasta primero los {char.hpTemp} PV temporales</div>}
           </div>
 
           <Input
@@ -721,6 +743,9 @@ function HpAdjustModal({ combatantId, onClose }: { combatantId: string | null; o
           <div className="flex gap-2 pt-3 border-t border-dm-border">
             <Button variant="secondary" className="flex-1 h-10" disabled={amount === ""} onClick={() => apply(value)}>
               Fijar a {amount === "" ? "…" : value}
+            </Button>
+            <Button variant="secondary" className="flex-1 h-10 !text-sky-400" disabled={amount === ""} onClick={() => setTemp(value)} title="Fija los PV temporales a esta cantidad (0 los quita)">
+              PV temp.
             </Button>
             <Button variant="secondary" className="flex-1 h-10" onClick={() => apply(char.hpMax)}>
               Curar todo

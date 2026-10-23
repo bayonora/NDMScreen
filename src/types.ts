@@ -28,6 +28,18 @@ export type Player = {
   languages?: string;
   specialTraits?: string;
   actions?: string;
+  /** Current and temporary hit points, tracked on the card. Missing hpCurrent = full. */
+  hpCurrent?: number;
+  hpTemp?: number;
+  /** Stat block extras: "armadura natural", "7d10+21", "30 pies"... */
+  acDesc?: string;
+  hitDice?: string;
+  speed?: string;
+  savingThrows?: string;
+  damageVulnerabilities?: string;
+  damageResistances?: string;
+  damageImmunities?: string;
+  conditionImmunities?: string;
   tags?: CharacterTag[];
   image?: string;
 };
@@ -47,6 +59,18 @@ export type NPC = {
   languages: string;
   specialTraits: string;
   actions: string;
+  /** Current and temporary hit points, tracked on the card. Missing hpCurrent = full. */
+  hpCurrent?: number;
+  hpTemp?: number;
+  /** Stat block extras: "armadura natural", "7d10+21", "30 pies"... */
+  acDesc?: string;
+  hitDice?: string;
+  speed?: string;
+  savingThrows?: string;
+  damageVulnerabilities?: string;
+  damageResistances?: string;
+  damageImmunities?: string;
+  conditionImmunities?: string;
   tags?: CharacterTag[];
   image?: string;
 };
@@ -66,6 +90,18 @@ export type Creature = {
   languages: string;
   specialTraits: string;
   actions: string;
+  /** Current and temporary hit points, tracked on the card. Missing hpCurrent = full. */
+  hpCurrent?: number;
+  hpTemp?: number;
+  /** Stat block extras: "armadura natural", "7d10+21", "30 pies"... */
+  acDesc?: string;
+  hitDice?: string;
+  speed?: string;
+  savingThrows?: string;
+  damageVulnerabilities?: string;
+  damageResistances?: string;
+  damageImmunities?: string;
+  conditionImmunities?: string;
   tags?: CharacterTag[];
   image?: string;
 };
