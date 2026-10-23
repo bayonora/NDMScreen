@@ -8,6 +8,7 @@ import { CustomItem, LootTable } from "../types";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { SortableGrid } from "../components/SortableGrid";
 import { Markdown } from "../components/ui/Markdown";
+import { Measured } from "../components/ui/Measured";
 import { Overlay } from "../components/ui/Modal";
 import { ViewHeader, ToolbarButton, SegmentedTabs } from "../components/ui/ViewHeader";
 import { ImportExportActions, arrayOrKey } from "../components/ImportExportActions";
@@ -35,8 +36,18 @@ const primaryButtonClass = "px-4 py-2 bg-dm-accent text-dm-bg-darker hover:bg-dm
 export function ViewItems() {
   const customItems = useStore((state) => state.customItems);
   const lootTables = useStore((state) => state.lootTables);
-  const [activeTab, setActiveTab] = useState<"items" | "loot" | "srd">("items");
+  // The sub-tab lives in the UI state so the global search can open a specific one.
+  const activeTab = useStore((state) => state.uiState.itemsTab) || "items";
+  const setActiveTab = (itemsTab: "items" | "loot" | "srd") => actions.updateUI({ itemsTab });
+  const editCustomItemId = useStore((state) => state.uiState.editCustomItemId);
   const [editingItem, setEditingItem] = useState<CustomItem | null>(null);
+
+  useEffect(() => {
+    if (!editCustomItemId) return;
+    const item = store.getState().customItems.find((i) => i.id === editCustomItemId);
+    if (item) setEditingItem(item);
+    actions.updateUI({ editCustomItemId: undefined });
+  }, [editCustomItemId]);
   const [viewingItem, setViewingItem] = useState<CustomItem | null>(null);
   const [editingTable, setEditingTable] = useState<EditingTable | null>(null);
   const [viewingTable, setViewingTable] = useState<LootTable | null>(null);
@@ -308,7 +319,7 @@ export function ViewItems() {
 
               <h3 className="text-xs uppercase tracking-widest text-dm-muted mb-2">Descripción Completa</h3>
               <div className="text-dm-text text-sm leading-relaxed mb-8 flex-1 break-words select-text [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:text-dm-text-bright [&_table]:block [&_table]:overflow-x-auto [&_table]:my-3 [&_table]:text-xs [&_table]:border [&_table]:border-dm-border [&_th]:text-dm-accent [&_th]:text-left [&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-1 [&_tr]:border-b [&_tr]:border-dm-border">
-                <Markdown>{viewingItem.description || "Sin descripción detallada."}</Markdown>
+                <Markdown units>{viewingItem.description || "Sin descripción detallada."}</Markdown>
               </div>
               {viewingItem.source && <p className="text-[11px] text-dm-muted -mt-6 mb-6">Basado en: {viewingItem.source}</p>}
 
@@ -553,7 +564,7 @@ function ItemStats({ item }: { item: CustomItem }) {
       {shown.map(([label, value]) => (
         <div key={label} className={cn("bg-dm-bg-darker border border-dm-border px-3 py-2", label === "Propiedades" && "col-span-2")}>
           <dt className="text-[10px] uppercase tracking-widest font-bold text-dm-muted">{label}</dt>
-          <dd className="text-sm text-dm-text-bright break-words">{value}</dd>
+          <dd className="text-sm text-dm-text-bright break-words"><Measured text={value} /></dd>
         </div>
       ))}
     </dl>

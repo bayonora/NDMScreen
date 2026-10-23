@@ -19,6 +19,12 @@ type UIState = {
   partyTab?: "players" | "npcs" | "creatures";
   highlightedQuestId?: string;
   highlightedSpellId?: string;
+  /** Sub-tab of the Objetos view. */
+  itemsTab?: "items" | "loot" | "srd";
+  /** Catalog entry to open when the Objetos tab shows (from the global search). */
+  highlightedItemId?: string;
+  /** Homebrew item to open in the editor when the Objetos tab shows. */
+  editCustomItemId?: string;
   collapsedCharacters?: string[];
   theme?: string;
 };

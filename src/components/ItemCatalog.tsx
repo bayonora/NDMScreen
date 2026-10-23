@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState, useDeferredValue } from "react";
 import { Search, Loader2, SlidersHorizontal, Link2, Plus, Check, ArrowRight } from "lucide-react";
 import { useItemCatalogStore } from "../store/useItemCatalogStore";
-import { actions } from "../store/useStore";
+import { actions, useStore } from "../store/useStore";
 import { cn, normalizeSearchText } from "../lib/utils";
 import { Modal } from "./ui/Modal";
 import { Markdown } from "./ui/Markdown";
+import { Measured } from "./ui/Measured";
 import { SegmentedTabs } from "./ui/ViewHeader";
 import { CatalogItem } from "../types/item";
 import { MUNDANE_CATEGORIES, MAGIC_CATEGORIES, RARITIES, rarityInfo, rarityLabel, categoryLabel, itemStats, catalogToCustomItem } from "../data/itemLabels";
@@ -35,6 +36,24 @@ export function ItemCatalog({ onOpenHomebrew }: { onOpenHomebrew: (id: string) =
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
+
+  // Opened from the global search: show the entry's list without filters and open it.
+  const highlightedItemId = useStore((s) => s.uiState.highlightedItemId);
+  useEffect(() => {
+    if (!highlightedItemId || items.length === 0) return;
+    const it = items.find((i) => i.index === highlightedItemId);
+    if (it) {
+      setKind(it.kind);
+      setSearch("");
+      setCategoryFilter("");
+      setRarityFilter("");
+      setAttunementFilter("");
+      setSelected(it);
+    }
+    actions.updateUI({ highlightedItemId: undefined });
+    // No cleanup: clearing highlightedItemId re-runs this effect and must not cancel the scroll.
+    setTimeout(() => document.getElementById(`item-${highlightedItemId}`)?.scrollIntoView({ block: "center" }), 150);
+  }, [highlightedItemId, items]);
 
   const switchKind = (k: Kind) => {
     setKind(k);
@@ -222,13 +241,14 @@ function CatalogRow({ item, onClick }: { item: CatalogItem; onClick: () => void 
   return (
     <button
       type="button"
+      id={`item-${item.index}`}
       onClick={onClick}
       className="w-full text-left px-3 sm:px-4 py-2.5 flex items-center justify-between gap-3 border-t border-dm-border/60 first:border-t-0 hover:bg-dm-bg-hover transition-colors [content-visibility:auto] [contain-intrinsic-size:auto_56px]"
     >
       <div className="min-w-0">
         <div className="font-bold text-dm-text-bright truncate">{item.name}</div>
         {(item.kind === "magic" ? item.item_type : itemStats(item)) && (
-          <div className="text-xs text-dm-muted truncate">{item.kind === "magic" ? item.item_type : itemStats(item)}</div>
+          <div className="text-xs text-dm-muted truncate">{item.kind === "magic" ? item.item_type : <Measured text={itemStats(item)} />}</div>
         )}
       </div>
       <div className="shrink-0 flex items-center gap-2 text-xs tabular-nums">
@@ -242,7 +262,7 @@ function CatalogRow({ item, onClick }: { item: CatalogItem; onClick: () => void 
         ) : (
           <span className="flex flex-col items-end leading-tight">
             {item.cost && <span className="font-semibold text-dm-accent whitespace-nowrap">{item.cost}</span>}
-            {item.weight && item.weight !== "-" && <span className="text-dm-muted whitespace-nowrap">{item.weight}</span>}
+            {item.weight && item.weight !== "-" && <span className="text-dm-muted whitespace-nowrap"><Measured text={item.weight} /></span>}
           </span>
         )}
       </div>
@@ -250,7 +270,7 @@ function CatalogRow({ item, onClick }: { item: CatalogItem; onClick: () => void 
   );
 }
 
-function CatalogDetail({ item, onOpenHomebrew }: { item: CatalogItem; onOpenHomebrew: (id: string) => void }) {
+export function CatalogDetail({ item, onOpenHomebrew }: { item: CatalogItem; onOpenHomebrew: (id: string) => void }) {
   const [addedId, setAddedId] = useState<string | null>(null);
   const rarity = rarityInfo(item.rarities?.[0] ?? item.rarity);
   const stats: [string, string | undefined][] = [
@@ -287,7 +307,7 @@ function CatalogDetail({ item, onOpenHomebrew }: { item: CatalogItem; onOpenHome
           {shownStats.map(([label, value]) => (
             <div key={label} className="bg-dm-bg-hover border border-dm-border rounded-sm px-3 py-2">
               <dt className="text-[10px] uppercase tracking-widest font-bold text-dm-accent">{label}</dt>
-              <dd className="text-sm text-dm-text-bright">{value}</dd>
+              <dd className="text-sm text-dm-text-bright"><Measured text={value} /></dd>
             </div>
           ))}
         </dl>
@@ -295,7 +315,7 @@ function CatalogDetail({ item, onOpenHomebrew }: { item: CatalogItem; onOpenHome
 
       {item.desc ? (
         <div className={proseClass}>
-          <Markdown>{item.desc}</Markdown>
+          <Markdown units>{item.desc}</Markdown>
         </div>
       ) : (
         <p className="text-sm text-dm-muted italic">El manual no incluye una descripción para este objeto, solo sus datos de la tabla.</p>

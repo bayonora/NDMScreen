@@ -6,7 +6,9 @@
   Usa pies y libras, igual que el bestiario y el grimorio.
 - **Objetos mágicos** (de la A a la Z y el Orbe de los Dragones): SRD 5.1 oficial en español de
   Wizards of the Coast, <https://media.wizards.com/2023/downloads/dnd/SRD_CC_v5.1_ES.pdf>
-  (páginas 222–273), CC-BY-4.0. Usa metros y kilos, como el PDF oficial.
+  (páginas 222–273), CC-BY-4.0. El PDF usa metros y kilos; `imperial.py` los pasa a pies y libras
+  (con los factores oficiales al revés: 30 cm = 1 pie, 0,5 kg = 1 libra…) para que todo coincida con
+  el manual y con el resto de la app. La app muestra el equivalente métrico al lado.
 
 ## Pasos
 
@@ -38,3 +40,4 @@ dentro de cada una por rareza.
 - Productos comerciales: "clavo no 1 cerdo" → "clavo o 1 cerdo"; "pimiento" → "pimienta".
 - "prueba de Fortaleza" → "prueba de Fuerza"; "modificador por Fuera" → "modificador por Fuerza".
 - Collar de plegarias: una fila de su tabla viene desordenada en el PDF y se corrige a mano.
+- Bastón de poder y Bastón de los magos: la tabla de distancias del golpe vengativo se rehace a mano.

@@ -4,7 +4,10 @@ usage: py -I build_items.py <mundane.json> <magic.json> <out.json>
 Order = display order: equipment in the manual's category order, then magic items by category,
 rarity and name.
 """
-import sys, json, re, unicodedata
+import sys, os, json, re, unicodedata
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from imperial import to_imperial
 
 sys.stdout.reconfigure(encoding="utf-8")
 mundane = json.load(open(sys.argv[1], encoding="utf-8"))
@@ -42,6 +45,9 @@ for it in magic:
         assert a in it["desc"], it["index"]
         it["desc"] = it["desc"].replace(a, b)
     it.pop("page", None)
+    # Same units as the rest of the app (and the manual): feet and pounds. The UI adds metric next to them.
+    it["desc"] = to_imperial(it["desc"])
+    it["type_line"] = to_imperial(it["type_line"])
     it["source"] = "srd-oficial"
     if not it["rarities"]:
         it.pop("rarities")
