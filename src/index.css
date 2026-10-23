@@ -224,3 +224,12 @@ body {
     scrollbar-color: var(--theme-border) transparent;
   }
 }
+
+/* Metric equivalent shown after measurements in feet/pounds: "30 pies (9 m)". */
+.unit-metric {
+  font-size: 0.82em;
+  font-weight: 400;
+  font-style: normal;
+  color: var(--theme-muted);
+  white-space: nowrap;
+}

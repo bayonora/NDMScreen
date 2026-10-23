@@ -3,6 +3,7 @@ import { Search, X, BookOpen, Users, Sparkles, Target, Map as MapIcon, Store as 
 import { Overlay, useModalLayer } from "./ui/Modal";
 import { StatBlock } from "./StatBlock";
 import { Markdown } from "./ui/Markdown";
+import { Measured } from "./ui/Measured";
 import { useStore, actions, Tab } from "../store/useStore";
 import { useSpellStore } from "../store/useSpellStore";
 import { useMonsterStore } from "../store/useMonsterStore";
@@ -447,15 +448,15 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
                        <span><strong>Escuela:</strong> {s.school?.index ? SCHOOL_NAMES[s.school.index] : (s.school?.name || "Sin escuela")}</span>
                        <span><strong>Tiempo:</strong> {s.casting_time}</span>
                        <span><strong>Duración:</strong> {s.duration}</span>
-                       <span><strong>Rango:</strong> {s.range}</span>
+                       <span><strong>Rango:</strong> <Measured text={s.range} /></span>
                        <span><strong>Componentes:</strong> {s.components?.join(", ") || ""}</span>
                      </div>
                      <div className="text-sm leading-relaxed max-h-64 overflow-y-auto custom-scrollbar pr-2 space-y-2 prose prose-invert prose-sm max-w-none prose-strong:text-dm-accent">
-                       <Markdown>{s.desc?.join('\n\n') || ""}</Markdown>
+                       <Markdown units>{s.desc?.join('\n\n') || ""}</Markdown>
                        {s.higher_level && s.higher_level.length > 0 && (
                          <div className="mt-4">
                            <strong className="text-dm-accent">A niveles superiores: </strong>
-                           <Markdown>{s.higher_level.join('\n\n')}</Markdown>
+                           <Markdown units>{s.higher_level.join('\n\n')}</Markdown>
                          </div>
                        )}
                      </div>
