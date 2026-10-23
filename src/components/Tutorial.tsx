@@ -211,8 +211,8 @@ const TUTORIAL_SECTIONS = [
         <p>Las más de 300 criaturas del SRD 5.1 en español, con su bloque de estadísticas completo.</p>
         <ul className="list-disc pl-5 space-y-2 text-dm-muted">
           <li><strong className="text-dm-accent">Buscar y filtrar:</strong> Busca por nombre (también en inglés, como "owlbear") y filtra por Desafío, Tipo o Tamaño.</li>
-          <li><strong className="text-dm-accent">Añadir a combate:</strong> Desde la ficha, elige cuántas quieres y lánzalas al Tracker de Iniciativa. La iniciativa se tira sola (d20 + Destreza) y cada copia se numera.</li>
-          <li><strong className="text-dm-accent">Guardar en Criaturas:</strong> Crea una copia editable en Grupo › Criaturas para adaptarla a tu campaña.</li>
+          <li><strong className="text-dm-accent">Añadir a combate:</strong> Desde la ficha, elige cuántas quieres y lánzalas al Tracker de Iniciativa. La iniciativa la tira la app (d20 + Destreza) o la escribes tú con «Manual», y cada copia se numera.</li>
+          <li><strong className="text-dm-accent">Guardar en tus criaturas:</strong> Crea una copia editable en Grupo › Criaturas para adaptarla a tu campaña.</li>
           <li><strong className="text-dm-accent">Guardados:</strong> Marca con la estrella las que más uses y filtra por "Solo guardados".</li>
         </ul>
       </div>

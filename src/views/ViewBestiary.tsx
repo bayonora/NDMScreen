@@ -310,29 +310,49 @@ function MonsterActions({ monster }: { monster: Monster }) {
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setAutoRoll((v) => !v)}
-          aria-pressed={autoRoll}
-          title="Tirar la iniciativa automáticamente (d20 + modificador de Destreza)"
-          className={cn(
-            "flex items-center gap-1.5 px-2.5 py-2 border rounded-sm text-xs tracking-wider tabular-nums transition-colors",
-            autoRoll ? "border-dm-accent text-dm-accent bg-dm-accent/10" : "border-dm-border text-dm-muted hover:text-dm-accent"
+        {/* Initiative: rolled by the app (d20 + DEX modifier) or typed by the DM. */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] uppercase tracking-widest text-dm-muted">Iniciativa</span>
+          <div className="flex border border-dm-border rounded-sm overflow-hidden" role="radiogroup" aria-label="Iniciativa">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={autoRoll}
+              onClick={() => setAutoRoll(true)}
+              title={`La app tira 1d20 y suma el modificador de Destreza (${formatMod(monster.stats.DEX)})`}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-2 text-xs tabular-nums transition-colors",
+                autoRoll ? "bg-dm-accent/15 text-dm-accent font-bold" : "text-dm-muted hover:text-dm-accent"
+              )}
+            >
+              <Dices size={14} /> Tirar (d20{formatMod(monster.stats.DEX)})
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={!autoRoll}
+              onClick={() => setAutoRoll(false)}
+              title="Escribe tú el resultado de la iniciativa"
+              className={cn(
+                "px-2.5 py-2 text-xs border-l border-dm-border transition-colors",
+                !autoRoll ? "bg-dm-accent/15 text-dm-accent font-bold" : "text-dm-muted hover:text-dm-accent"
+              )}
+            >
+              Manual
+            </button>
+          </div>
+          {!autoRoll && (
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Valor"
+              aria-label="Valor de iniciativa"
+              value={manualInit}
+              onChange={(e) => setManualInit(e.target.value)}
+              className="w-20 px-2 py-2 bg-dm-bg border border-dm-border rounded-sm text-sm focus:outline-none focus:border-dm-accent"
+            />
           )}
-        >
-          <Dices size={14} /> d20{formatMod(monster.stats.DEX)}
-        </button>
-        {!autoRoll && (
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Inic."
-            aria-label="Iniciativa"
-            value={manualInit}
-            onChange={(e) => setManualInit(e.target.value)}
-            className="w-20 px-2 py-2 bg-dm-bg border border-dm-border rounded-sm text-sm focus:outline-none focus:border-dm-accent"
-          />
-        )}
+        </div>
 
         <button
           type="button"
@@ -345,13 +365,13 @@ function MonsterActions({ monster }: { monster: Monster }) {
           type="button"
           onClick={saveToCreatures}
           disabled={saved}
-          title="Guarda una copia editable en Grupo › Criaturas"
+          title="Guarda una copia editable en Grupo › Criaturas, para adaptarla a tu campaña"
           className={cn(
             "flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 border text-xs uppercase tracking-wider rounded-sm transition-colors",
             saved ? "border-dm-accent text-dm-accent" : "border-dm-border text-dm-muted hover:text-dm-accent hover:border-dm-accent"
           )}
         >
-          {saved ? <Check size={16} /> : <UserPlus size={16} />} {saved ? "Guardada en Criaturas" : "Guardar en Criaturas"}
+          {saved ? <Check size={16} /> : <UserPlus size={16} />} {saved ? "Guardada en tus criaturas" : "Guardar en tus criaturas"}
         </button>
         <button
           type="button"
