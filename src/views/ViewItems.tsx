@@ -10,6 +10,7 @@ import { SortableGrid } from "../components/SortableGrid";
 import { Markdown } from "../components/ui/Markdown";
 import { Measured } from "../components/ui/Measured";
 import { Combobox } from "../components/ui/Combobox";
+import { DescriptionEditor } from "../components/DescriptionEditor";
 import { Overlay } from "../components/ui/Modal";
 import { ViewHeader, ToolbarButton, SegmentedTabs } from "../components/ui/ViewHeader";
 import { ImportExportActions, arrayOrKey } from "../components/ImportExportActions";
@@ -417,8 +418,15 @@ export function ViewItems() {
                 </div>
               </fieldset>
 
-              <label className={labelClass} htmlFor="item-desc">Descripción Completa</label>
-              <textarea id="item-desc" value={editingItem.description || ""} onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })} className={cn(fieldClass, "h-40 sm:h-48 resize-y font-sans text-sm")} placeholder="Historia detallada, estadísticas de daño, peso..." />
+              <DescriptionEditor
+                id="item-desc"
+                label="Descripción Completa"
+                labelClassName={labelClass}
+                value={editingItem.description || ""}
+                onChange={(description) => setEditingItem({ ...editingItem, description })}
+                textareaClassName={cn(fieldClass, "h-40 sm:h-48 resize-y font-sans text-sm")}
+                placeholder="Historia detallada, estadísticas de daño, peso..."
+              />
 
               <span className={labelClass}>Imagen (Opcional)</span>
               <div className="flex items-center space-x-4 mb-6">
