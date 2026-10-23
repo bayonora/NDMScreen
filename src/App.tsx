@@ -5,7 +5,7 @@
 
 import React, { useState, useRef, useEffect, Suspense, lazy } from "react";
 import { cn } from "./lib/utils";
-import { Users, Swords, BookOpen, Map as MapIcon, Store as StoreIcon, Settings, Download, Upload, StickyNote, Backpack, Calculator, Target, Info, LayoutGrid } from "lucide-react";
+import { Users, Swords, BookOpen, Map as MapIcon, Store as StoreIcon, Settings, Download, Upload, StickyNote, Backpack, Calculator, Target, Info, LayoutGrid, Skull } from "lucide-react";
 import { store, actions, useStore, Tab } from "./store/useStore";
 import { motion } from "motion/react";
 import { Modal } from "./components/ui/Modal";
@@ -27,6 +27,7 @@ const ViewShops = lazy(() => import("./views/ViewShops").then((m) => ({ default:
 const ViewNotes = lazy(() => import("./views/ViewNotes").then((m) => ({ default: m.ViewNotes })));
 const ViewItems = lazy(() => import("./views/ViewItems").then((m) => ({ default: m.ViewItems })));
 const ViewGrimoire = lazy(() => import("./views/ViewGrimoire").then((m) => ({ default: m.ViewGrimoire })));
+const ViewBestiary = lazy(() => import("./views/ViewBestiary").then((m) => ({ default: m.ViewBestiary })));
 
 const TABS: { id: Tab; label: string; icon: React.ElementType; view: React.ComponentType }[] = [
   { id: "party", label: "Grupo", icon: Users, view: ViewParty },
@@ -37,6 +38,7 @@ const TABS: { id: Tab; label: string; icon: React.ElementType; view: React.Compo
   { id: "notes", label: "Notas", icon: StickyNote, view: ViewNotes },
   { id: "items", label: "Objetos", icon: Backpack, view: ViewItems },
   { id: "spells", label: "Grimorio", icon: BookOpen, view: ViewGrimoire },
+  { id: "bestiary", label: "Bestiario", icon: Skull, view: ViewBestiary },
 ];
 
 /** Tabs that get their own slot in the phone nav bar; the rest live in the "Más" sheet. */
