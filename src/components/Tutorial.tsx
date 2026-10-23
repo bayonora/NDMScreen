@@ -144,6 +144,7 @@ const TUTORIAL_SECTIONS = [
       <div className="space-y-4 text-sm text-dm-text leading-relaxed">
         <p>Tenderos, mercancías y catálogos de compraventa a tu alcance.</p>
         <ul className="list-disc pl-5 space-y-2 text-dm-muted">
+          <li><strong className="text-dm-accent">Tiendas Base:</strong> La app trae tiendas ya surtidas con los precios del manual (tienda general, herrería, alquimista y posada). No se pueden editar ni borrar, pero puedes <strong>duplicarlas</strong> para tener tu propia versión, u ocultarlas con el botón del <strong>Ojo</strong> de la barra superior.</li>
           <li><strong className="text-dm-accent">Creación de Tiendas:</strong> Añade un mercader con su nombre, el nombre de su establecimiento y una imagen de perfil. Al hacer clic sobre él, entrarás a su inventario.</li>
           <li><strong className="text-dm-accent">Inventario Personalizado:</strong> Dentro de cada tienda, puedes añadir los objetos que tiene a la venta escribiendo su nombre, precio (ej: 50 gp), descripción e incluso subiendo una imagen para mostrársela a tus jugadores.</li>
           <li><strong className="text-dm-accent">Control Visual y Ocultación:</strong> Los objetos de la tienda se presentan en forma de tarjetas o listas limpias. Si necesitas ocultar temporalmente un ítem porque se ha agotado (o porque el mercader aún no se lo quiere mostrar a los jugadores), puedes usar el icono del <strong>Ojo</strong> para ocultarlo sin tener que borrarlo.</li>

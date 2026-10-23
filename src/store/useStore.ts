@@ -26,6 +26,12 @@ type UIState = {
   searchFocusId?: string;
   /** Shop to open when the Tiendas tab shows (from the global search). */
   openShopId?: string;
+  /** Hides the fixed shops (lib/shops) from the Tiendas grid and the search. */
+  hideBuiltinShops?: boolean;
+  /** Every shop id, fixed ones included, in the order of the Tiendas grid. See mergeShops. */
+  shopOrder?: string[];
+  /** Items of the fixed shops hidden from the players (they can't be edited, so it's kept here). */
+  hiddenBuiltinItems?: string[];
   /** Map or place to open when the Mapas tab shows (from the global search). */
   mapsFocusId?: string;
   /** Note to open when the Notas tab shows (from the global search). */
@@ -310,7 +316,13 @@ export const actions = {
   reorderNPCs: (npcs: NPC[]) => store.setState({ npcs }),
   reorderCreatures: (creatures: Creature[]) => store.setState({ creatures }),
   reorderNotes: (notes: Note[]) => store.setState({ notes }),
-  reorderShops: (shops: Shop[]) => store.setState({ shops }),
+  /** Every shop id (fixed ones included) in the new order; the user's shops are stored in that order too. */
+  setShopOrder: (ids: string[]) => {
+    const pos = new Map(ids.map((id, i) => [id, i]));
+    const { shops, uiState } = store.getState();
+    const sorted = [...shops].sort((a, b) => (pos.get(a.id) ?? ids.length) - (pos.get(b.id) ?? ids.length));
+    store.setState({ shops: sorted, uiState: { ...uiState, shopOrder: ids } });
+  },
   reorderCustomItems: (customItems: CustomItem[]) => store.setState({ customItems }),
   reorderLootTables: (lootTables: LootTable[]) => store.setState({ lootTables }),
 
@@ -608,7 +620,33 @@ export const actions = {
     });
   },
   deleteShop: (id: string) => {
-    store.setState({ shops: store.getState().shops.filter((s) => s.id !== id) });
+    const { shops, uiState } = store.getState();
+    store.setState({
+      shops: shops.filter((s) => s.id !== id),
+      uiState: { ...uiState, shopOrder: uiState.shopOrder?.filter((x) => x !== id) },
+    });
+  },
+  /**
+   * Copies any shop (the fixed ones too) as a new editable shop placed right after it.
+   * `order` is every shop id as shown in the grid. Returns the copy's id.
+   */
+  duplicateShop: (shop: Shop, order: string[]) => {
+    const id = uuidv4();
+    const copy: Shop = { ...shop, id, name: `${shop.name} (copia)`, items: shop.items.map((it) => ({ ...it, id: uuidv4() })) };
+    const { shops, uiState } = store.getState();
+    const next = [...shops];
+    const at = next.findIndex((s) => s.id === shop.id);
+    next.splice(at >= 0 ? at + 1 : next.length, 0, copy);
+    const ids = [...order];
+    const k = ids.indexOf(shop.id);
+    ids.splice(k >= 0 ? k + 1 : ids.length, 0, id);
+    store.setState({ shops: next, uiState: { ...uiState, shopOrder: ids } });
+    return id;
+  },
+  /** Hides or shows an item of a fixed shop (the eye button). */
+  toggleBuiltinItemHidden: (itemId: string) => {
+    const hidden = store.getState().uiState.hiddenBuiltinItems || [];
+    actions.updateUI({ hiddenBuiltinItems: hidden.includes(itemId) ? hidden.filter((x) => x !== itemId) : [...hidden, itemId] });
   },
   addShopItem: (shopId: string, item: Omit<ShopItem, "id">) => {
     const state = store.getState();

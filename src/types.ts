@@ -160,6 +160,8 @@ export type Shop = {
   ownerImage: string; // Base64
   imagePosition?: string;
   previewImage?: string; // Cropped base64 for preview // object-position e.g. "center", "top", "bottom"
+  /** Kind of shop (see SHOP_KINDS in lib/shops): the fixed shops and their copies have one. */
+  kind?: string;
   items: ShopItem[];
 };
 
