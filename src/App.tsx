@@ -14,6 +14,7 @@ import { DiceRollerModal, D20Icon } from "./components/DiceRollerModal";
 import { WelcomeModal, FullTutorialModal } from "./components/Tutorial";
 import { GlobalSearch } from "./components/GlobalSearch";
 import { RollToastHost } from "./components/RollToasts";
+import { ToastHost } from "./components/Toasts";
 import { useSearchFocus } from "./lib/searchFocus";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { TitleTorch } from "./components/TitleTorch";
@@ -162,6 +163,7 @@ export default function App() {
         </ErrorBoundary>
       </main>
       <RollToastHost />
+      <ToastHost />
 
       <nav className="shrink-0 bg-dm-bg-darker border-t border-dm-accent/10 z-40 select-none pb-[env(safe-area-inset-bottom,0px)]">
         {/* Phones: the main tabs plus "Más", which opens a sheet with the rest and the tools. */}

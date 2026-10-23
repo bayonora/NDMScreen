@@ -17,6 +17,8 @@ type UIState = {
   draftNote: Partial<Note> | null;
   hasSeenWelcome?: boolean;
   partyTab?: "players" | "npcs" | "creatures";
+  /** Cards (default) or the compact list in Grupo. */
+  partyView?: "cards" | "list";
   highlightedQuestId?: string;
   highlightedSpellId?: string;
   highlightedMonsterId?: string;
@@ -333,6 +335,12 @@ export const actions = {
       if (isCollapsed) actions.updateUI({ collapsedCharacters: collapsed.filter(x => x !== id) });
     }
   },
+  /** Collapses or expands several cards at once (the "Colapsar todas" button). */
+  setCharactersCollapsed: (ids: string[], collapse: boolean) => {
+    const current = new Set(store.getState().uiState.collapsedCharacters || []);
+    ids.forEach((id) => (collapse ? current.add(id) : current.delete(id)));
+    actions.updateUI({ collapsedCharacters: [...current] });
+  },
   
   // Quests
   addQuest: (q: Omit<Quest, "id" | "createdAt">) => {
@@ -351,7 +359,9 @@ export const actions = {
 
   // Party & NPCs
   addPlayer: (p: Omit<Player, "id" | "type">) => {
-    store.setState({ players: [...store.getState().players, { ...p, id: uuidv4(), type: "player" }] });
+    const id = uuidv4();
+    store.setState({ players: [...store.getState().players, { ...p, id, type: "player" }] });
+    return id;
   },
   updatePlayer: (id: string, p: Partial<Player>) => {
     store.setState({
@@ -367,7 +377,9 @@ export const actions = {
     });
   },
   addNPC: (n: Omit<NPC, "id" | "type">) => {
-    store.setState({ npcs: [...store.getState().npcs, { ...n, id: uuidv4(), type: "npc" }] });
+    const id = uuidv4();
+    store.setState({ npcs: [...store.getState().npcs, { ...n, id, type: "npc" }] });
+    return id;
   },
   updateNPC: (id: string, n: Partial<NPC>) => {
     store.setState({
@@ -412,6 +424,19 @@ export const actions = {
     if (char.type === "npc") return actions.updateNPC(char.id, updates as Partial<NPC>);
     return actions.updateCreature(char.id, updates as Partial<Creature>);
   },
+  /**
+   * Sets the HP tracked on a card. A character that is in the initiative keeps the same HP there,
+   * so damage taken in or out of combat is never lost.
+   */
+  setCharacterHp: (char: Character, hpCurrent: number, hpTemp: number) => {
+    const hp = Math.max(0, Math.min(char.hpMax, Math.round(hpCurrent)));
+    actions.updateCharacter(char, { hpCurrent: hp, hpTemp: Math.max(0, Math.round(hpTemp)) || undefined });
+    if (char.type !== "player" && char.isTemp) return;
+    const state = store.getState();
+    if (state.combatants.some((c) => c.characterId === char.id && !c.isTemp)) {
+      store.setState({ combatants: state.combatants.map((c) => (c.characterId === char.id && !c.isTemp ? { ...c, hpCurrent: hp } : c)) });
+    }
+  },
   getCharacter: (id: string): Character | undefined => {
     const state = store.getState();
     return state.players.find((p) => p.id === id) || state.npcs.find((n) => n.id === id) || (state.creatures || []).find((c) => c.id === id);
@@ -420,18 +445,18 @@ export const actions = {
   // Initiative
   addCombatant: (characterId: string, initiative: number) => {
     const state = store.getState();
-    if (state.combatants.some(c => c.characterId === characterId)) {
-      alert("Este personaje ya está en la iniciativa.");
-      return;
-    }
+    if (state.combatants.some(c => c.characterId === characterId)) return false;
     const char = actions.getCharacter(characterId);
-    if (!char) return;
+    if (!char) return false;
+    // Starts with the HP tracked on the card (full if it was never touched).
+    const hpCurrent = Math.min(char.hpMax, char.hpCurrent ?? char.hpMax);
     store.setState({
       combatants: [
         ...state.combatants,
-        { id: uuidv4(), characterId, initiative, hpCurrent: char.hpMax, statuses: [] },
+        { id: uuidv4(), characterId, initiative, hpCurrent, statuses: [] },
       ].sort((a, b) => b.initiative - a.initiative),
     });
+    return true;
   },
   addTempCombatant: (npc: Omit<NPC, "id" | "type">, initiative: number, isEnemy: boolean = true) => {
     const state = store.getState();
@@ -479,9 +504,26 @@ export const actions = {
     });
   },
   updateCombatant: (id: string, updates: Partial<Combatant>) => {
+    const state = store.getState();
     store.setState({
-      combatants: store.getState().combatants.map((c) => (c.id === id ? { ...c, ...updates } : c)).sort((a, b) => b.initiative - a.initiative),
+      combatants: state.combatants.map((c) => (c.id === id ? { ...c, ...updates } : c)).sort((a, b) => b.initiative - a.initiative),
     });
+    // Saved characters carry their combat HP back to their card.
+    const target = state.combatants.find((c) => c.id === id);
+    if (updates.hpCurrent !== undefined && target && !target.isTemp) {
+      const char = actions.getCharacter(target.characterId);
+      if (char) actions.updateCharacter(char, { hpCurrent: Math.max(0, Math.min(char.hpMax, updates.hpCurrent)) });
+    }
+  },
+  /** Damage taken in combat: temporary HP absorb it first, as on the card. */
+  damageCombatant: (id: string, amount: number) => {
+    const combatant = store.getState().combatants.find((c) => c.id === id);
+    if (!combatant || amount <= 0) return;
+    const char = combatant.isTemp && combatant.tempData ? combatant.tempData : actions.getCharacter(combatant.characterId);
+    const temp = char?.hpTemp || 0;
+    const absorbed = Math.min(temp, amount);
+    if (char && absorbed) actions.updateCharacter(char, { hpTemp: temp - absorbed || undefined });
+    actions.updateCombatant(id, { hpCurrent: Math.max(0, combatant.hpCurrent - (amount - absorbed)) });
   },
   killCombatant: (id: string) => {
     const state = store.getState();
