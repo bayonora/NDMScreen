@@ -46,7 +46,7 @@ export function ViewShops() {
 
   /** Copies the shop; from inside a shop the copy opens at once, from the grid a toast offers it. */
   const duplicate = (s: Shop, open: boolean) => {
-    const id = actions.duplicateShop(s, all.map((x) => x.id));
+    const id = actions.duplicateShop(s);
     if (open) {
       setSelectedShopId(id);
       showToast(`Copia de ${s.name} creada. Esta sí se puede editar.`);
@@ -55,13 +55,8 @@ export function ViewShops() {
     }
   };
 
-  // The grid may show only part of the shops (fixed ones hidden): the moved ones fill the slots
-  // of the visible shops and the hidden ones keep their place.
-  const handleReorder = (moved: Shop[]) => {
-    const shown = new Set(visible.map((s) => s.id));
-    let k = 0;
-    actions.setShopOrder(all.map((s) => (shown.has(s.id) ? moved[k++].id : s.id)));
-  };
+  // The fixed shops always stay first; only the user's shops are reordered.
+  const handleReorder = (moved: Shop[]) => actions.reorderShops(moved.filter((s) => !isBuiltinShop(s.id)));
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -101,6 +96,7 @@ export function ViewShops() {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full"
           items={visible}
           onReorder={handleReorder}
+          isLocked={(s) => isBuiltinShop(s.id)}
           renderItem={(s) => {
             const builtin = isBuiltinShop(s.id);
             const KindIcon = shopIcon(s);

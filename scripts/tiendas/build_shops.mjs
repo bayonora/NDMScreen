@@ -55,8 +55,8 @@ const SHOPS = [
   {
     id: "builtin-general",
     kind: "general",
-    name: "Almacén del Aventurero",
-    ownerName: "Tobías Hornacho",
+    name: "La Rosca Asoma",
+    ownerName: "Andrei Dumitru",
     items: fromCatalog([
       "pack-de-aventurero", "pack-de-explorador",
       "mochila", "saco-de-dormir", "manta", "tienda-de-campana-para-dos-personas", "raciones-1-dia", "odre", "fiambrera",
@@ -78,8 +78,8 @@ const SHOPS = [
   {
     id: "builtin-forja",
     kind: "forge",
-    name: "La Forja de Durgan",
-    ownerName: "Durgan Yunquefirme",
+    name: "Iron Maiden",
+    ownerName: "Brigit Wayland",
     items: fromCatalog([
       ...sub("Armas cuerpo a cuerpo sencillas"), ...sub("Armas cuerpo a cuerpo marciales"),
       ...sub("Armas a distancia sencillas"), ...sub("Armas a distancia marciales"),
@@ -90,8 +90,8 @@ const SHOPS = [
   {
     id: "builtin-alquimista",
     kind: "potions",
-    name: "El Caldero Burbujeante",
-    ownerName: "Mirela Alambique",
+    name: "Starsups",
+    ownerName: "Marie-Anne",
     items: [
       ...fromCatalog(["pocion-de-curacion"]),
       custom("pocion-de-curacion-mayor", "Poción de curación mayor", "200 po", "*Poción, infrecuente*\n\nAl beberla recuperas 4d4 + 4 puntos de golpe. El líquido rojo brilla al agitarse."),
@@ -119,35 +119,6 @@ const SHOPS = [
         { "varita-de-deteccion-magica": "400 po", "varita-de-secretos": "400 po", "varita-de-proyectiles-magicos": "400 po", "bolsa-de-contencion": "400 po" },
       ),
       spellService("servicio-identificar", "Identificar", 1, "150 po", "Incluye la perla de 100 po que consume el conjuro. Revela las propiedades de un objeto mágico."),
-    ],
-  },
-  {
-    id: "builtin-posada",
-    kind: "tavern",
-    name: "La Jarra Espumosa",
-    ownerName: "Gorrik Barrilón",
-    items: [
-      custom("alojamiento-miserable", "Alojamiento miserable (noche)", "7 pc", "Un rincón en el suelo de la sala común, junto al fuego si hay suerte."),
-      custom("alojamiento-pobre", "Alojamiento pobre (noche)", "1 pp", "Un jergón en un dormitorio compartido."),
-      custom("alojamiento-modesto", "Alojamiento modesto (noche)", "5 pp", "Una cama en una habitación compartida y limpia."),
-      custom("alojamiento-comodo", "Alojamiento cómodo (noche)", "8 pp", "Una habitación privada con cama, mesa y cerrojo."),
-      custom("alojamiento-rico", "Alojamiento rico (noche)", "2 po", "La mejor habitación de la casa, con baño caliente."),
-      custom("alojamiento-aristocratico", "Alojamiento aristocrático (noche)", "4 po", "Suite con servicio personal a cualquier hora."),
-      custom("comida-miserable", "Comida miserable (día)", "3 pc", "Gachas aguadas y pan duro."),
-      custom("comida-pobre", "Comida pobre (día)", "6 pc", "Pan, sopa de verduras y algo de queso."),
-      custom("comida-modesta", "Comida modesta (día)", "3 pp", "Guiso caliente, pan y cerveza."),
-      custom("comida-comoda", "Comida cómoda (día)", "5 pp", "Carne asada, verduras de temporada y postre."),
-      custom("comida-rica", "Comida rica (día)", "8 pp", "Varios platos bien preparados y vino."),
-      custom("comida-aristocratica", "Comida aristocrática (día)", "2 po", "Manjares exóticos y los mejores vinos."),
-      custom("banquete", "Banquete (por persona)", "10 po", "Un festín para celebrar una victoria."),
-      custom("cerveza-jarra", "Cerveza (jarra)", "4 pc", "Cerveza de la casa, espumosa y fresca."),
-      custom("cerveza-galon", "Cerveza (galón)", "2 pp", "Un barrilito para compartir."),
-      custom("vino-comun", "Vino común (jarra)", "2 pp", "Tinto joven de la región."),
-      custom("vino-fino", "Vino fino (botella)", "10 po", "Una añada de las buenas, de bodega lejana."),
-      custom("pan", "Pan (hogaza)", "2 pc", "Recién salido del horno."),
-      custom("queso", "Queso (trozo)", "1 pp", "Curado, de oveja."),
-      custom("carne", "Carne (pedazo)", "3 pp", "Asada o en salazón, para el camino."),
-      ...fromCatalog(["raciones-1-dia", "juego-de-dados", "juego-de-cartas"]),
     ],
   },
 ];

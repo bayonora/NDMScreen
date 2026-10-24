@@ -97,12 +97,15 @@ interface SortableGridProps<T extends { id: string }> {
   onReorder: (items: T[]) => void;
   renderItem: (item: T, isDragging: boolean) => React.ReactNode;
   className?: string;
+  /** Items that can't be dragged or dropped on (they keep their place). */
+  isLocked?: (item: T) => boolean;
 }
 
 export function SortableGrid<T extends { id: string }>({
   items,
   onReorder,
   renderItem,
+  isLocked,
   className = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 items-start w-full"
 }: SortableGridProps<T>) {
   const [activeId, setActiveId] = React.useState<string | null>(null);
@@ -151,7 +154,7 @@ export function SortableGrid<T extends { id: string }>({
       <SortableContext items={items.map((i) => i.id)} strategy={rectSortingStrategy}>
         <div className={className}>
           {items.map((item) => (
-              <SortableItem key={item.id} id={item.id}>
+              <SortableItem key={item.id} id={item.id} disabled={isLocked?.(item)}>
                 {renderItem(item, false)}
               </SortableItem>
             ))}
@@ -174,7 +177,7 @@ export function SortableGrid<T extends { id: string }>({
   );
 }
 
-function SortableItem({ id, children }: { id: string; children: React.ReactNode }) {
+function SortableItem({ id, disabled, children }: { id: string; disabled?: boolean; children: React.ReactNode }) {
   const {
     attributes,
     listeners,
@@ -182,7 +185,7 @@ function SortableItem({ id, children }: { id: string; children: React.ReactNode 
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
+  } = useSortable({ id, disabled });
 
   const style = {
     transform: CSS.Translate.toString(transform),
