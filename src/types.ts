@@ -151,6 +151,8 @@ export type ShopItem = {
   price: string;
   image?: string; // Base64
   hidden: boolean;
+  /** Group inside the shop ("Armas", "Pociones"...); missing or empty means no category. */
+  category?: string;
 };
 
 export type Shop = {

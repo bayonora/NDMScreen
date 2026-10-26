@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import { get, set } from "idb-keyval";
 import { Player, NPC, Creature, Character, Combatant, MapData, LocationData, Shop, ShopItem, Note, CustomItem, LootTable, Quest } from "../types";
 import { v4 as uuidv4 } from "uuid";
+import { groupShopItems, placeInCategory, shopCategory } from "../lib/shopCategories";
 import { mergeDedupe, downloadJSON } from "../lib/utils";
 
 export type Tab = "party" | "initiative" | "quests" | "maps" | "shops" | "notes" | "items" | "spells" | "bestiary";
@@ -635,18 +636,50 @@ export const actions = {
     const state = store.getState();
     store.setState({
       shops: state.shops.map((s) =>
-        s.id === shopId ? { ...s, items: [...s.items, { ...item, id: uuidv4() }] } : s
+        s.id === shopId ? { ...s, items: placeInCategory(s.items, { ...item, id: uuidv4() }) } : s
       ),
     });
   },
+  /** A change of category moves the item to the end of its new group. */
   updateShopItem: (shopId: string, itemId: string, item: Partial<ShopItem>) => {
+    const state = store.getState();
+    store.setState({
+      shops: state.shops.map((s) => {
+        if (s.id !== shopId) return s;
+        const old = s.items.find((i) => i.id === itemId);
+        if (!old) return s;
+        const next = { ...old, ...item };
+        return {
+          ...s,
+          items: shopCategory(next) === shopCategory(old) ? s.items.map((i) => (i.id === itemId ? next : i)) : placeInCategory(s.items, next),
+        };
+      }),
+    });
+  },
+  /** Renames a category of a shop; renaming it to an existing one merges both. */
+  renameShopCategory: (shopId: string, from: string, to: string) => {
     const state = store.getState();
     store.setState({
       shops: state.shops.map((s) =>
         s.id === shopId
-          ? { ...s, items: s.items.map((i) => (i.id === itemId ? { ...i, ...item } : i)) }
+          ? { ...s, items: groupShopItems(s.items.map((i) => (shopCategory(i) === from ? { ...i, category: to.trim() } : i))).flatMap((g) => g.items) }
           : s
       ),
+    });
+  },
+  /** Moves a whole category one place up (-1) or down (1). */
+  moveShopCategory: (shopId: string, category: string, dir: -1 | 1) => {
+    const state = store.getState();
+    store.setState({
+      shops: state.shops.map((s) => {
+        if (s.id !== shopId) return s;
+        const groups = groupShopItems(s.items);
+        const i = groups.findIndex((g) => g.category === category);
+        const j = i + dir;
+        if (i < 0 || j < 0 || j >= groups.length) return s;
+        [groups[i], groups[j]] = [groups[j], groups[i]];
+        return { ...s, items: groups.flatMap((g) => g.items) };
+      }),
     });
   },
   deleteShopItem: (shopId: string, itemId: string) => {

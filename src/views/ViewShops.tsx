@@ -7,7 +7,9 @@ import { Modal } from "../components/ui/Modal";
 import { Button, Input, Textarea } from "../components/ui/Input";
 import { Markdown } from "../components/ui/Markdown";
 import { Shop, ShopItem } from "../types";
-import { Plus, Trash2, Edit2, Store as StoreIcon, EyeOff, Eye, Image as ImageIcon, ArrowLeft, X, Copy, Lock, Search } from "lucide-react";
+import { Plus, Trash2, Edit2, Store as StoreIcon, EyeOff, Eye, Image as ImageIcon, ArrowLeft, X, Copy, Lock, Search, ChevronDown, ChevronsDownUp, ChevronsUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Combobox } from "../components/ui/Combobox";
+import { groupShopItems, shopCategories, shopCategory } from "../lib/shopCategories";
 import { compressImage, cn } from "../lib/utils";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { SortableGrid } from "../components/SortableGrid";
@@ -196,7 +198,7 @@ export function ViewShops() {
             )}
           </>
         ) : (
-          <ShopInventory shop={selectedShop} onDuplicate={() => duplicate(selectedShop, true)} />
+          <ShopInventory key={selectedShop.id} shop={selectedShop}onDuplicate={() => duplicate(selectedShop, true)} />
         )}
       </div>
 
@@ -223,14 +225,51 @@ function ShopInventory({ shop, onDuplicate }: { shop: Shop; onDuplicate: () => v
   const [viewItem, setViewItem] = useState<ShopItem | null>(null);
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
+  // Category the "Añadir objeto" of a group header fills in.
+  const [addToCategory, setAddToCategory] = useState("");
+  const [renameCategory, setRenameCategory] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
 
   const q = normalizeSearchText(filter).trim();
   // Hidden items never match the filter, so searching doesn't give away what they are.
   const items = useMemo(
-    () => (q ? shop.items.filter((it) => !it.hidden && normalizeSearchText(`${it.name} ${it.price}`).includes(q)) : shop.items),
+    () => (q ? shop.items.filter((it) => !it.hidden && normalizeSearchText(`${it.name} ${it.price} ${it.category || ""}`).includes(q)) : shop.items),
     [shop.items, q]
   );
   const hiddenCount = shop.items.filter((it) => it.hidden).length;
+  const groups = useMemo(() => groupShopItems(items), [items]);
+  const allCategories = useMemo(() => shopCategories(shop.items), [shop.items]);
+  // A shop with no categories stays a plain list, as before.
+  const grouped = allCategories.length > 0;
+  // While searching every group is open, so no match is left folded away.
+  const isCollapsed = (category: string) => !q && collapsed.has(category);
+  const allFolded = groups.length > 0 && groups.every((g) => collapsed.has(g.category));
+
+  const toggleCategory = (category: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(category)) next.add(category);
+      return next;
+    });
+
+  // An item opened from the global search must be visible: unfold its group.
+  const searchFocusId = useStore((state) => state.uiState.searchFocusId);
+  useEffect(() => {
+    const target = searchFocusId && shop.items.find((it) => it.id === searchFocusId);
+    if (!target) return;
+    setCollapsed((prev) => {
+      if (!prev.has(shopCategory(target))) return prev;
+      const next = new Set(prev);
+      next.delete(shopCategory(target));
+      return next;
+    });
+  }, [searchFocusId, shop.items]);
+
+  const openAddItem = (category = "") => {
+    setEditItemData(null);
+    setAddToCategory(category);
+    setIsAddItemOpen(true);
+  };
 
   const handleEdit = (item: ShopItem, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -265,19 +304,26 @@ function ShopInventory({ shop, onDuplicate }: { shop: Shop; onDuplicate: () => v
                 <Copy size={14} className="mr-1" /> Duplicar para editar
               </Button>
             ) : (
-              <Button onClick={() => { setEditItemData(null); setIsAddItemOpen(true); }}>
+              <Button onClick={() => openAddItem()}>
                 <Plus size={14} className="mr-1" /> Añadir Objeto
               </Button>
             )}
           </div>
+          {!readOnly && !grouped && shop.items.length > 0 && (
+            <p className="text-xs text-dm-muted">
+              Para separar el inventario en secciones (armas, armaduras, pociones…), pon una <strong className="text-dm-text">categoría</strong> a los objetos al crearlos o editarlos.
+            </p>
+          )}
           {readOnly && (
             <p className="flex items-start gap-2 text-xs text-dm-muted">
               <Lock size={13} className="text-dm-accent shrink-0 mt-px" />
               Tienda base con los precios del manual. No se puede editar ni borrar, pero sí ocultar objetos con el ojo; duplícala si quieres cambiar más.
             </p>
           )}
-          {shop.items.length > 8 && (
-            <div className="relative">
+          {(shop.items.length > 8 || grouped) && (
+            <div className="flex items-center gap-2">
+            {shop.items.length > 8 && (
+            <div className="relative flex-1">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-dm-muted pointer-events-none" />
               <input
                 value={filter}
@@ -292,10 +338,22 @@ function ShopInventory({ shop, onDuplicate }: { shop: Shop; onDuplicate: () => v
                 </button>
               )}
             </div>
+            )}
+            {grouped && groups.length > 1 && !q && (
+              <button
+                type="button"
+                onClick={() => setCollapsed(allFolded ? new Set() : new Set(groups.map((g) => g.category)))}
+                className="ml-auto shrink-0 h-9 flex items-center gap-1.5 px-3 border border-dm-border bg-dm-bg-darker text-xs uppercase tracking-widest text-dm-muted hover:text-dm-accent hover:border-dm-accent"
+              >
+                {allFolded ? <ChevronsUpDown size={14} /> : <ChevronsDownUp size={14} />}
+                {allFolded ? "Desplegar todo" : "Plegar todo"}
+              </button>
+            )}
+            </div>
           )}
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className={cn("flex flex-col", grouped ? "gap-6" : "gap-3")}>
           {shop.items.length === 0 && (
             <div className="p-10 text-center border border-dashed border-dm-border bg-dm-bg/50 text-dm-muted text-sm tracking-widest uppercase">
               El inventario está vacío
@@ -304,7 +362,51 @@ function ShopInventory({ shop, onDuplicate }: { shop: Shop; onDuplicate: () => v
           {shop.items.length > 0 && items.length === 0 && (
             <div className="p-6 text-center text-dm-muted text-sm italic">Nada coincide con «{filter}».</div>
           )}
-          {items.map((item) => (
+          {groups.map((g, gi) => {
+            const folded = isCollapsed(g.category);
+            const visibleCount = g.items.filter((it) => !it.hidden).length;
+            const label = g.category || "Sin categoría";
+            return (
+            <section key={g.category || "\u0000"} className="flex flex-col gap-3">
+              {grouped && (
+                // Negative top = the scroll panel's padding, so the header sticks flush to its top edge (as in the Grimorio).
+                <div className="sticky -top-3 sm:-top-6 z-20 flex items-stretch bg-dm-bg-darker border-b-2 border-dm-accent/60 shadow-[0_6px_12px_-6px_rgba(0,0,0,0.8)]">
+                  <button
+                    type="button"
+                    onClick={() => toggleCategory(g.category)}
+                    aria-expanded={!folded}
+                    title={folded ? "Desplegar" : "Plegar"}
+                    className="flex-1 min-w-0 flex items-center gap-2 sm:gap-2.5 pl-3 pr-1 sm:pr-2 py-2.5 sm:py-3 text-left text-sm sm:text-lg leading-tight font-display uppercase tracking-wider sm:tracking-widest text-dm-accent hover:text-dm-text-bright transition-colors"
+                  >
+                    <span className="w-1 self-stretch bg-dm-accent rounded-full shrink-0" aria-hidden />
+                    <ChevronDown size={16} className={cn("shrink-0 transition-transform duration-200", folded && "-rotate-90")} aria-hidden />
+                    {/* Long names wrap instead of being cut, so "Armaduras ligeras" and "pesadas" stay apart on a phone. */}
+                    <span className={cn("min-w-0 break-words line-clamp-2", !g.category && "italic opacity-70")}>{label}</span>
+                    <span className="shrink-0 px-2 py-0.5 rounded-sm bg-dm-accent/15 text-[11px] font-sans font-bold tracking-wider text-dm-accent">{visibleCount}</span>
+                  </button>
+                  {!readOnly && !q && (
+                    <div className="flex items-center shrink-0 pr-0.5 sm:pr-1 [&>button]:p-1.5 sm:[&>button]:p-2">
+                      <button type="button" onClick={() => openAddItem(g.category)} className="p-2 text-dm-muted hover:text-dm-accent" title={`Añadir objeto a ${label}`} aria-label={`Añadir objeto a ${label}`}>
+                        <Plus size={16} />
+                      </button>
+                      <button type="button" onClick={() => setRenameCategory(g.category)} className="p-2 text-dm-muted hover:text-dm-accent" title="Renombrar categoría" aria-label={`Renombrar ${label}`}>
+                        <Edit2 size={15} />
+                      </button>
+                      {groups.length > 1 && (
+                        <>
+                          <button type="button" disabled={gi === 0} onClick={() => actions.moveShopCategory(shop.id, g.category, -1)} className="p-2 text-dm-muted hover:text-dm-accent disabled:opacity-25 disabled:pointer-events-none" title="Subir categoría" aria-label={`Subir ${label}`}>
+                            <ArrowUp size={15} />
+                          </button>
+                          <button type="button" disabled={gi === groups.length - 1} onClick={() => actions.moveShopCategory(shop.id, g.category, 1)} className="p-2 text-dm-muted hover:text-dm-accent disabled:opacity-25 disabled:pointer-events-none" title="Bajar categoría" aria-label={`Bajar ${label}`}>
+                            <ArrowDown size={15} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+          {!folded && g.items.map((item) => (
             <div
               key={item.id}
               data-search-id={item.id}
@@ -364,6 +466,9 @@ function ShopInventory({ shop, onDuplicate }: { shop: Shop; onDuplicate: () => v
               </div>
             </div>
           ))}
+            </section>
+            );
+          })}
         </div>
       </div>
 
@@ -411,8 +516,20 @@ function ShopInventory({ shop, onDuplicate }: { shop: Shop; onDuplicate: () => v
           onClose={() => setIsAddItemOpen(false)}
           shopId={shop.id}
           editData={editItemData}
+          categories={allCategories}
+          defaultCategory={addToCategory}
         />
       )}
+
+      <RenameCategoryModal
+        category={renameCategory}
+        categories={allCategories}
+        onClose={() => setRenameCategory(null)}
+        onRename={(to) => {
+          if (renameCategory !== null) actions.renameShopCategory(shop.id, renameCategory, to);
+          setRenameCategory(null);
+        }}
+      />
 
       <Modal isOpen={!!viewItem} onClose={() => setViewItem(null)} title={viewItem?.name || ""}>
         {viewItem && (
@@ -421,9 +538,14 @@ function ShopInventory({ shop, onDuplicate }: { shop: Shop; onDuplicate: () => v
               <img src={viewItem.image} alt={viewItem.name} className="w-full h-48 object-cover border border-dm-border rounded-sm" />
             )}
             <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-dm-muted uppercase tracking-widest">Precio</span>
-                <span className="font-mono text-dm-accent">{viewItem.price}</span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-dm-muted uppercase tracking-widest">Precio</span>
+                  <span className="font-mono text-dm-accent">{viewItem.price}</span>
+                </div>
+                {shopCategory(viewItem) && (
+                  <span className="px-2 py-1 rounded-sm bg-dm-bg-hover border border-dm-border text-xs text-dm-muted">{shopCategory(viewItem)}</span>
+                )}
               </div>
               <div className="w-full h-px bg-dm-border" />
               <div className="text-sm leading-relaxed text-dm-text prose prose-invert prose-sm max-w-none prose-strong:text-dm-text-bright">
@@ -569,14 +691,49 @@ function AddShopModal({ isOpen, onClose, editData }: { isOpen: boolean, onClose:
   );
 }
 
-function AddItemModal({ isOpen, onClose, shopId, editData }: { isOpen: boolean, onClose: () => void, shopId: string, editData: ShopItem | null }) {
+/** Renames a category of the shop; an empty name takes its items out of any category. */
+function RenameCategoryModal({ category, categories, onClose, onRename }: { category: string | null; categories: string[]; onClose: () => void; onRename: (to: string) => void }) {
+  const [value, setValue] = useState("");
+  useEffect(() => {
+    if (category !== null) setValue(category);
+  }, [category]);
+  const to = value.trim();
+  const merges = !!to && to !== category && categories.includes(to);
+
+  return (
+    <Modal isOpen={category !== null} onClose={onClose} title={category ? "Renombrar categoría" : "Poner categoría"}>
+      <form onSubmit={(e) => { e.preventDefault(); onRename(to); }} className="flex flex-col gap-4">
+        <Input label="Nombre de la categoría" value={value} onChange={(e) => setValue(e.target.value)} autoFocus placeholder="Ej: Armas" />
+        <p className="text-xs text-dm-muted">
+          {merges
+            ? `Ya existe «${to}»: los objetos de las dos se juntarán.`
+            : category && !to
+              ? "Sin nombre, sus objetos se quedan sin categoría."
+              : category
+                ? "Cambia el nombre en todos los objetos de esta categoría."
+                : "Se pondrá a todos los objetos que ahora no tienen categoría."}
+        </p>
+        <div className="flex justify-end gap-2 pt-4 border-t border-dm-border">
+          <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" disabled={to === category}>Guardar</Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function AddItemModal({ isOpen, onClose, shopId, editData, categories, defaultCategory }: { isOpen: boolean, onClose: () => void, shopId: string, editData: ShopItem | null, categories: string[], defaultCategory: string }) {
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState("");
+  const [category, setCategory] = useState("");
 
-  // This modal stays mounted between uses, so reset the image each time it opens.
+  // This modal stays mounted between uses, so reset the image and category each time it opens.
   React.useEffect(() => {
-    if (isOpen) setImage(editData?.image || "");
-  }, [isOpen, editData]);
+    if (isOpen) {
+      setImage(editData?.image || "");
+      setCategory(editData ? shopCategory(editData) : defaultCategory);
+    }
+  }, [isOpen, editData, defaultCategory]);
 
   const handleImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -596,10 +753,11 @@ function AddItemModal({ isOpen, onClose, shopId, editData }: { isOpen: boolean, 
     const description = formData.get("description") as string;
     const price = formData.get("price") as string;
 
+    const cat = category.trim();
     if (editData) {
-      actions.updateShopItem(shopId, editData.id, { name, description, price, image });
+      actions.updateShopItem(shopId, editData.id, { name, description, price, image, category: cat });
     } else {
-      actions.addShopItem(shopId, { name, description, price, image, hidden: false });
+      actions.addShopItem(shopId, { name, description, price, image, hidden: false, category: cat });
     }
     onClose();
   };
@@ -609,6 +767,18 @@ function AddItemModal({ isOpen, onClose, shopId, editData }: { isOpen: boolean, 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input label="Nombre del Objeto" name="name" required defaultValue={editData?.name} />
         <Input label="Precio" name="price" required defaultValue={editData?.price} placeholder="Ej: 50 po" />
+        <div className="flex flex-col gap-1 w-full">
+          <label htmlFor="shop-item-category" className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">Categoría (opcional)</label>
+          <Combobox
+            id="shop-item-category"
+            value={category}
+            onChange={setCategory}
+            options={categories.map((value) => ({ value }))}
+            placeholder={categories.length ? "Elige una o escribe una nueva" : "Ej: Armas, Armaduras, Pociones…"}
+            inputClassName="flex h-10 w-full bg-dm-bg border border-dm-border px-3 py-2 text-sm text-dm-text-bright placeholder:text-dm-muted placeholder:italic focus:outline-none focus:border-dm-accent"
+          />
+          <span className="text-xs text-dm-muted italic">Los objetos con la misma categoría salen juntos en su propia sección.</span>
+        </div>
         <Textarea label="Descripción" name="description" required defaultValue={editData?.description} />
         <div className="flex flex-col gap-1 w-full">
           <span className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">Imagen (Opcional)</span>
