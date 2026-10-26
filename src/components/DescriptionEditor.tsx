@@ -199,7 +199,7 @@ function TableEditorModal({ initial, editing, onCancel, onSave, onRemove }: {
 
   return (
     <Overlay isOpen onClose={onCancel} closeOnBackdrop={false} zIndex="z-[60]">
-      <div role="dialog" aria-modal="true" aria-label="Editor de tabla" className="relative bg-dm-bg/95 backdrop-blur-xl border border-dm-accent/20 rounded-xl w-full max-w-2xl max-h-full sm:max-h-[85vh] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.8)] animate-in fade-in zoom-in-95">
+      <div role="dialog" aria-modal="true" aria-label="Editor de tabla" className="relative bg-dm-bg/95 border border-dm-accent/20 rounded-xl w-full max-w-2xl max-h-full sm:max-h-[85vh] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.8)] animate-in fade-in zoom-in-95">
         <div className="flex items-center justify-between gap-2 px-4 sm:px-6 pt-4 pb-3 border-b border-dm-accent/10">
           <h2 className="text-lg text-dm-accent tracking-widest uppercase font-light">{editing ? "Editar tabla" : "Nueva tabla"}</h2>
           <button type="button" onClick={onCancel} aria-label="Cerrar" className="text-dm-muted hover:text-dm-text-bright"><X size={20} /></button>

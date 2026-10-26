@@ -471,7 +471,7 @@ function QuestModal({ isOpen, onClose, initialData, defaultParentId, allQuests }
             {image && (
               <>
                 <div className="absolute inset-0 flex items-center justify-center can-hover:opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <span className="bg-dm-bg-alt/80 px-3 py-1 text-dm-text-bright text-xs uppercase tracking-widest font-bold rounded-sm backdrop-blur-sm">Cambiar</span>
+                  <span className="bg-dm-bg-alt/80 px-3 py-1 text-dm-text-bright text-xs uppercase tracking-widest font-bold rounded-sm">Cambiar</span>
                 </div>
                 <button
                   type="button"

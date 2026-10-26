@@ -76,11 +76,11 @@ interface ModalProps {
 }
 
 export const modalPanelClass =
-  "relative bg-dm-bg/80 backdrop-blur-xl border border-dm-accent/20 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] w-full max-h-full sm:max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 overflow-hidden";
+  "relative bg-dm-bg/80 backdrop-blur-xl gecko:backdrop-filter-none gecko:bg-dm-bg/95 border border-dm-accent/20 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] w-full max-h-full sm:max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 overflow-hidden";
 
 /** Panel classes for a dialog that is a bottom sheet on phones and a centered card from `sm` up. */
 export const sheetPanelClass =
-  "relative bg-dm-bg/95 sm:bg-dm-bg/80 backdrop-blur-xl border border-dm-accent/20 border-b-0 sm:border-b rounded-t-2xl sm:rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] w-full max-h-full sm:max-h-[90vh] flex flex-col animate-in max-sm:slide-in-from-bottom sm:fade-in sm:zoom-in-95 overflow-hidden";
+  "relative bg-dm-bg/95 sm:bg-dm-bg/80 backdrop-blur-xl gecko:backdrop-filter-none gecko:sm:bg-dm-bg/95 border border-dm-accent/20 border-b-0 sm:border-b rounded-t-2xl sm:rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] w-full max-h-full sm:max-h-[90vh] flex flex-col animate-in max-sm:slide-in-from-bottom sm:fade-in sm:zoom-in-95 overflow-hidden";
 
 const isPhone = () => window.matchMedia("(max-width: 639px)").matches;
 

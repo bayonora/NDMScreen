@@ -330,7 +330,7 @@ export function ViewInitiative() {
 
       {/* Phones: combat controls sit at the bottom, within thumb reach. */}
       {combatants.length > 0 && (
-        <div className="sm:hidden shrink-0 flex items-stretch gap-2 px-3 py-2 border-t border-dm-border bg-dm-bg/95 backdrop-blur">
+        <div className="sm:hidden shrink-0 flex items-stretch gap-2 px-3 py-2 border-t border-dm-border bg-dm-bg/95">
           {!isCombatActive ? (
             <Button onClick={handleStartCombat} className="flex-1 h-12 text-sm">
               <Play size={16} className="mr-2" /> Iniciar Combate

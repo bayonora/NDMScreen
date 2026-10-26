@@ -17,7 +17,7 @@ export function WelcomeModal() {
 
   return (
     <Overlay isOpen={isOpen} onClose={handleClose} zIndex="z-[100]">
-      <div role="dialog" aria-modal="true" className="bg-dm-bg/80 backdrop-blur-xl border border-dm-accent/30 rounded-xl max-w-lg w-full max-h-full overflow-y-auto custom-scrollbar p-5 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.8)] relative animate-in fade-in zoom-in-95 duration-300">
+      <div role="dialog" aria-modal="true" className="bg-dm-bg/80 backdrop-blur-xl gecko:backdrop-filter-none gecko:bg-dm-bg/95 border border-dm-accent/30 rounded-xl max-w-lg w-full max-h-full overflow-y-auto custom-scrollbar p-5 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.8)] relative animate-in fade-in zoom-in-95 duration-300">
         <h2 className="text-2xl font-bold tracking-widest uppercase text-dm-accent mb-4 flex items-center gap-3 border-b border-dm-accent/10 pb-4 leading-tight">
           <Shield className="text-dm-muted shrink-0" size={32} />
           <div>
@@ -268,7 +268,7 @@ export function FullTutorialModal({ isOpen, onClose }: { isOpen: boolean, onClos
 
   return (
     <Overlay isOpen={isOpen} onClose={onClose} zIndex="z-[100]">
-      <div role="dialog" aria-modal="true" className="bg-dm-bg/80 backdrop-blur-xl border border-dm-accent/30 rounded-xl max-w-4xl w-full h-full sm:h-[80vh] shadow-[0_8px_32px_rgba(0,0,0,0.8)] relative flex flex-col md:flex-row overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div role="dialog" aria-modal="true" className="bg-dm-bg/80 backdrop-blur-xl gecko:backdrop-filter-none gecko:bg-dm-bg/95 border border-dm-accent/30 rounded-xl max-w-4xl w-full h-full sm:h-[80vh] shadow-[0_8px_32px_rgba(0,0,0,0.8)] relative flex flex-col md:flex-row overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Sidebar */}
         <div className="w-full md:w-64 bg-black/40 border-b md:border-b-0 md:border-r border-dm-accent/10 flex flex-col shrink-0">

@@ -189,7 +189,7 @@ export function ViewMaps() {
                      {({ zoomIn, zoomOut, resetTransform }) => (
                        <React.Fragment>
                          {placingPinFor && (
-                           <div className="absolute top-0 left-0 right-0 bg-dm-danger/90 backdrop-blur-md text-dm-text text-xs py-2 px-4 flex justify-between items-center z-50 animate-pulse border-b border-dm-accent/50">
+                           <div className="absolute top-0 left-0 right-0 bg-dm-danger/90 text-dm-text text-xs py-2 px-4 flex justify-between items-center z-50 animate-pulse border-b border-dm-accent/50">
                              <span className="uppercase tracking-widest font-bold">Haz clic en el mapa para ubicar el marcador</span>
                              <div className="flex gap-4 font-bold">
                                {children.find(c => c.id === placingPinFor)?.markerX !== undefined && (
@@ -252,7 +252,7 @@ export function ViewMaps() {
                              ))}
                            </div>
                          </TransformComponent>
-                         <div className="absolute bottom-4 right-4 flex gap-1 z-10 pointer-events-auto bg-dm-bg-alt/80 backdrop-blur-md p-1 rounded-sm border border-dm-border shadow-lg">
+                         <div className="absolute bottom-4 right-4 flex gap-1 z-10 pointer-events-auto bg-dm-bg-alt/95 p-1 rounded-sm border border-dm-border shadow-lg">
                            <button onClick={() => zoomOut(0.2)} className="text-dm-muted hover:text-dm-accent font-bold px-2 py-1 text-lg transition-colors bg-dm-bg rounded-sm">-</button>
                            <button onClick={() => resetTransform()} className="text-[10px] uppercase tracking-widest text-dm-muted hover:text-dm-accent transition-colors px-2 py-1 bg-dm-bg rounded-sm flex items-center">Reset</button>
                            <button onClick={() => zoomIn(0.2)} className="text-dm-muted hover:text-dm-accent font-bold px-2 py-1 text-lg transition-colors bg-dm-bg rounded-sm">+</button>
@@ -320,7 +320,7 @@ export function ViewMaps() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent pointer-events-none" />
                         
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                           <div className="bg-black/60 backdrop-blur-sm p-1.5 rounded-full text-dm-accent transform translate-y-2 group-hover:translate-y-0 transition-all">
+                           <div className="bg-black/70 p-1.5 rounded-full text-dm-accent translate-y-2 group-hover:translate-y-0 transition-transform">
                              <Maximize2 size={16} />
                            </div>
                         </div>

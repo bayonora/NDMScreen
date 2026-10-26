@@ -16,6 +16,7 @@ import { GlobalSearch } from "./components/GlobalSearch";
 import { RollToastHost } from "./components/RollToasts";
 import { ToastHost } from "./components/Toasts";
 import { useSearchFocus } from "./lib/searchFocus";
+import { emitTabReselect } from "./lib/tabReselect";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { TitleTorch } from "./components/TitleTorch";
 import { ImportModal } from "./components/ImportModal";
@@ -59,6 +60,8 @@ export default function App() {
   const theme = useStore((state) => state.uiState.theme) || "clasico";
   const activeTab = useStore((state) => state.uiState.activeTab) || "party";
   const setActiveTab = (tab: Tab) => actions.updateUI({ activeTab: tab });
+  // Nav buttons: pressing the current tab again takes its view back to the start (see tabReselect).
+  const pressTab = (tab: Tab) => (tab === activeTab ? emitTabReselect(tab) : setActiveTab(tab));
   useSearchFocus();
 
   useEffect(() => {
@@ -169,7 +172,7 @@ export default function App() {
         {/* Phones: the main tabs plus "Más", which opens a sheet with the rest and the tools. */}
         <div className="flex sm:hidden">
           {TABS.filter((t) => PHONE_PRIMARY_TABS.includes(t.id)).map((t) => (
-            <NavButton key={t.id} active={activeTab === t.id} onClick={() => setActiveTab(t.id)} label={t.label} icon={t.icon} indicatorId="navIndicatorPhone" />
+            <NavButton key={t.id} active={activeTab === t.id} onClick={() => pressTab(t.id)} label={t.label} icon={t.icon} indicatorId="navIndicatorPhone" />
           ))}
           <NavButton
             indicatorId="navIndicatorPhone"
@@ -182,7 +185,7 @@ export default function App() {
         </div>
         <div className="hidden sm:flex max-w-5xl mx-auto">
           {TABS.map((t) => (
-            <NavButton key={t.id} active={activeTab === t.id} onClick={() => setActiveTab(t.id)} label={t.label} icon={t.icon} />
+            <NavButton key={t.id} active={activeTab === t.id} onClick={() => pressTab(t.id)} label={t.label} icon={t.icon} />
           ))}
         </div>
       </nav>
@@ -195,7 +198,7 @@ export default function App() {
               icon={t.icon}
               label={t.label}
               active={activeTab === t.id}
-              onClick={() => { setActiveTab(t.id); setShowMore(false); }}
+              onClick={() => { pressTab(t.id); setShowMore(false); }}
             />
           ))}
         </div>

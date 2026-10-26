@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useStore, actions } from "../store/useStore";
 import { ViewHeader, ToolbarButton } from "../components/ui/ViewHeader";
 import { ImportExportActions, arrayOrKey } from "../components/ImportExportActions";
@@ -17,6 +17,7 @@ import { ImageCropperModal } from "../components/ImageCropperModal";
 import { readFileAsDataURL } from "../lib/utils";
 import { showToast } from "../components/Toasts";
 import { useShops, isBuiltinShop, shopIcon, SHOP_KINDS } from "../lib/shops";
+import { useTabReselect } from "../lib/tabReselect";
 
 export function ViewShops() {
   const userShops = useStore((state) => state.shops);
@@ -29,6 +30,8 @@ export function ViewShops() {
     setSelectedShopId(openShopId);
     actions.updateUI({ openShopId: undefined });
   }, [openShopId]);
+  // Pressing "Tiendas" in the nav while a shop is open goes back to the shop grid.
+  useTabReselect("shops", () => setSelectedShopId(null));
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editShopData, setEditShopData] = useState<Shop | null>(null);
   const [deleteShopId, setDeleteShopId] = useState<string | null>(null);
@@ -106,7 +109,7 @@ export function ViewShops() {
             return (
             <div
               data-search-id={s.id}
-              className="bg-dm-bg-darker group active:scale-[0.98] border border-dm-border overflow-hidden cursor-pointer hover:border-dm-accent hover:shadow-[0_0_15px_var(--theme-glow)] transition-all duration-300 flex flex-col shadow-lg shadow-black/80 relative"
+              className="bg-dm-bg-darker group active:scale-[0.98] border border-dm-border overflow-hidden cursor-pointer hover:border-dm-accent hover:shadow-[0_0_15px_var(--theme-glow)] transition-[border-color,box-shadow,scale] duration-300 flex flex-col shadow-lg shadow-black/80 relative"
               onClick={() => setSelectedShopId(s.id)}
             >
               {/* Área de Imagen / Banner */}
@@ -126,7 +129,7 @@ export function ViewShops() {
                 {/* Tipo de tienda; las tiendas base llevan candado */}
                 {(builtin || kindLabel) && (
                   <div
-                    className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 bg-dm-bg-darker/90 backdrop-blur-sm border border-dm-border text-[10px] uppercase tracking-widest text-dm-muted"
+                    className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 bg-dm-bg-darker/95 border border-dm-border text-[10px] uppercase tracking-widest text-dm-muted"
                     title={builtin ? "Tienda base: no se puede editar ni borrar. Duplícala para tener tu versión." : undefined}
                   >
                     {builtin && <Lock size={11} className="text-dm-accent" />}
@@ -135,11 +138,11 @@ export function ViewShops() {
                 )}
 
                 {/* Botones de Acción Superpuestos */}
-                <div className="absolute top-3 right-3 flex gap-2 can-hover:opacity-0 group-hover:opacity-100 transition-all duration-300 can-hover:-translate-y-2.5 group-hover:translate-y-0">
+                <div className="absolute top-3 right-3 flex gap-2 can-hover:opacity-0 group-hover:opacity-100 transition-[opacity,translate] duration-300 can-hover:-translate-y-2.5 group-hover:translate-y-0">
                   {!builtin && (
                     <button
                       onClick={(e) => handleEditShop(s, e)}
-                      className="p-2 bg-dm-bg-darker/90 backdrop-blur-sm border border-dm-border text-dm-muted hover:text-dm-accent hover:border-dm-accent transition-all duration-200"
+                      className="p-2 bg-dm-bg-darker/95 border border-dm-border text-dm-muted hover:text-dm-accent hover:border-dm-accent transition-colors duration-200"
                       title="Editar Tienda"
                     >
                       <Edit2 size={16}/>
@@ -147,7 +150,7 @@ export function ViewShops() {
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); duplicate(s, false); }}
-                    className="p-2 bg-dm-bg-darker/90 backdrop-blur-sm border border-dm-border text-dm-muted hover:text-dm-accent hover:border-dm-accent transition-all duration-200"
+                    className="p-2 bg-dm-bg-darker/95 border border-dm-border text-dm-muted hover:text-dm-accent hover:border-dm-accent transition-colors duration-200"
                     title="Duplicar Tienda"
                   >
                     <Copy size={16}/>
@@ -155,7 +158,7 @@ export function ViewShops() {
                   {!builtin && (
                     <button
                       onClick={(e) => handleDeleteShop(s.id, e)}
-                      className="p-2 bg-dm-bg-darker/90 backdrop-blur-sm border border-dm-border text-dm-muted hover:text-dm-danger hover:border-dm-danger transition-all duration-200"
+                      className="p-2 bg-dm-bg-darker/95 border border-dm-border text-dm-muted hover:text-dm-danger hover:border-dm-danger transition-colors duration-200"
                       title="Eliminar Tienda"
                     >
                       <Trash2 size={16}/>
@@ -271,22 +274,19 @@ function ShopInventory({ shop, onDuplicate }: { shop: Shop; onDuplicate: () => v
     setIsAddItemOpen(true);
   };
 
-  const handleEdit = (item: ShopItem, e: React.MouseEvent) => {
-    e.stopPropagation();
+  // Stable handlers, so opening an item or a dialog doesn't re-render every row (ItemRow is memoized).
+  const handleEdit = useCallback((item: ShopItem) => {
     setEditItemData(item);
     setIsAddItemOpen(true);
-  };
+  }, []);
 
-  const handleToggleHide = (item: ShopItem, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (readOnly) actions.toggleBuiltinItemHidden(item.id);
-    else actions.updateShopItem(shop.id, item.id, { hidden: !item.hidden });
-  };
-
-  const handleDelete = (itemId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDeleteItemId(itemId);
-  };
+  const handleToggleHide = useCallback(
+    (item: ShopItem) => {
+      if (readOnly) actions.toggleBuiltinItemHidden(item.id);
+      else actions.updateShopItem(shop.id, item.id, { hidden: !item.hidden });
+    },
+    [readOnly, shop.id]
+  );
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-4 sm:gap-8 relative z-10 w-full pb-20">
@@ -407,64 +407,15 @@ function ShopInventory({ shop, onDuplicate }: { shop: Shop; onDuplicate: () => v
                 </div>
               )}
           {!folded && g.items.map((item) => (
-            <div
+            <ItemRow
               key={item.id}
-              data-search-id={item.id}
-              className={cn(
-                "flex items-center justify-between gap-2 p-3 sm:p-4 border transition-all shadow-md shadow-black/30",
-                item.hidden
-                  ? "bg-dm-bg-darker/60 border-dm-border/50"
-                  : "bg-dm-bg/90 border-dm-border hover:border-dm-accent cursor-pointer backdrop-blur-sm"
-              )}
-              onClick={() => !item.hidden && setViewItem(item)}
-            >
-              {item.hidden ? (
-                <div className="flex items-center gap-4 opacity-30">
-                  <div className="w-12 h-12 bg-black border border-dm-bg-darker flex items-center justify-center">
-                    <EyeOff size={20} className="text-dm-border" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-dm-muted">Objeto oculto</h3>
-                    <p className="text-xs text-dm-muted-alt">Los jugadores no lo ven</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-4 min-w-0">
-                  {item.image ? (
-                    <img src={item.image} alt={item.name} className="w-12 h-12 object-cover border border-dm-border rounded-sm shrink-0" />
-                  ) : (
-                    <div className="w-12 h-12 bg-dm-bg-darker border border-dm-border flex items-center justify-center rounded-sm shrink-0">
-                      <ImageIcon className="text-dm-accent opacity-30" size={20} />
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-dm-accent text-lg font-display">{item.name}</h3>
-                    <p className="text-xs text-dm-muted font-mono">{item.price}</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex sm:gap-2 shrink-0">
-                <button
-                  onClick={(e) => handleToggleHide(item, e)}
-                  className={cn("p-2", item.hidden ? "text-dm-accent" : "text-dm-border hover:text-dm-accent")}
-                  title={item.hidden ? "Mostrar a los jugadores" : "Ocultar a los jugadores"}
-                  aria-label={item.hidden ? "Mostrar a los jugadores" : "Ocultar a los jugadores"}
-                >
-                  {item.hidden ? <Eye size={16}/> : <EyeOff size={16}/>}
-                </button>
-                {!readOnly && (
-                  <>
-                    <button onClick={(e) => handleEdit(item, e)} className="p-2 text-dm-border hover:text-dm-accent">
-                      <Edit2 size={16}/>
-                    </button>
-                    <button onClick={(e) => handleDelete(item.id, e)} className="p-2 text-dm-border hover:text-dm-danger">
-                      <Trash2 size={16}/>
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
+              item={item}
+              readOnly={readOnly}
+              onView={setViewItem}
+              onEdit={handleEdit}
+              onToggleHide={handleToggleHide}
+              onDelete={setDeleteItemId}
+            />
           ))}
             </section>
             );
@@ -566,6 +517,85 @@ function ShopInventory({ shop, onDuplicate }: { shop: Shop; onDuplicate: () => v
     </div>
   );
 }
+
+interface ItemRowProps {
+  item: ShopItem;
+  readOnly: boolean;
+  onView: (item: ShopItem) => void;
+  onEdit: (item: ShopItem) => void;
+  onToggleHide: (item: ShopItem) => void;
+  onDelete: (itemId: string) => void;
+}
+
+/**
+ * One row of the inventory. Memoized: a shop can have 100+ items, and the list shouldn't redraw
+ * when the item dialog opens or closes. `content-visibility` lets the browser skip rows off screen.
+ * Solid backgrounds and no backdrop-blur: when Firefox draws without the GPU (software
+ * WebRender), translucent rows over the page gradient made scrolling and opening items stutter.
+ */
+const ItemRow = memo(function ItemRow({ item, readOnly, onView, onEdit, onToggleHide, onDelete }: ItemRowProps) {
+  const stop = (fn: () => void) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    fn();
+  };
+  return (
+    <div
+      data-search-id={item.id}
+      className={cn(
+        "flex items-center justify-between gap-2 p-3 sm:p-4 border transition-colors shadow-md shadow-black/30 [content-visibility:auto] [contain-intrinsic-size:auto_74px]",
+        item.hidden ? "bg-dm-bg-darker border-dm-border/50" : "bg-dm-bg border-dm-border hover:border-dm-accent cursor-pointer"
+      )}
+      onClick={() => !item.hidden && onView(item)}
+    >
+      {item.hidden ? (
+        <div className="flex items-center gap-4 opacity-30">
+          <div className="w-12 h-12 bg-black border border-dm-bg-darker flex items-center justify-center">
+            <EyeOff size={20} className="text-dm-border" />
+          </div>
+          <div>
+            <h3 className="font-bold text-dm-muted">Objeto oculto</h3>
+            <p className="text-xs text-dm-muted-alt">Los jugadores no lo ven</p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-4 min-w-0">
+          {item.image ? (
+            <img src={item.image} alt={item.name} loading="lazy" decoding="async" className="w-12 h-12 object-cover border border-dm-border rounded-sm shrink-0" />
+          ) : (
+            <div className="w-12 h-12 bg-dm-bg-darker border border-dm-border flex items-center justify-center rounded-sm shrink-0">
+              <ImageIcon className="text-dm-accent opacity-30" size={20} />
+            </div>
+          )}
+          <div className="min-w-0">
+            <h3 className="font-bold text-dm-accent text-lg font-display">{item.name}</h3>
+            <p className="text-xs text-dm-muted font-mono">{item.price}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex sm:gap-2 shrink-0">
+        <button
+          onClick={stop(() => onToggleHide(item))}
+          className={cn("p-2", item.hidden ? "text-dm-accent" : "text-dm-border hover:text-dm-accent")}
+          title={item.hidden ? "Mostrar a los jugadores" : "Ocultar a los jugadores"}
+          aria-label={item.hidden ? "Mostrar a los jugadores" : "Ocultar a los jugadores"}
+        >
+          {item.hidden ? <Eye size={16} /> : <EyeOff size={16} />}
+        </button>
+        {!readOnly && (
+          <>
+            <button onClick={stop(() => onEdit(item))} className="p-2 text-dm-border hover:text-dm-accent">
+              <Edit2 size={16} />
+            </button>
+            <button onClick={stop(() => onDelete(item.id))} className="p-2 text-dm-border hover:text-dm-danger">
+              <Trash2 size={16} />
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+});
 
 function AddShopModal({ isOpen, onClose, editData }: { isOpen: boolean, onClose: () => void, editData: Shop | null }) {
   const [loading, setLoading] = useState(false);

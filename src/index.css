@@ -5,6 +5,12 @@
    touch screens they stay visible: `can-hover:opacity-0 group-hover:opacity-100`. */
 @custom-variant can-hover (@media (hover: hover) and (pointer: fine));
 
+/* Firefox only. Firefox paints `backdrop-filter` (the backdrop-blur-* utilities) much more slowly
+   than Chrome: every frame of an animation, scroll or hover behind a blurred panel is blurred
+   again, which feels like lag. Panels keep their blur in other browsers and use
+   `gecko:backdrop-filter-none gecko:bg-…/95` to become a near-solid color in Firefox. */
+@custom-variant gecko (@supports (-moz-appearance: none));
+
 /*
  * Theme tokens. Each theme only redefines the --theme-* variables; the @theme block below
  * exposes them to Tailwind as `dm-*` colors, so every utility works with them

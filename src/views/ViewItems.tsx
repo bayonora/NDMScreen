@@ -21,7 +21,7 @@ import { ImportExportActions, arrayOrKey } from "../components/ImportExportActio
 import { cn, compressImage, downloadJSON } from "../lib/utils";
 
 
-const panelClass = "relative bg-dm-bg/80 backdrop-blur-xl border border-dm-accent/20 rounded-xl w-full shadow-[0_8px_32px_rgba(0,0,0,0.8)] flex flex-col max-h-full sm:max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95";
+const panelClass = "relative bg-dm-bg/80 backdrop-blur-xl gecko:backdrop-filter-none gecko:bg-dm-bg/95 border border-dm-accent/20 rounded-xl w-full shadow-[0_8px_32px_rgba(0,0,0,0.8)] flex flex-col max-h-full sm:max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95";
 const labelClass = "block text-xs uppercase tracking-widest text-dm-muted mb-1";
 const fieldClass = "w-full bg-black/40 border border-dm-border p-2 text-dm-text-bright placeholder:text-dm-muted mb-4 focus:border-dm-accent outline-none";
 const primaryButtonClass = "px-4 py-2 bg-dm-accent text-dm-bg-darker hover:bg-dm-accent-hover disabled:opacity-50 transition-colors uppercase tracking-wider font-bold text-sm flex items-center justify-center gap-2";
@@ -168,8 +168,8 @@ export function ViewItems() {
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                         <div className="absolute bottom-3 left-4 flex gap-2">
-                          {item.category && <span className="bg-dm-bg-darker/80 backdrop-blur-md border border-dm-accent/30 text-dm-accent text-xs font-bold px-2 py-1 rounded-sm uppercase tracking-widest">{item.category}</span>}
-                          {item.rarity && <span className="bg-dm-bg-darker/80 backdrop-blur-md border border-dm-accent/30 text-dm-text-bright text-xs font-bold px-2 py-1 rounded-sm uppercase tracking-widest">{item.rarity}</span>}
+                          {item.category && <span className="bg-dm-bg-darker/90 border border-dm-accent/30 text-dm-accent text-xs font-bold px-2 py-1 rounded-sm uppercase tracking-widest">{item.category}</span>}
+                          {item.rarity && <span className="bg-dm-bg-darker/90 border border-dm-accent/30 text-dm-text-bright text-xs font-bold px-2 py-1 rounded-sm uppercase tracking-widest">{item.rarity}</span>}
                         </div>
                       </div>
                     ) : (
@@ -240,7 +240,7 @@ export function ViewItems() {
         {viewingItem && (
           <div role="dialog" aria-modal="true" className={cn(panelClass, "max-w-xl")}>
             <div className="h-1 w-full absolute top-0 left-0 z-20" style={{ backgroundColor: viewingItem.color || DEFAULT_COLOR }} />
-            <button type="button" onClick={() => setViewingItem(null)} aria-label="Cerrar" className="absolute top-4 right-4 text-dm-muted hover:text-dm-text-bright z-20 bg-black/50 rounded-full p-1 backdrop-blur-sm">
+            <button type="button" onClick={() => setViewingItem(null)} aria-label="Cerrar" className="absolute top-4 right-4 text-dm-muted hover:text-dm-text-bright z-20 bg-black/60 rounded-full p-1">
               <X size={20} />
             </button>
 

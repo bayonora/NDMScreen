@@ -18,7 +18,7 @@ export function ConfirmDeleteModal({
 }: Props) {
   return (
     <Overlay isOpen={isOpen} onClose={onClose} zIndex="z-[60]">
-      <div role="alertdialog" aria-modal="true" className="bg-dm-bg/80 backdrop-blur-xl border border-dm-danger/40 rounded-xl p-6 max-w-sm w-full relative shadow-[0_8px_32px_rgba(0,0,0,0.8)] animate-in fade-in zoom-in-95 duration-200">
+      <div role="alertdialog" aria-modal="true" className="bg-dm-bg/80 backdrop-blur-xl gecko:backdrop-filter-none gecko:bg-dm-bg/95 border border-dm-danger/40 rounded-xl p-6 max-w-sm w-full relative shadow-[0_8px_32px_rgba(0,0,0,0.8)] animate-in fade-in zoom-in-95 duration-200">
         <button
           type="button"
           onClick={onClose}

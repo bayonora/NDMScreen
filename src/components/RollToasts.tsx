@@ -51,7 +51,7 @@ export function RollToastHost() {
               exit={{ opacity: 0, x: 60, transition: { duration: 0.15 } }}
               transition={{ type: "spring", stiffness: 420, damping: 30 }}
               title="Cerrar"
-              className="pointer-events-auto origin-bottom-right flex items-center gap-3 sm:min-w-64 pl-3 pr-4 py-2.5 rounded-lg border bg-dm-bg/95 backdrop-blur-md shadow-xl shadow-black/60 text-left"
+              className="pointer-events-auto origin-bottom-right flex items-center gap-3 sm:min-w-64 pl-3 pr-4 py-2.5 rounded-lg border bg-dm-bg/95 shadow-xl shadow-black/60 text-left"
               style={{ borderColor: color }}
             >
               <Dices size={22} style={{ color }} className="shrink-0" />

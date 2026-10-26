@@ -33,7 +33,7 @@ function ToastItem({ toast }: { toast: Toast }) {
       exit={{ opacity: 0, y: 10, transition: { duration: 0.15 } }}
       transition={{ type: "spring", stiffness: 420, damping: 32 }}
       role="status"
-      className="pointer-events-auto flex items-center gap-3 max-w-full pl-3 pr-1.5 py-1.5 rounded-lg border border-dm-accent/50 bg-dm-bg/95 backdrop-blur-md shadow-xl shadow-black/60 text-sm"
+      className="pointer-events-auto flex items-center gap-3 max-w-full pl-3 pr-1.5 py-1.5 rounded-lg border border-dm-accent/50 bg-dm-bg/95 shadow-xl shadow-black/60 text-sm"
     >
       <Check size={16} className="text-dm-accent shrink-0" />
       <span className="text-dm-text min-w-0">{toast.message}</span>
