@@ -121,10 +121,10 @@
 }
 
 @theme {
-  --font-dnd: "Cinzel Decorative", "Cinzel", serif;
-  --font-display: "Cinzel", serif;
-  --font-serif: "Lora", serif;
-  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-dnd: "Cinzel Decorative", "Cinzel Variable", "Cinzel", serif;
+  --font-display: "Cinzel Variable", "Cinzel", serif;
+  --font-serif: "Lora Variable", "Lora", serif;
+  --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", sans-serif;
 }
 
 html,

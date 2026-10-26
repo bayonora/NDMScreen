@@ -123,6 +123,8 @@ export type Combatant = {
   statuses: StatusEffect[];
   isTemp?: boolean;
   tempData?: NPC | Creature;
+  /** DCs of the concentration saves still to roll, one per hit taken while concentrating. */
+  concentrationChecks?: number[];
 };
 
 export type LocationData = {

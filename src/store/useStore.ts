@@ -4,6 +4,7 @@ import { Player, NPC, Creature, Character, Combatant, MapData, LocationData, Sho
 import { v4 as uuidv4 } from "uuid";
 import { groupShopItems, placeInCategory, shopCategory } from "../lib/shopCategories";
 import { mergeDedupe, downloadJSON } from "../lib/utils";
+import { isConcentrating, isConcentrationStatus, withConcentrationCheck } from "../lib/concentration";
 
 export type Tab = "party" | "initiative" | "quests" | "maps" | "shops" | "notes" | "items" | "spells" | "bestiary";
 
@@ -433,13 +434,19 @@ export const actions = {
    * Sets the HP tracked on a card. A character that is in the initiative keeps the same HP there,
    * so damage taken in or out of combat is never lost.
    */
-  setCharacterHp: (char: Character, hpCurrent: number, hpTemp: number) => {
+  setCharacterHp: (char: Character, hpCurrent: number, hpTemp: number, damage?: number) => {
     const hp = Math.max(0, Math.min(char.hpMax, Math.round(hpCurrent)));
     actions.updateCharacter(char, { hpCurrent: hp, hpTemp: Math.max(0, Math.round(hpTemp)) || undefined });
     if (char.type !== "player" && char.isTemp) return;
     const state = store.getState();
     if (state.combatants.some((c) => c.characterId === char.id && !c.isTemp)) {
-      store.setState({ combatants: state.combatants.map((c) => (c.characterId === char.id && !c.isTemp ? { ...c, hpCurrent: hp } : c)) });
+      store.setState({
+        combatants: state.combatants.map((c) =>
+          c.characterId === char.id && !c.isTemp
+            ? withConcentrationCheck({ ...c, hpCurrent: hp }, damage ?? c.hpCurrent - hp)
+            : c
+        ),
+      });
     }
   },
   getCharacter: (id: string): Character | undefined => {
@@ -508,10 +515,18 @@ export const actions = {
       combatants: [...state.combatants, newCombatant].sort((a, b) => b.initiative - a.initiative),
     });
   },
-  updateCombatant: (id: string, updates: Partial<Combatant>) => {
+  /** `damage` is the full hit (temporary HP included); without it, a drop in HP counts as damage. */
+  updateCombatant: (id: string, updates: Partial<Combatant>, damage?: number) => {
     const state = store.getState();
+    const apply = (c: Combatant): Combatant => {
+      let next: Combatant = { ...c, ...updates };
+      // Dropping the concentration status also drops its pending saves.
+      if (next.concentrationChecks && !isConcentrating(next)) next = { ...next, concentrationChecks: undefined };
+      const hit = damage ?? (updates.hpCurrent !== undefined ? c.hpCurrent - updates.hpCurrent : 0);
+      return withConcentrationCheck(next, hit);
+    };
     store.setState({
-      combatants: state.combatants.map((c) => (c.id === id ? { ...c, ...updates } : c)).sort((a, b) => b.initiative - a.initiative),
+      combatants: state.combatants.map((c) => (c.id === id ? apply(c) : c)).sort((a, b) => b.initiative - a.initiative),
     });
     // Saved characters carry their combat HP back to their card.
     const target = state.combatants.find((c) => c.id === id);
@@ -528,7 +543,13 @@ export const actions = {
     const temp = char?.hpTemp || 0;
     const absorbed = Math.min(temp, amount);
     if (char && absorbed) actions.updateCharacter(char, { hpTemp: temp - absorbed || undefined });
-    actions.updateCombatant(id, { hpCurrent: Math.max(0, combatant.hpCurrent - (amount - absorbed)) });
+    actions.updateCombatant(id, { hpCurrent: Math.max(0, combatant.hpCurrent - (amount - absorbed)) }, amount);
+  },
+  /** The DM rolled the concentration save(s): kept clears the reminder, lost also removes the status. */
+  resolveConcentration: (id: string, kept: boolean) => {
+    const c = store.getState().combatants.find((x) => x.id === id);
+    if (!c) return;
+    actions.updateCombatant(id, kept ? { concentrationChecks: undefined } : { concentrationChecks: undefined, statuses: c.statuses.filter((s) => !isConcentrationStatus(s)) });
   },
   killCombatant: (id: string) => {
     const state = store.getState();

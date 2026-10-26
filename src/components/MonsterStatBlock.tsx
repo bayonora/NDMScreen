@@ -79,13 +79,6 @@ export function MonsterStatBlock({ monster: m, showLore = true }: { monster: Mon
           </div>
         </div>
       ))}
-
-      <p className="pt-3 text-[11px] text-dm-muted border-t border-dm-border">
-        {m.translated
-          ? "Traducido del SRD 5.1 en inglés (no figura en la versión en español)."
-          : "SRD 5.1 en español · Traducción de Nosolorol Ediciones."}{" "}
-        Contenido bajo la Open Game License v1.0a, Wizards of the Coast.
-      </p>
     </div>
   );
 }

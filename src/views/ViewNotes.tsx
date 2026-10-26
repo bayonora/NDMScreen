@@ -698,7 +698,7 @@ function NotesHelp({ compact, onRoll }: { compact?: boolean; onRoll?: (n: string
         </p>
       )}
 
-      <HelpSection icon={Sparkles} title="Extras de D&D">
+      <HelpSection icon={Sparkles} title="Extras de rol">
         {DND_EXAMPLES.map((ex) => <HelpRow key={ex.label} example={ex} onRoll={onRoll} />)}
         <p className="text-xs text-dm-muted leading-relaxed pt-2">
           <strong className="text-dm-text">Etiquetas:</strong> en la nota rápida, las palabras con <code className="text-dm-accent">#</code> (p. ej. <code className="text-dm-accent">#villano</code>) se guardan como etiquetas.

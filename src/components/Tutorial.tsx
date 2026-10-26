@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { X, Shield, Map as MapIcon, Package, ScrollText, Target, Sword, Settings, HelpCircle, ChevronRight, Users, Store, Backpack, BookOpen, Skull } from "lucide-react";
+import React, { useState } from "react";
+import { X, Shield, Map as MapIcon, ScrollText, Target, Swords, HelpCircle, ChevronRight, Users, Store, Backpack, BookOpen, Skull, StickyNote, Compass, Lightbulb, Keyboard, Wrench } from "lucide-react";
 import { useStore, actions } from "../store/useStore";
 import { Button } from "./ui/Input";
 import { cn } from "../lib/utils";
 import { Overlay } from "./ui/Modal";
 import { motion, AnimatePresence } from "motion/react";
+import { CC_BY_ATTRIBUTION, OGL_SECTIONS, OGL_COPYRIGHT_NOTICE, CREDITS } from "../data/legalTexts";
 
 export function WelcomeModal() {
   const hasSeenWelcome = useStore((state) => state.uiState.hasSeenWelcome);
@@ -66,43 +67,196 @@ export function WelcomeModal() {
   );
 }
 
+/* Building blocks for the manual pages, so every section reads the same way. */
+
+function Page({ intro, children }: { intro: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="space-y-5 text-sm text-dm-text leading-relaxed">
+      <p className="text-base text-dm-text-bright">{intro}</p>
+      {children}
+    </div>
+  );
+}
+
+function Block({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-2">
+      <h4 className="text-dm-accent font-bold uppercase tracking-wider text-xs">{title}</h4>
+      {children}
+    </section>
+  );
+}
+
+function Features({ children }: { children: React.ReactNode }) {
+  return <ul className="list-disc pl-5 space-y-2 text-dm-muted marker:text-dm-accent/60">{children}</ul>;
+}
+
+function F({ name, children }: { name: string; children: React.ReactNode }) {
+  return (
+    <li>
+      <strong className="text-dm-text-bright">{name}:</strong> {children}
+    </li>
+  );
+}
+
+function Steps({ children }: { children: React.ReactNode }) {
+  return <ol className="list-decimal pl-5 space-y-2 text-dm-muted marker:text-dm-accent marker:font-bold">{children}</ol>;
+}
+
+function Tip({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex gap-3 bg-dm-accent/5 border border-dm-accent/30 rounded-sm p-3 text-dm-text">
+      <Lightbulb size={16} className="text-dm-accent shrink-0 mt-0.5" />
+      <div className="space-y-1">{children}</div>
+    </div>
+  );
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded border border-dm-border border-b-2 bg-dm-bg-darker text-[11px] font-sans text-dm-text-bright align-middle">
+      {children}
+    </kbd>
+  );
+}
+
+function C({ children }: { children: React.ReactNode }) {
+  return <code className="text-dm-accent bg-dm-bg-darker border border-dm-border/60 px-1 py-0.5 rounded-sm text-[12px]">{children}</code>;
+}
+
+function ShortcutTable({ rows }: { rows: { keys: React.ReactNode; text: string }[] }) {
+  return (
+    <ul className="divide-y divide-dm-border/50 border border-dm-border rounded-sm bg-dm-bg-darker/50">
+      {rows.map((r) => (
+        <li key={r.text} className="flex items-center gap-3 px-3 py-2">
+          <span className="flex items-center gap-1 shrink-0 w-24 sm:w-32">{r.keys}</span>
+          <span className="min-w-0 text-dm-text">{r.text}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 const TUTORIAL_SECTIONS = [
   {
-    id: "party",
-    title: "1. Grupo, NPCs y Criaturas",
-    icon: <Shield size={18} />,
+    id: "start",
+    title: "Primeros pasos",
+    icon: <Compass size={18} />,
     content: (
-      <div className="space-y-4 text-sm text-dm-text leading-relaxed">
-        <p>Tu base de datos de actores. Todo lo que crees aquí se guardará para que puedas importarlo rápidamente a un combate desde la pestaña de Iniciativa.</p>
-        <div className="bg-dm-bg p-4 border border-dm-accent/30 rounded-sm my-2">
-          <h4 className="text-dm-accent font-bold mb-2 uppercase tracking-wider text-xs">Sub-pestañas:</h4>
-          <ul className="list-disc pl-5 space-y-1 text-dm-muted">
-            <li><strong>Jugadores:</strong> Las fichas de los héroes (Clase, Nivel, Percepción Pasiva).</li>
-            <li><strong>NPCs:</strong> Personajes de la trama, tenderos o aliados relevantes (con sus motivaciones y habilidades).</li>
-            <li><strong>Criaturas:</strong> Tu bestiario de monstruos puros, listos para ser carne de cañón.</li>
-          </ul>
-        </div>
-        <ul className="list-disc pl-5 space-y-2 text-dm-muted">
-          <li><strong className="text-dm-accent">Fichas de Estadísticas:</strong> Cada actor guarda su AC, Vida Máxima y Atributos (FUE, DEX...). Al abrir la ficha completa verás su bloque de estadísticas estilo D&D oficial.</li>
-        </ul>
-      </div>
+      <Page intro="NDMScreen es tu pantalla del máster: fichas, combate, mundo, notas y reglas en un solo sitio, pensada para usarla en mitad de la partida sin perder el ritmo.">
+        <Block title="Tu primera sesión en 5 pasos">
+          <Steps>
+            <li><strong className="text-dm-text-bright">Crea a los jugadores</strong> en <em>Grupo › Jugadores</em> con el botón <strong>Añadir</strong>. Con nombre, CA, PV y Destreza ya es suficiente para jugar.</li>
+            <li><strong className="text-dm-text-bright">Prepara a los enemigos</strong> en el <em>Bestiario</em>: busca la criatura, guárdala en tus criaturas o lánzala directamente al combate.</li>
+            <li><strong className="text-dm-text-bright">Lleva el combate</strong> en <em>Iniciativa</em>: pulsa <strong>Iniciar Combate</strong> y avanza con <strong>Siguiente Turno</strong>. La app cuenta las rondas por ti.</li>
+            <li><strong className="text-dm-text-bright">Apunta lo que pase</strong> en <em>Notas</em>: pulsa <Kbd>N</Kbd>, escribe y pulsa <Kbd>Enter</Kbd>. Sin abrir ventanas.</li>
+            <li><strong className="text-dm-text-bright">Guarda una copia</strong> al terminar en <em>Ajustes › Exportar Todo</em>.</li>
+          </Steps>
+        </Block>
+        <Block title="Cómo se guarda todo">
+          <Features>
+            <F name="Automático">cada cambio se guarda al momento en tu navegador; verás «Guardado» en la cabecera. No hay cuentas ni servidores y funciona sin internet una vez cargada.</F>
+            <F name="Solo en este navegador">si cambias de ordenador o de navegador, o borras los datos de navegación, no verás tu campaña. Por eso conviene exportar a menudo.</F>
+          </Features>
+        </Block>
+        <Block title="Moverte por la app">
+          <Features>
+            <F name="Barra inferior">cada pestaña es una parte de la campaña. En el móvil verás las cuatro principales y el resto (y las herramientas) dentro de <strong>Más</strong>.</F>
+            <F name="Volver a la lista de tiendas">dentro de una tienda, pulsa otra vez la pestaña Tiendas para volver a la lista de tiendas.</F>
+            <F name="Cabecera">buscador global, calculadora, lanzador de dados, este manual y los ajustes.</F>
+            <F name="Temas de color">en <em>Ajustes</em> eliges entre Nellie, Direi, Heaven y Nauthiz.</F>
+          </Features>
+        </Block>
+        <Tip>
+          <p><strong className="text-dm-accent">Truco:</strong> el buscador de la cabecera (<Kbd>Ctrl</Kbd>+<Kbd>K</Kbd>) encuentra cualquier cosa de cualquier pestaña. Si un jugador pregunta por un nombre a mitad de sesión, búscalo ahí.</p>
+        </Tip>
+      </Page>
+    )
+  },
+  {
+    id: "party",
+    title: "1. Grupo",
+    icon: <Users size={18} />,
+    content: (
+      <Page intro="Las fichas de todos los personajes de tu campaña, separadas en Jugadores, NPCs y Criaturas. Desde aquí los llevas al combate con un clic.">
+        <Block title="Crear una ficha">
+          <Features>
+            <F name="Añadir">elige si es Jugador, NPC o Criatura y rellena lo que necesites. Solo son obligatorios el nombre, la CA, los PV y las seis características.</F>
+            <F name="Rasgos y acciones">separa cada uno con una línea en blanco y empieza con su nombre y un punto (<C>Mordisco. Ataque con arma…</C>): el nombre saldrá en negrita. Una línea en mayúsculas, como <C>REACCIONES</C>, crea una sección.</F>
+            <F name="Retrato">sube una imagen y encuádrala con el recortador antes de guardarla.</F>
+            <F name="Medidas">escribe pies y libras como en el manual; la ficha añade al lado el equivalente en metros y kilos.</F>
+          </Features>
+        </Block>
+        <Block title="Usar las fichas">
+          <Features>
+            <F name="Puntos de golpe">pulsa los PV de la ficha para abrir el panel rápido de daño y curación (se explica en <em>Iniciativa</em>). La vida es la misma en la ficha y en el combate.</F>
+            <F name="Etiquetas">con el botón <strong>+</strong> de la ficha añades etiquetas con descripción («Maldito», «Debe un favor»…). Pulsa una etiqueta para leerla o editarla. Arriba aparecen todas las etiquetas como filtros.</F>
+            <F name="Buscar">el buscador de la pestaña mira nombre, raza, clase, desafío y etiquetas. <Kbd>Esc</Kbd> lo borra.</F>
+            <F name="Vista de fichas o de lista">cambia entre las fichas completas y una lista compacta. En la vista de fichas puedes colapsarlas todas a la vez.</F>
+            <F name="Reordenar">arrastra las fichas para ponerlas en el orden que quieras (mientras filtras no se puede).</F>
+          </Features>
+        </Block>
+        <Block title="Menú de la ficha (⋮)">
+          <Features>
+            <F name="Copiar ficha">la copia con formato para pegarla en Google Docs, Word o similares.</F>
+            <F name="Duplicar">crea una copia para hacer variantes («Bandido» → «Jefe bandido»).</F>
+            <F name="Duplicar como criatura enemiga / como NPC aliado">convierte un NPC en enemigo (el aliado que os traiciona) o una criatura en aliada (el lobo que habéis domado), sin perder el original.</F>
+          </Features>
+        </Block>
+        <Block title="Llevar al combate">
+          <p className="text-dm-muted">Pulsa el botón de las <strong className="text-dm-text">espadas</strong> de la ficha. La app tira <C>d20 + Destreza</C> por ti, o eliges <strong className="text-dm-text">Manual</strong> y escribes lo que haya sacado el jugador. En las criaturas eliges también la <strong className="text-dm-text">cantidad</strong> (hasta 20) y cada copia entra numerada: Goblin (1), Goblin (2)…</p>
+        </Block>
+        <Tip>
+          <p><strong className="text-dm-accent">Truco:</strong> prepara a los jefes como criaturas guardadas y a los secuaces genéricos lánzalos desde el Bestiario o como temporales en Iniciativa: así tu Grupo no se llena de «Goblin 7».</p>
+        </Tip>
+      </Page>
     )
   },
   {
     id: "initiative",
     title: "2. Iniciativa y Combate",
-    icon: <Sword size={18} />,
+    icon: <Swords size={18} />,
     content: (
-      <div className="space-y-4 text-sm text-dm-text leading-relaxed">
-        <p>El tracker de combate es el corazón de la acción, diseñado para ordenar automáticamente los turnos e identificar fácilmente aliados (verde) de enemigos (rojo).</p>
-        <ul className="list-disc pl-5 space-y-2 text-dm-muted">
-          <li><strong className="text-dm-accent">Añadir desde Grupo:</strong> El botón "Añadir a Iniciativa" te permite traer cualquier Personaje, NPC o Criatura de tu base de datos directamente al combate, introduciendo la tirada que hayan sacado.</li>
-          <li><strong className="text-dm-accent">Combatientes Temporales:</strong> Si surge un combate imprevisto (ej. bandidos genéricos), usa la opción 'Temporal' para añadirlos sin que se guarden permanentemente en tu bestiario, manteniendo la base de datos limpia.</li>
-          <li><strong className="text-dm-accent">Mecánica de Salud Rápida:</strong> La casilla de HP soporta matemáticas en vivo. No calcules mentalmente: si un goblin de 30 HP recibe 12 de daño, simplemente haz clic en su salud, escribe <code className="text-dm-accent bg-dm-bg-alt px-1 py-0.5 rounded">-12</code> y pulsa Enter. Se restará solo. Funciona igual con curaciones (<code className="text-dm-accent bg-dm-bg-alt px-1 py-0.5 rounded">+15</code>).</li>
-          <li><strong className="text-dm-accent">Estados Alterados:</strong> En el menú de 3 puntos de cada personaje puedes aplicar estados (Cegado, Paralizado...). Se mostrará un icono identificativo para que no te olvides de penalizar sus tiradas.</li>
-          <li><strong className="text-dm-accent">El Cementerio:</strong> Cuando eliminas a un combatiente lo mandas al cementerio. Quedará guardado en un registro aparte para que puedas consultar sus stats o revivirlo si es necesario.</li>
-        </ul>
-      </div>
+      <Page intro="El orden de turnos, la vida y los estados de todos los que luchan, siempre ordenados de mayor a menor iniciativa.">
+        <Block title="Añadir combatientes">
+          <Features>
+            <F name="Desde Grupo o Bestiario">con el botón de las espadas de cada ficha (lo más rápido).</F>
+            <F name="Desde aquí">el botón <strong>Añadir</strong> te deja elegir a alguien de tu Grupo y escribir su tirada, o crear un combatiente <strong>Temporal</strong> con solo nombre, PV y CA. Los temporales no se guardan en tu Grupo.</F>
+            <F name="Cambiar la iniciativa">pulsa el número de la izquierda y escribe otro; la lista se reordena sola. Admite sumas como <C>14+2</C>.</F>
+          </Features>
+        </Block>
+        <Block title="Llevar los turnos">
+          <Features>
+            <F name="Iniciar Combate">marca el primer turno y empieza la Ronda 1.</F>
+            <F name="Siguiente Turno">pasa al siguiente, suma una ronda al volver arriba y descuenta un turno a los estados del que acaba de actuar.</F>
+            <F name="Finalizar">termina el combate y vuelve a la Ronda 1. Los combatientes se quedan en la lista por si la pelea continúa.</F>
+            <F name="En el móvil">los botones del combate están abajo, al alcance del pulgar.</F>
+          </Features>
+        </Block>
+        <Block title="Daño y curación">
+          <p className="text-dm-muted">Pulsa la vida de cualquier combatiente y escribe en el panel:</p>
+          <ShortcutTable rows={[
+            { keys: <C>-7</C>, text: "Le hace 7 de daño (los PV temporales lo absorben primero)" },
+            { keys: <C>+5</C>, text: "Lo cura 5 (sin pasar del máximo)" },
+            { keys: <C>20</C>, text: "Le deja la vida en 20" },
+            { keys: <C>-(8+3)</C>, text: "También acepta operaciones" },
+          ]} />
+          <p className="text-dm-muted">Debajo del campo verás cómo quedará la vida antes de pulsar <Kbd>Enter</Kbd>. Los botones del panel aplican la misma cantidad como daño, curación o PV temporales, y <strong className="text-dm-text">Restaurar</strong> lo deja a tope.</p>
+          <p className="text-dm-muted">La fila cambia de color según las heridas, late cuando está grave y se tacha al llegar a 0.</p>
+        </Block>
+        <Block title="Estados y bajas">
+          <Features>
+            <F name="Estados">pulsa el <strong>+</strong> junto al nombre. Elige uno de los 15 predefinidos (Aturdido, Concentración, Derribado…) o crea el tuyo con descripción y duración en turnos (0 = hasta que lo quites). Pulsa el estado para verlo, editarlo o quitarlo.</F>
+            <F name="Concentración">si alguien con el estado <em>Concentración</em> recibe daño, su fila se ilumina en amarillo y te recuerda la tirada de salvación de Constitución con su CD (10 o la mitad del daño, la mayor). Pulsa <strong>Mantiene</strong> o <strong>La pierde</strong> según lo que saque; si pierde, el estado se quita solo. Si recibe varios golpes, verás una CD por cada uno.</F>
+            <F name="Ver la ficha">pulsa el nombre de un combatiente para consultar su ficha completa sin salir del combate.</F>
+            <F name="Duplicar">los combatientes temporales tienen un botón para clonarlos al momento: perfecto para «aparecen dos más».</F>
+            <F name="Cementerio">la calavera saca a un combatiente de la lista y lo guarda en el Cementerio, desde donde puedes devolverlo a la iniciativa o borrarlo.</F>
+          </Features>
+        </Block>
+        <Tip>
+          <p><strong className="text-dm-accent">Truco:</strong> pon el estado <em>Concentración</em> en cuanto alguien lance un conjuro que la requiera. Así la app te avisará de la tirada en cuanto reciba daño, también si se lo quitas desde su ficha en Grupo.</p>
+        </Tip>
+      </Page>
     )
   },
   {
@@ -110,15 +264,25 @@ const TUTORIAL_SECTIONS = [
     title: "3. Misiones",
     icon: <Target size={18} />,
     content: (
-      <div className="space-y-4 text-sm text-dm-text leading-relaxed">
-        <p>Un sistema de árbol jerárquico para organizar tramas complejas, evitando las típicas listas interminables.</p>
-        <ul className="list-disc pl-5 space-y-2 text-dm-muted">
-          <li><strong className="text-dm-accent">Misión Raíz vs Submisión:</strong> Creas primero las tramas principales. Usando el botón "+" debajo de cualquier misión puedes crear sub-misiones que quedarán indentadas jerárquicamente debajo de la principal.</li>
-          <li><strong className="text-dm-accent">Estados Rotativos:</strong> El icono circular a la izquierda del título te permite hacer clic para ciclar el estado de la misión: <span className="text-yellow-500">Pendiente</span> &rarr; <span className="text-green-500">Completada</span> &rarr; <span className="text-red-500">Fallida</span>.</li>
-          <li><strong className="text-dm-accent">Pistas y Recompensas (+):</strong> Con el botón de suma puedes añadir notas internas a un nodo (una pista sobre el asesino, el tesoro que encontrarán...).</li>
-          <li><strong className="text-dm-accent">Modo Lectura:</strong> Hacer clic en el propio título o imagen de la misión la abrirá en un modal grande, limpio, perfecto para leerle el texto introductorio a tus jugadores sin forzar la vista.</li>
-        </ul>
-      </div>
+      <Page intro="Las tramas de tu campaña en forma de árbol: cada misión puede abrir ramas con sus submisiones, para ver de un vistazo qué camino ha seguido el grupo.">
+        <Block title="Organizar las tramas">
+          <Features>
+            <F name="Nueva Misión">ponle título, lugar, descripción, recompensa e imagen. En <strong>Misión Anterior (Rama)</strong> eliges de qué misión cuelga; déjalo vacío para una trama principal.</F>
+            <F name="Submisiones">el botón <strong>+</strong> de la parte inferior de una misión crea una submisión enlazada a ella.</F>
+            <F name="Plegar ramas">la flecha lateral oculta o muestra las submisiones para centrarte en lo que importa.</F>
+          </Features>
+        </Block>
+        <Block title="Durante la partida">
+          <Features>
+            <F name="Estado">pulsa el círculo junto al título para cambiarlo: <span className="text-dm-text">Activa</span> → <span className="text-green-500">Completada</span> → <span className="text-dm-danger">Fallida</span>.</F>
+            <F name="Detalles y notas">con <strong>+ Añadir</strong> guardas pistas, notas o recompensas extra dentro de cada misión, sin ensuciar la descripción.</F>
+            <F name="Vista completa">pulsa la misión para abrirla en grande, ideal para leer en voz alta el encargo a tus jugadores.</F>
+          </Features>
+        </Block>
+        <Tip>
+          <p><strong className="text-dm-accent">Truco:</strong> marca como <em>Fallida</em> en vez de borrar. El árbol se convierte en el registro de las decisiones del grupo y te da ganchos para más adelante.</p>
+        </Tip>
+      </Page>
     )
   },
   {
@@ -126,14 +290,25 @@ const TUTORIAL_SECTIONS = [
     title: "4. Mapas y Lugares",
     icon: <MapIcon size={18} />,
     content: (
-      <div className="space-y-4 text-sm text-dm-text leading-relaxed">
-        <p>Construye tu mundo visualmente y ten a mano el lore geopolítico.</p>
-        <ul className="list-disc pl-5 space-y-2 text-dm-muted">
-          <li><strong className="text-dm-accent">Estructura de Carpetas Geográficas:</strong> Ahora puedes organizar tu mundo de forma jerárquica. Por ejemplo: Mapa Continental &gt; Reino &gt; Ciudad &gt; Mazmorra. Haz clic en "Entrar" en cualquier lugar para ver qué contiene.</li>
-          <li><strong className="text-dm-accent">Mapas Interactivos:</strong> Cada nodo puede tener una "Imagen de Fondo" que actúa como mapa físico. Puedes cargar imágenes desde tu PC o añadir URLs. El visor incluye herramientas de Paneo (arrastrar) y Zoom.</li>
-          <li><strong className="text-dm-accent">Pins en el Mapa:</strong> Al navegar dentro de un mapa físico que contiene sub-lugares, los verás listados a la derecha. Coloca Pins para asignar a cada sub-lugar una coordenada (X, Y) visual directamente sobre la imagen.</li>
-        </ul>
-      </div>
+      <Page intro="Tu mundo por capas: continente › reino › ciudad › taberna. Cada lugar puede tener su propio mapa con marcadores que llevan a los lugares que contiene.">
+        <Block title="Construir el mundo">
+          <Features>
+            <F name="Añadir lugar">con nombre, una etiqueta corta (Taberna, Costa de la Espada…), descripción y, si quieres, una imagen de fondo que hará de mapa.</F>
+            <F name="Entrar y salir">pulsa un lugar para entrar en él. La ruta de arriba te devuelve a cualquier nivel anterior.</F>
+            <F name="Explorar el mapa">arrastra para moverte y usa los botones <strong>+</strong> y <strong>−</strong> para el zoom; el botón central lo reinicia.</F>
+          </Features>
+        </Block>
+        <Block title="Marcadores">
+          <Steps>
+            <li>Dentro de un lugar con mapa, busca en la lista el sublugar que quieres situar.</li>
+            <li>Pulsa su botón de <strong className="text-dm-text">marcador</strong> y haz clic en el punto del mapa donde está.</li>
+            <li>Desde entonces, pulsar el marcador en el mapa te lleva directamente a ese lugar.</li>
+          </Steps>
+        </Block>
+        <Tip>
+          <p><strong className="text-dm-accent">Truco:</strong> las imágenes se guardan dentro de la app y ocupan espacio. Usa mapas comprimidos (JPG o WebP) y vigila el indicador de <em>Capacidad</em> de esta pestaña.</p>
+        </Tip>
+      </Page>
     )
   },
   {
@@ -141,102 +316,196 @@ const TUTORIAL_SECTIONS = [
     title: "5. Tiendas",
     icon: <Store size={18} />,
     content: (
-      <div className="space-y-4 text-sm text-dm-text leading-relaxed">
-        <p>Tenderos, mercancías y catálogos de compraventa a tu alcance.</p>
-        <ul className="list-disc pl-5 space-y-2 text-dm-muted">
-          <li><strong className="text-dm-accent">Tiendas Base:</strong> La app trae tiendas ya surtidas con los precios del manual (tienda general, herrería y alquimista) que siempre salen las primeras. No se pueden editar ni borrar, pero puedes <strong>duplicarlas</strong> para tener tu propia versión, u ocultarlas con el botón del <strong>Ojo</strong> de la barra superior.</li>
-          <li><strong className="text-dm-accent">Creación de Tiendas:</strong> Añade un mercader con su nombre, el nombre de su establecimiento y una imagen de perfil. Al hacer clic sobre él, entrarás a su inventario.</li>
-          <li><strong className="text-dm-accent">Inventario Personalizado:</strong> Dentro de cada tienda, puedes añadir los objetos que tiene a la venta escribiendo su nombre, precio (ej: 50 gp), descripción e incluso subiendo una imagen para mostrársela a tus jugadores.</li>
-          <li><strong className="text-dm-accent">Control Visual y Ocultación:</strong> Los objetos de la tienda se presentan en forma de tarjetas o listas limpias. Si necesitas ocultar temporalmente un ítem porque se ha agotado (o porque el mercader aún no se lo quiere mostrar a los jugadores), puedes usar el icono del <strong>Ojo</strong> para ocultarlo sin tener que borrarlo.</li>
-        </ul>
-      </div>
+      <Page intro="Mercaderes con su inventario y sus precios, listos para enseñárselos al grupo cuando entre por la puerta.">
+        <Block title="Tiendas base">
+          <p className="text-dm-muted">La app trae una tienda general, una herrería y un alquimista ya surtidos con los precios del manual. Siempre salen las primeras y no se pueden editar, pero puedes <strong className="text-dm-text">duplicarlas</strong> para tener tu propia versión editable, u ocultarlas todas con el botón del <strong className="text-dm-text">ojo</strong> de la barra superior.</p>
+        </Block>
+        <Block title="Tus tiendas">
+          <Features>
+            <F name="Nueva Tienda">nombre del local, del mercader e imagen, con vista previa de cómo quedará la tarjeta.</F>
+            <F name="Objetos">nombre, precio (<C>50 po</C>), descripción, imagen y categoría opcional.</F>
+            <F name="Categorías">los objetos con la misma categoría salen juntos en su propia sección. Puedes renombrar las secciones y subirlas o bajarlas.</F>
+            <F name="Buscar">cada tienda tiene su buscador para encontrar un objeto en inventarios largos.</F>
+          </Features>
+        </Block>
+        <Tip>
+          <p><strong className="text-dm-accent">Truco:</strong> el <strong>ojo</strong> de cada objeto lo oculta a los jugadores sin borrarlo. Úsalo para lo que se ha agotado o para el «género especial» que el mercader solo saca si le caéis bien.</p>
+        </Tip>
+      </Page>
     )
   },
   {
     id: "notes",
     title: "6. Notas",
-    icon: <BookOpen size={18} />,
+    icon: <StickyNote size={18} />,
     content: (
-      <div className="space-y-4 text-sm text-dm-text leading-relaxed">
-        <p>Tu libreta de campaña para apuntar todo lo que surge en la mesa.</p>
-        <ul className="list-disc pl-5 space-y-2 text-dm-muted">
-          <li><strong className="text-dm-accent">Nota rápida:</strong> Escribe en la barra superior (o pulsa <code className="text-dm-accent">N</code>) y Enter. Las palabras con <code className="text-dm-accent">#</code> se guardan como etiquetas.</li>
-          <li><strong className="text-dm-accent">Tipos y plantillas:</strong> PNJ, Lugar, Pista, Botín, Regla, Sesión o Gancho, cada uno con su plantilla. Filtra por tipo, busca con <code className="text-dm-accent">/</code> y fija arriba las importantes.</li>
-          <li><strong className="text-dm-accent">Dados y casillas:</strong> Cualquier tirada escrita como <code className="text-dm-accent">1d20+5</code> se lanza con un clic, y las casillas <code className="text-dm-accent">- [ ]</code> se marcan sin entrar a editar. Pulsa <code className="text-dm-accent">?</code> en Notas para ver la guía completa de formato y atajos.</li>
-          <li><strong className="text-dm-accent">Organización Drag & Drop:</strong> Arrastra y suelta las tarjetas de tus notas para reordenarlas en el tablero visual como más te guste.</li>
-          <li><strong className="text-dm-accent">Formato Markdown:</strong> Escribe texto enriquecido rápidamente usando símbolos estándar: <code className="text-dm-accent"># Título</code>, <code className="text-dm-accent">**Negrita**</code>, <code className="text-dm-accent">- Lista</code>. Se renderizará perfectamente, con soporte para tablas y saltos de línea.</li>
-          <li><strong className="text-dm-accent">Codificación por Color:</strong> A cada nota puedes asignarle un color de fondo (Rojo, Verde, Morado...). Así reconoces tus archivos de un vistazo.</li>
-        </ul>
-      </div>
+      <Page intro="Tu libreta de campaña, pensada para apuntar rápido en plena sesión y encontrarlo todo después.">
+        <Block title="Escribir">
+          <Features>
+            <F name="Nota rápida">pulsa <Kbd>N</Kbd>, escribe y <Kbd>Enter</Kbd>. Las palabras con <C>#</C> (<C>#villano</C>) se convierten en etiquetas. Con <Kbd>Mayús</Kbd>+<Kbd>Enter</Kbd> la abres en el editor completo.</F>
+            <F name="Tipos con plantilla">General, PNJ, Lugar, Pista / Secreto, Botín, Regla, Sesión y Gancho. Cada tipo trae una plantilla con los campos útiles ya escritos.</F>
+            <F name="Formato">usa los botones del editor o escribe <C>**negrita**</C>, <C>## título</C>, <C>- lista</C> y <C>&gt; texto</C> para leer en voz alta. También hay tablas.</F>
+            <F name="Colores">Pergamino, Sangre, Bosque, Arcano, Oro, Hechizo, Jade o Ceniza, para reconocer cada nota de un vistazo.</F>
+          </Features>
+        </Block>
+        <Block title="Notas que hacen cosas">
+          <Features>
+            <F name="Tiradas">cualquier tirada escrita (<C>1d20+5</C>, <C>2d6</C>…) se lanza con un clic y el resultado aparece en pantalla.</F>
+            <F name="Casillas">escribe <C>- [ ] Encontrar la llave</C> y márcala con un clic sin entrar a editar. La nota muestra cuántas llevas hechas.</F>
+          </Features>
+        </Block>
+        <Block title="Ordenar y encontrar">
+          <Features>
+            <F name="Buscar">pulsa <Kbd>/</Kbd> y escribe, o busca <C>#etiqueta</C>. Pulsar una etiqueta muestra todas las notas que la llevan.</F>
+            <F name="Filtros y orden">filtra por tipo y ordena de forma manual, por recientes o de la A a la Z. En orden manual, arrastra las notas para colocarlas.</F>
+            <F name="Fijar">las notas fijadas salen siempre arriba (<Kbd>P</Kbd> al verlas).</F>
+          </Features>
+        </Block>
+        <Tip>
+          <p><strong className="text-dm-accent">Truco:</strong> crea una nota de tipo <em>Sesión</em> para cada partida y etiqueta lo importante (<C>#pista</C>, <C>#deuda</C>). Antes de la siguiente sesión, buscar la etiqueta te da el resumen. Pulsa <Kbd>?</Kbd> en Notas para la guía completa con ejemplos que puedes probar.</p>
+        </Tip>
+      </Page>
     )
   },
   {
     id: "items",
-    title: "7. Objetos y Tablas de Botín",
-    icon: <Package size={18} />,
+    title: "7. Objetos y Botín",
+    icon: <Backpack size={18} />,
     content: (
-      <div className="space-y-4 text-sm text-dm-text leading-relaxed">
-        <p>Tu arsenal personal y el sistema de botín aleatorio.</p>
-        <div className="bg-dm-bg p-4 border border-dm-accent/30 rounded-sm my-2">
-          <h4 className="text-dm-accent font-bold mb-2 uppercase tracking-wider text-xs">Sub-pestañas:</h4>
-          <ul className="list-disc pl-5 space-y-1 text-dm-muted">
-            <li><strong>Objetos Únicos:</strong> Crea cartas detalladas de objetos importantes. Añádeles un nombre, descripción, valor (precio) y una imagen representativa para visualizarlos como un inventario de gran calidad.</li>
-            <li><strong>Tablas de Botín:</strong> El sistema perfecto para generar loot rápido tras un combate.</li>
-          </ul>
-        </div>
-        <ul className="list-disc pl-5 space-y-2 text-dm-muted">
-          <li><strong className="text-dm-accent">Creación de Tablas:</strong> Crea una tabla (ej. "Tesoro de Dragón"). El editor de texto te permite escribir un objeto o recompensa por línea. Si quieres que algo tenga más probabilidad de salir, simplemente repítelo en varias líneas.</li>
-          <li><strong className="text-dm-accent">Tirar el Dado:</strong> Al ver tus tablas de botín, haz clic en el icono del dado que aparece en la cabecera de cada una de ellas. La herramienta tirará un dado virtual basado en el total de líneas y extraerá instantáneamente tu recompensa sin necesidad de dados porcentuales.</li>
-        </ul>
-      </div>
+      <Page intro="El catálogo de objetos del manual, tus objetos propios y las tablas de botín para repartir tesoros al momento.">
+        <Block title="Las tres pestañas">
+          <Features>
+            <F name="Objetos">el equipo y los objetos mágicos del SRD en español. Filtra por categoría, rareza y sintonización. Con <strong>Añadir a Homebrew</strong> te guardas una copia editable.</F>
+            <F name="Homebrew">tus objetos: nombre, resumen, color de rareza, imagen y detalles opcionales (precio, peso, daño, CA, propiedades, sintonización). Se pueden reordenar arrastrándolos.</F>
+            <F name="Tablas de Botín">tablas que tiran el dado por ti y te dicen qué ha caído.</F>
+          </Features>
+        </Block>
+        <Block title="Crear una tabla de botín">
+          <Features>
+            <F name="Modo Lista">añade objetos del catálogo o de tu homebrew con <strong>Añadir objetos</strong> (cada clic sube su probabilidad), o escribe resultados de texto (<C>1000 po</C>). Ajusta el porcentaje de cada resultado.</F>
+            <F name="Modo Texto">un resultado por línea. Repite una línea para que salga más a menudo.</F>
+            <F name="Dado">en <strong>Auto</strong> la app elige el dado más pequeño que respeta tus porcentajes, o eliges tú uno concreto.</F>
+          </Features>
+          <p className="text-dm-muted">Para tirar, abre la tabla y pulsa <strong className="text-dm-text">Tirar</strong>. Si el resultado es un objeto, púlsalo para ver su descripción.</p>
+        </Block>
+        <Tip>
+          <p><strong className="text-dm-accent">Truco:</strong> haz una tabla por tipo de encuentro («Bolsillos de bandido», «Guarida de dragón») y tendrás el botín resuelto en un segundo, sin consultar el manual.</p>
+        </Tip>
+      </Page>
     )
   },
   {
     id: "grimoire",
-    title: "8. El Grimorio",
+    title: "8. Grimorio",
     icon: <BookOpen size={18} />,
     content: (
-      <div className="space-y-4 text-sm text-dm-text leading-relaxed">
-        <p>Una biblioteca completa con la magia oficial del sistema D&D 5e.</p>
-        <ul className="list-disc pl-5 space-y-2 text-dm-muted">
-          <li><strong className="text-dm-accent">Base de Datos SRD 5e:</strong> Todos los conjuros estándar precargados y formateados, con indicadores visuales si requieren componentes Verbales (V), Somáticos (S) o Materiales (M).</li>
-          <li><strong className="text-dm-accent">Filtros Mágicos:</strong> Usa las barras superiores para aislar conjuros por nivel, Escuela de magia o Clase (Magos, Clérigos, etc).</li>
-          <li><strong className="text-dm-accent">Favoritos:</strong> Marca tus conjuros más usados (o los de tus enemigos/jugadores) como Favoritos. Aparecerán listados en una sub-pestaña especial para acceso instantáneo durante la sesión.</li>
-        </ul>
-      </div>
+      <Page intro="Los conjuros de la 5ª edición en español, con sus datos y su descripción completa.">
+        <Block title="Encontrar un conjuro">
+          <Features>
+            <F name="Buscar">por nombre.</F>
+            <F name="Filtros">por nivel (o trucos), escuela de magia y clase que puede lanzarlo.</F>
+            <F name="Orden">por nivel ascendente o descendente, o por nombre.</F>
+          </Features>
+        </Block>
+        <Block title="La ficha del conjuro">
+          <p className="text-dm-muted">Nivel, escuela, tiempo de lanzamiento, alcance (con su equivalente en metros), componentes y duración, la descripción completa y qué cambia al lanzarlo a niveles superiores.</p>
+        </Block>
+        <Tip>
+          <p><strong className="text-dm-accent">Truco:</strong> pulsa la <strong>estrella</strong> de los conjuros de tus jugadores y de tus villanos y elige el orden <em>Solo guardados</em>. En combate tendrás a mano solo los que importan.</p>
+        </Tip>
+      </Page>
     )
   },
   {
     id: "bestiary",
-    title: "9. El Bestiario",
+    title: "9. Bestiario",
     icon: <Skull size={18} />,
     content: (
-      <div className="space-y-4 text-sm text-dm-text leading-relaxed">
-        <p>Las más de 300 criaturas del SRD 5.1 en español, con su bloque de estadísticas completo.</p>
-        <ul className="list-disc pl-5 space-y-2 text-dm-muted">
-          <li><strong className="text-dm-accent">Buscar y filtrar:</strong> Busca por nombre (también en inglés, como "owlbear") y filtra por Desafío, Tipo o Tamaño.</li>
-          <li><strong className="text-dm-accent">Añadir a combate:</strong> Desde la ficha, elige cuántas quieres y lánzalas al Tracker de Iniciativa. La iniciativa la tira la app (d20 + Destreza) o la escribes tú con «Manual», y cada copia se numera.</li>
-          <li><strong className="text-dm-accent">Guardar en tus criaturas:</strong> Crea una copia editable en Grupo › Criaturas para adaptarla a tu campaña.</li>
-          <li><strong className="text-dm-accent">Guardados:</strong> Marca con la estrella las que más uses y filtra por "Solo guardados".</li>
-        </ul>
-      </div>
+      <Page intro="Las más de 300 criaturas del SRD 5.1 en español, con su bloque de estadísticas completo y listas para el combate.">
+        <Block title="Encontrar una criatura">
+          <Features>
+            <F name="Buscar">por nombre, también en inglés («owlbear» encuentra al oso lechuza).</F>
+            <F name="Filtros">por desafío, tipo y tamaño, y orden por nombre o desafío.</F>
+          </Features>
+        </Block>
+        <Block title="Desde la ficha">
+          <Features>
+            <F name="Al combate">elige cuántas quieres y si la iniciativa la tira la app (<C>d20 + Destreza</C>) o la escribes tú. Cada copia entra numerada.</F>
+            <F name="Guardar en tus criaturas">crea una copia editable en <em>Grupo › Criaturas</em> para adaptarla a tu campaña (más vida, otro nombre, acciones nuevas…).</F>
+            <F name="Copiar">copia la ficha como tabla para pegarla en Google Docs, Word o similares.</F>
+          </Features>
+        </Block>
+        <Tip>
+          <p><strong className="text-dm-accent">Truco:</strong> marca con la <strong>estrella</strong> las criaturas del capítulo que vas a jugar y ordena por <em>Solo guardados</em>: tu bestiario de la sesión en una sola lista.</p>
+        </Tip>
+      </Page>
     )
   },
   {
-    id: "global",
-    title: "10. Sistema Global y Herramientas",
-    icon: <Settings size={18} />,
+    id: "tools",
+    title: "10. Herramientas y Copias",
+    icon: <Wrench size={18} />,
     content: (
-      <div className="space-y-4 text-sm text-dm-text leading-relaxed">
-        <p>Herramientas omnipresentes para no tener que salir nunca de la página de Rol.</p>
-        <ul className="list-disc pl-5 space-y-2 text-dm-muted">
-          <li><strong className="text-dm-accent">Autoguardado 100% Offline:</strong> No hay servidores, todo se guarda en tu navegador automáticamente, a prueba de cortes de internet.</li>
-          <li><strong className="text-dm-accent">Buscador Global:</strong> En la barra superior. Si tus jugadores mencionan "El Zafiro Negro", escríbelo ahí y la app buscará en Notas, Objetos, NPCs y Mapas a la vez.</li>
-          <li><strong className="text-dm-accent">Calculadora Integrada:</strong> Accesible desde cualquier lugar en el icono lateral superior. No ensucies la mesa con hojas en sucio, haz sumas rápidas o restas de daño directamente.</li>
-		  <li><strong className="text-dm-accent">Exportación/Importación Individual:</strong> Cada sub-pestaña tiene su icono de guardar/subir. Puedes descargar un JSON sólo con tus Criaturas y pasárselo a otro máster sin destriparle quiénes son tus NPCs importantes. El sistema permite elegir si <em>Fusionar</em> (añadir a lo que ya tienes) o <em>Sobrescribir</em>.</li>
-          <li><strong className="text-dm-accent">Exportación Total:</strong> Genera un json para guardar un backup de absolutamente TODO, pasarlo a otro PC, o restaurar la partida tras formatear el ordenador. Al importar, podrás elegir Fusionar (juntar datos) o Sobrescribir (borrar todo y dejar solo lo nuevo).</li>
-        </ul>
-      </div>
+      <Page intro="Utilidades que están siempre disponibles en la cabecera, estés en la pestaña que estés.">
+        <Block title="Buscador global">
+          <Features>
+            <F name="Busca en todo">fichas, combate, misiones, mapas, tiendas, notas, objetos, tablas, conjuros y criaturas a la vez.</F>
+            <F name="Vista rápida">al elegir un resultado lo ves en una ventana sin cambiar de pestaña. Desde ahí, <strong>Ir a…</strong> te lleva a su sitio y lo resalta.</F>
+          </Features>
+        </Block>
+        <Block title="Dados y calculadora">
+          <Features>
+            <F name="Lanzador de dados">elige el dado y la cantidad (hasta 12) y tira. Guarda un historial de las últimas tiradas.</F>
+            <F name="Calculadora">para repartir oro, sumar daño o lo que surja, sin salir de la app.</F>
+          </Features>
+        </Block>
+        <Block title="Copias de seguridad">
+          <Features>
+            <F name="Exportar Todo">en <em>Ajustes</em> descarga un archivo con toda la campaña. Úsalo como copia de seguridad o para pasarla a otro ordenador.</F>
+            <F name="Importar">al cargar un archivo eliges <strong>Fusionar</strong> (añade lo nuevo a lo que ya tienes) o <strong>Sobrescribir</strong> (lo reemplaza todo).</F>
+            <F name="Por pestañas">Grupo, Misiones, Mapas, Tiendas, Notas y Objetos tienen sus propios botones de exportar e importar. Así puedes pasar a otro máster solo tus criaturas o tus tiendas sin destriparle la trama.</F>
+          </Features>
+        </Block>
+        <Tip>
+          <p><strong className="text-dm-accent">Importante:</strong> si borras los datos de navegación, usas el modo incógnito o cambias de navegador, la campaña no estará. Exporta al final de cada sesión y guarda el archivo en tu nube o en un USB.</p>
+        </Tip>
+      </Page>
+    )
+  },
+  {
+    id: "shortcuts",
+    title: "Atajos de teclado",
+    icon: <Keyboard size={18} />,
+    content: (
+      <Page intro="Con teclado vas más rápido. Estos son todos los atajos de la app.">
+        <Block title="En cualquier pestaña">
+          <ShortcutTable rows={[
+            { keys: <><Kbd>Ctrl</Kbd>+<Kbd>K</Kbd></>, text: "Abrir el buscador global" },
+            { keys: <><Kbd>↑</Kbd><Kbd>↓</Kbd></>, text: "Moverte por los resultados de la búsqueda" },
+            { keys: <Kbd>Enter</Kbd>, text: "Vista rápida del resultado elegido" },
+            { keys: <><Kbd>Ctrl</Kbd>+<Kbd>Enter</Kbd></>, text: "Ir directamente al resultado" },
+            { keys: <Kbd>Esc</Kbd>, text: "Cerrar ventanas y borrar búsquedas" },
+          ]} />
+        </Block>
+        <Block title="En Notas">
+          <ShortcutTable rows={[
+            { keys: <Kbd>N</Kbd>, text: "Escribir una nota rápida" },
+            { keys: <Kbd>/</Kbd>, text: "Buscar en las notas" },
+            { keys: <Kbd>?</Kbd>, text: "Abrir la guía de formato" },
+            { keys: <><Kbd>Mayús</Kbd>+<Kbd>Enter</Kbd></>, text: "Pasar la nota rápida al editor" },
+            { keys: <><Kbd>Ctrl</Kbd>+<Kbd>Enter</Kbd></>, text: "Guardar en el editor" },
+            { keys: <><Kbd>←</Kbd><Kbd>→</Kbd></>, text: "Nota anterior o siguiente" },
+            { keys: <Kbd>E</Kbd>, text: "Editar la nota abierta (o doble clic en el texto)" },
+            { keys: <Kbd>P</Kbd>, text: "Fijar la nota abierta" },
+          ]} />
+        </Block>
+        <Block title="En combate y en las fichas">
+          <ShortcutTable rows={[
+            { keys: <><C>-5</C> <C>+5</C></>, text: "Daño o curación en el panel de PV, y Enter" },
+            { keys: <Kbd>Enter</Kbd>, text: "Confirmar una iniciativa escrita a mano" },
+          ]} />
+        </Block>
+      </Page>
     )
   },
   {
@@ -245,17 +514,38 @@ const TUTORIAL_SECTIONS = [
     icon: <ScrollText size={18} />,
     content: (
       <div className="space-y-4 text-sm text-dm-text leading-relaxed">
-        <div className="bg-dm-bg p-4 border border-dm-accent/30 rounded-sm">
+        <div className="bg-dm-bg p-4 border border-dm-accent/30 rounded-sm space-y-2">
           <h4 className="text-dm-accent font-bold mb-2 uppercase tracking-wider text-xs">Política de Privacidad</h4>
-          <p>Esta aplicación funciona bajo un modelo <strong>Local-First</strong>. No recopilamos, procesamos, almacenamos en la nube ni transferimos ningún dato personal. Toda la información de tus partidas, personajes y notas se almacena <strong>exclusivamente de forma local en tu navegador</strong> mediante <code>localStorage</code> y/o <code>IndexedDB</code>.</p>
+          <p>Esta aplicación funciona bajo un modelo <strong>Local-First</strong>. No pedimos registro, no recopilamos datos personales y no los enviamos a ningún servidor. Toda la información de tus partidas, personajes, notas e imágenes se guarda <strong>solo en tu navegador</strong> mediante <code>localStorage</code> e <code>IndexedDB</code>.</p>
+          <p><strong>Cookies y almacenamiento:</strong> no usamos cookies, analítica, publicidad ni rastreadores. El almacenamiento local solo sirve para que la app funcione y guarde lo que tú escribes, por eso no hace falta pedir consentimiento. Puedes borrarlo cuando quieras desde los ajustes de tu navegador (perderás tus datos si no los has exportado).</p>
+          <p><strong>Alojamiento:</strong> la web se sirve desde Vercel (Vercel Inc.). Como cualquier servidor web, Vercel puede registrar datos técnicos de la visita, como la dirección IP, para entregar la página y protegerla frente a abusos. Esto se rige por su propia <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-dm-accent underline">política de privacidad</a>. Las tipografías se sirven desde esta misma web, sin pasar por Google ni por otros servicios.</p>
         </div>
         <div className="bg-dm-bg p-4 border border-dm-accent/30 rounded-sm">
           <h4 className="text-dm-accent font-bold mb-2 uppercase tracking-wider text-xs">Aviso Legal y Exención de Responsabilidad</h4>
-          <p>Dado que los datos residen únicamente en tu dispositivo, el desarrollador no se hace responsable de la pérdida accidental de datos producida por borrar la caché, restablecer el navegador, o el uso de modos incógnito/privados. <strong>Te recomendamos encarecidamente utilizar la función de Exportar Datos periódicamente para mantener copias de seguridad de tus campañas.</strong> El servicio se ofrece "tal cual", sin garantías de ningún tipo.</p>
+          <p>NDMScreen es un proyecto gratuito y sin ánimo de lucro. Dado que los datos residen únicamente en tu dispositivo, el desarrollador no se hace responsable de la pérdida accidental de datos producida por borrar la caché, restablecer el navegador o usar modos incógnito/privados. <strong>Te recomendamos encarecidamente utilizar la función de Exportar Datos periódicamente para mantener copias de seguridad de tus campañas.</strong> El servicio se ofrece "tal cual", sin garantías de ningún tipo. Cada usuario es responsable del contenido (textos e imágenes) que introduce en su propio navegador.</p>
         </div>
-        <div className="bg-dm-bg p-4 border border-dm-accent/30 rounded-sm">
-          <h4 className="text-dm-accent font-bold mb-2 uppercase tracking-wider text-xs">Aviso sobre Derechos de Autor (D&D 5e)</h4>
-          <p>Esta herramienta es un recurso para fans y no está afiliada, respaldada, patrocinada, ni aprobada específicamente por Wizards of the Coast LLC. Esta aplicación está sujeta y construida en conformidad con la Fan Content Policy de WotC y la Open Game License (OGL). Ningún material oficial de pago de Dungeons & Dragons se incluye de forma pre-cargada. Los usuarios son responsables del contenido (incluyendo imágenes o textos) que decidan introducir en su almacenamiento local.</p>
+        <div className="bg-dm-bg p-4 border border-dm-accent/30 rounded-sm space-y-2">
+          <h4 className="text-dm-accent font-bold mb-2 uppercase tracking-wider text-xs">Contenido de Juego y Licencias</h4>
+          <p>NDMScreen es una herramienta de fans compatible con la quinta edición. No está afiliada, respaldada, patrocinada ni aprobada por Wizards of the Coast LLC. Las marcas mencionadas pertenecen a sus respectivos propietarios.</p>
+          <p><strong>Objetos mágicos:</strong> {CC_BY_ATTRIBUTION}</p>
+          <p><strong>Bestiario y equipo no mágico:</strong> proceden del SRD 5.1 en español de Nosolorol Ediciones (traducción de Ana Navalón), distribuido bajo la Open Game License v1.0a. La criatura «Draña», que falta en esa versión, está traducida por NDMScreen del SRD 5.1 en inglés.</p>
+          <p><strong>Contenido de Juego Abierto (sección 8 de la OGL):</strong> se declara Open Game Content el texto de las fichas de criaturas del Bestiario y el del equipo no mágico de la sección Objetos. El resto de la aplicación no es Open Game Content: su nombre, código, diseño, textos de la interfaz, tiendas e ilustraciones.</p>
+          <details>
+            <summary className="cursor-pointer text-dm-accent hover:text-dm-accent-hover select-none">Ver la Open Game License v1.0a completa</summary>
+            <div className="mt-2 space-y-2 text-xs text-dm-muted break-words">
+              <p className="font-bold text-dm-text">OPEN GAME LICENSE Version 1.0a</p>
+              {OGL_SECTIONS.map((p) => <p key={p.slice(0, 32)}>{p}</p>)}
+              <p className="font-bold text-dm-text">15. COPYRIGHT NOTICE</p>
+              {OGL_COPYRIGHT_NOTICE.map((p) => <p key={p.slice(0, 32)}>{p}</p>)}
+            </div>
+          </details>
+        </div>
+        <div className="bg-dm-bg p-4 border border-dm-accent/30 rounded-sm space-y-2">
+          <h4 className="text-dm-accent font-bold mb-2 uppercase tracking-wider text-xs">Créditos</h4>
+          <p>Ilustraciones de los mercaderes y diseño de la aplicación: © NDMScreen. Todos los derechos reservados.</p>
+          <ul className="list-disc pl-5 space-y-1 text-dm-muted">
+            {CREDITS.map((c) => <li key={c.name}>{c.name}: <span className="text-dm-text">{c.license}</span></li>)}
+          </ul>
         </div>
       </div>
     )
@@ -331,7 +621,7 @@ export function FullTutorialModal({ isOpen, onClose }: { isOpen: boolean, onClos
                       </h3>
                     </div>
                     
-                    <div className="prose prose-invert max-w-none">
+                    <div className="max-w-none">
                       {sec.content}
                     </div>
                   </motion.div>

@@ -234,9 +234,6 @@ export function ItemCatalog({ onOpenHomebrew }: { onOpenHomebrew: (id: string) =
               ))}
             </section>
           ))}
-          <p className="text-[11px] text-center text-dm-muted px-4">
-            Equipo: SRD 5.1 en español de Nosolorol Ediciones (OGL v1.0a). Objetos mágicos: SRD 5.1 oficial en español de Wizards of the Coast (CC-BY-4.0).
-          </p>
         </>
       )}
 
@@ -354,11 +351,6 @@ export function CatalogDetail({ item, onOpenHomebrew }: { item: CatalogItem; onO
           </button>
         )}
       </div>
-      <p className="text-[11px] text-dm-muted">
-        {item.source === "srd-oficial"
-          ? "SRD 5.1 oficial en español · Wizards of the Coast · CC-BY-4.0."
-          : "SRD 5.1 en español · Nosolorol Ediciones · Open Game License v1.0a."}
-      </p>
     </div>
   );
 }

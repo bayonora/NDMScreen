@@ -73,7 +73,7 @@ export function HpTracker({ character, open, onOpenChange, hitDice, compact }: {
   const set = (hp: number, t: number) => actions.setCharacterHp(character, hp, t);
   const damage = (n: number) => {
     const absorbed = Math.min(temp, n);
-    set(cur - (n - absorbed), temp - absorbed);
+    actions.setCharacterHp(character, cur - (n - absorbed), temp - absorbed, n);
   };
 
   const trigger = (

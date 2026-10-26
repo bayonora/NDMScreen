@@ -4,13 +4,14 @@ import { Character, StatusEffect } from "../types";
 import { Input, Button, Textarea } from "../components/ui/Input";
 import { Modal, Overlay } from "../components/ui/Modal";
 import { ViewHeader, ToolbarButton } from "../components/ui/ViewHeader";
-import { Play, SkipForward, Square, Plus, Shield, Heart, Trash2, RotateCcw, Skull, UserCheck, User, Copy, Swords } from "lucide-react";
+import { Play, SkipForward, Square, Plus, Shield, Heart, Trash2, RotateCcw, Skull, UserCheck, User, Copy, Swords, Brain, Check, X } from "lucide-react";
 import { cn } from "../lib/utils";
 import { StatBlock } from "../components/StatBlock";
 import { motion, AnimatePresence } from "motion/react";
 import { MathInput } from "../components/MathInput";
 import { HpPad, AnchoredPanel } from "../components/HpPad";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
+import { isConcentrating, isConcentrationStatus } from "../lib/concentration";
 
 export function ViewInitiative() {
   const combatants = useStore((state) => state.combatants);
@@ -134,6 +135,8 @@ export function ViewInitiative() {
               const isBloodied = hpPct <= 75 && hpPct > 50;
               const isHurt = hpPct < 100 && hpPct > 75;
               const isFull = hpPct === 100;
+              // Saves still to roll after hits taken while concentrating.
+              const concChecks = isConcentrating(c) ? c.concentrationChecks || [] : [];
               
               return (
                 <motion.div 
@@ -178,6 +181,13 @@ export function ViewInitiative() {
                       <Skull size={100} />
                     </div>
                   )}
+                  {concChecks.length > 0 && !isDead && (
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none border-l-2 border-amber-400 shadow-[inset_0_0_28px_rgba(251,191,36,0.3)]"
+                      animate={{ opacity: [0.35, 1, 0.35] }}
+                      transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                    />
+                  )}
                   {isDead && (
                     <div className="absolute left-16 top-1/2 -translate-y-1/2 w-[60%] h-px bg-dm-danger/70 shadow-[0_0_10px_var(--theme-danger)] pointer-events-none z-10" />
                   )}
@@ -214,7 +224,12 @@ export function ViewInitiative() {
                             <button 
                               key={s.id}
                               onClick={() => setStatusModal({ open: true, combatantId: c.id, effect: s })}
-                              className="px-2 py-0.5 bg-dm-danger/20 text-dm-danger text-[11px] uppercase tracking-wider rounded-sm border border-dm-danger/50 cursor-pointer hover:bg-dm-danger/40 truncate max-w-[150px] font-bold"
+                              className={cn(
+                                "px-2 py-0.5 text-[11px] uppercase tracking-wider rounded-sm border cursor-pointer truncate max-w-[150px] font-bold",
+                                concChecks.length > 0 && isConcentrationStatus(s)
+                                  ? "bg-amber-400/20 text-amber-300 border-amber-400/60 hover:bg-amber-400/30"
+                                  : "bg-dm-danger/20 text-dm-danger border-dm-danger/50 hover:bg-dm-danger/40"
+                              )}
                               title={s.description}
                             >
                               {s.name}{s.duration ? ` (${s.duration})` : ""}
@@ -229,6 +244,14 @@ export function ViewInitiative() {
                           </button>
                         </div>
                       </div>
+                      {concChecks.length > 0 && (
+                        <ConcentrationAlert
+                          dcs={concChecks}
+                          down={isDead}
+                          onKept={() => actions.resolveConcentration(c.id, true)}
+                          onLost={() => actions.resolveConcentration(c.id, false)}
+                        />
+                      )}
                       <span className={cn("text-[10px] uppercase font-bold", isActive ? "opacity-100 text-dm-accent" : "opacity-30 hidden sm:inline")}>
                         {isActive ? "▶ TURNO ACTIVO" : (char.type === "player" ? "Jugador" : char.type === "creature" ? "Criatura" : "NPC")}
                       </span>
@@ -570,7 +593,7 @@ function StatusModal({ isOpen, onClose, combatantId, effect }: { isOpen: boolean
       <div className="flex flex-col md:flex-row gap-6 max-h-[70vh]">
         {!effect && (
           <div className="w-full md:w-1/3 flex flex-col gap-2 border-b md:border-b-0 md:border-r border-dm-border pb-4 md:pb-0 md:pr-4 overflow-y-auto custom-scrollbar">
-            <h3 className="text-[10px] uppercase tracking-widest text-dm-accent font-bold mb-2">Predefinidos (D&D 5e)</h3>
+            <h3 className="text-[10px] uppercase tracking-widest text-dm-accent font-bold mb-2">Predefinidos (5ª edición)</h3>
             {PREDEFINED_STATUSES.map((status) => (
               <button
                 key={status.name}
@@ -699,5 +722,42 @@ function HpPadPanel({ combatantId, anchor, onClose }: { combatantId: string | nu
         onDone={onClose}
       />
     </AnchoredPanel>
+  );
+}
+
+/**
+ * Reminder inside the row of a concentrating combatant that took damage: the save it has to roll,
+ * with one tap to say how it went. At 0 HP concentration is simply lost.
+ */
+function ConcentrationAlert({ dcs, down, onKept, onLost }: { dcs: number[]; down: boolean; onKept: () => void; onLost: () => void }) {
+  const chip = "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border text-[11px] font-bold uppercase tracking-wider transition-colors";
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      role="status"
+      className="relative z-10 self-start max-w-full flex items-center flex-wrap gap-x-2 gap-y-1 pl-2 pr-1 py-1 rounded-sm border border-amber-400/40 bg-amber-400/10 text-amber-200 text-xs"
+    >
+      <Brain size={14} className="text-amber-400 shrink-0" />
+      {down ? (
+        <span>A 0 PV <b className="text-amber-300">pierde la concentración</b>.</span>
+      ) : (
+        <span>
+          <b className="text-amber-300">¿Mantiene la concentración?</b> TS de Constitución{" "}
+          <b className="text-amber-300 tabular-nums">{dcs.map((dc) => `CD ${dc}`).join(" · ")}</b>
+          {dcs.length > 1 && <span className="text-amber-200/70"> ({dcs.length} tiradas)</span>}
+        </span>
+      )}
+      <span className="flex items-center gap-1">
+        {!down && (
+          <button type="button" onClick={onKept} title="Supera la tirada y sigue concentrado" className={cn(chip, "border-green-500/50 text-green-400 hover:bg-green-500/15")}>
+            <Check size={12} /> Mantiene
+          </button>
+        )}
+        <button type="button" onClick={onLost} title="Quita el estado de concentración" className={cn(chip, "border-dm-danger/50 text-dm-danger hover:bg-dm-danger/15")}>
+          <X size={12} /> {down ? "Quitar" : "La pierde"}
+        </button>
+      </span>
+    </motion.div>
   );
 }

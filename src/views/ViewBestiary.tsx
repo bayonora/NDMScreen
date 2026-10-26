@@ -224,10 +224,6 @@ export function ViewBestiary() {
               )}
             </div>
           )}
-
-          <p className="text-[11px] text-center text-dm-muted px-4">
-            Bestiario del SRD 5.1 en español (traducción de Nosolorol Ediciones), bajo la Open Game License v1.0a de Wizards of the Coast.
-          </p>
         </div>
       </div>
 
