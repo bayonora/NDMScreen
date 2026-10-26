@@ -164,7 +164,7 @@ const TUTORIAL_SECTIONS = [
             <F name="Barra inferior">cada pestaña es una parte de la campaña. En el móvil verás las cuatro principales y el resto (y las herramientas) dentro de <strong>Más</strong>.</F>
             <F name="Volver a la lista de tiendas">dentro de una tienda, pulsa otra vez la pestaña Tiendas para volver a la lista de tiendas.</F>
             <F name="Cabecera">buscador global, calculadora, lanzador de dados, este manual y los ajustes.</F>
-            <F name="Temas de color">en <em>Ajustes</em> eliges entre Nellie, Direi, Heaven y Nauthiz.</F>
+            <F name="Temas de color">en <em>Ajustes</em> eliges entre Nellie, FiveSeven, Heaven y Nauthiz.</F>
           </Features>
         </Block>
         <Tip>

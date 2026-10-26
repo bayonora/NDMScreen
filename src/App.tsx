@@ -50,7 +50,7 @@ const PHONE_PRIMARY_TABS: Tab[] = ["party", "initiative", "maps", "spells"];
 
 const THEMES = [
   { id: "clasico", label: "NELLIE", swatches: ["#1e1a17", "#c1a063"], ring: "#3a302a" },
-  { id: "direi", label: "DIREI", swatches: ["#000000", "#ffffff"], ring: "#333333" },
+  { id: "fiveseven", label: "FIVESEVEN", swatches: ["#000000", "#ffffff"], ring: "#333333" },
   { id: "noche", label: "HEAVEN", swatches: ["#0d1117", "#79c0ff"], ring: "#30363d" },
   { id: "sangre", label: "NAUTHIZ", swatches: ["#1a0f0f", "#ff4d4d"], ring: "#3d1c1c" },
 ];
