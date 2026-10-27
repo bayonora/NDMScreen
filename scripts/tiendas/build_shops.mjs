@@ -58,8 +58,8 @@ const SHOPS = [
   {
     id: "builtin-general",
     kind: "general",
-    name: "La Rosca Asoma",
-    ownerName: "Andrei Dumitru",
+    name: "La Roska",
+    ownerName: "Chiftele Dumitru",
     items: [
       ...group("Packs de equipo", fromCatalog(["pack-de-aventurero", "pack-de-explorador", "pack-de-sacerdote"])),
       ...group("Viaje y acampada", fromCatalog(["mochila", "saco-de-dormir", "manta", "tienda-de-campana-para-dos-personas", "raciones-1-dia", "odre", "fiambrera", "aparejo-de-pesca"])),
@@ -151,6 +151,7 @@ const SHOPS = [
 // Merchant portraits, in public/tiendas/: the full image (shop panel) and a crop for the card.
 // Relative paths, because the app is built with base "./".
 const IMAGES = {
+  "builtin-general": { ownerImage: "tiendas/la-roska.webp", previewImage: "tiendas/la-roska-card.webp" },
   "builtin-forja": { ownerImage: "tiendas/iron-maiden.webp", previewImage: "tiendas/iron-maiden-card.webp" },
   "builtin-alquimista": { ownerImage: "tiendas/starsups.webp", previewImage: "tiendas/starsups-card.webp" },
 };
