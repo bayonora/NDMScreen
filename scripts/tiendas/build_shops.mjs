@@ -54,12 +54,14 @@ const scroll = byIndex.get("pergamino-de-conjuro").desc;
 const spellService = (key, name, level, price, extra) =>
   custom(key, `Lanzamiento: ${name}`, price, `Servicio de lanzamiento de conjuros (nivel ${level}).${extra ? `\n\n${extra}` : ""}`);
 
+// Each shop may also have a `quote`: the merchant's featured line, shown on the shop's panel.
 const SHOPS = [
   {
     id: "builtin-general",
     kind: "general",
     name: "La Roska",
     ownerName: "Chiftele Dumitru",
+    quote: "Lo tocas, lo pagas, así que no me toques las pelotas.",
     items: [
       ...group("Packs de equipo", fromCatalog(["pack-de-aventurero", "pack-de-explorador", "pack-de-sacerdote"])),
       ...group("Viaje y acampada", fromCatalog(["mochila", "saco-de-dormir", "manta", "tienda-de-campana-para-dos-personas", "raciones-1-dia", "odre", "fiambrera", "aparejo-de-pesca"])),
@@ -94,6 +96,7 @@ const SHOPS = [
     kind: "forge",
     name: "Iron Maiden",
     ownerName: "Brigit Fireforge",
+    quote: "No hay mejor martillo que el de una Fireforge.",
     items: [
       ...group("Armas cuerpo a cuerpo sencillas", fromCatalog(sub("Armas cuerpo a cuerpo sencillas"))),
       ...group("Armas cuerpo a cuerpo marciales", fromCatalog(sub("Armas cuerpo a cuerpo marciales"))),
@@ -111,6 +114,7 @@ const SHOPS = [
     kind: "potions",
     name: "Starsups",
     ownerName: "Marie-Anne",
+    quote: "Lo que el dinero no compra tiene un ingrediente que sí.",
     items: [
       ...group("Pociones de curación", [
       ...fromCatalog(["pocion-de-curacion"]),

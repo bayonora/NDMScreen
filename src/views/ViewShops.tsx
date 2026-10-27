@@ -452,6 +452,13 @@ function ShopInventory({ shop, onDuplicate }: { shop: Shop; onDuplicate: () => v
               <p className="text-xs uppercase tracking-[0.2em] text-dm-accent font-bold">{shop.ownerName || "Anónimo"}</p>
             </div>
 
+            {shop.quote && (
+              <blockquote className="relative mt-6 pl-6 pr-2 font-serif italic text-base sm:text-lg leading-relaxed text-dm-text whitespace-pre-line break-words">
+                <span aria-hidden="true" className="absolute left-0 -top-1 font-serif not-italic text-5xl leading-none text-dm-accent/60">“</span>
+                {shop.quote}
+              </blockquote>
+            )}
+
             {/* Decoración adicional opcional */}
             <div className="mt-8 pt-6 border-t border-dm-border/50 flex justify-between items-center">
                <span className="text-[10px] uppercase tracking-widest text-dm-muted-alt">{kindLabel || "Propietario / Mercader"}</span>
@@ -636,13 +643,14 @@ function AddShopModal({ isOpen, onClose, editData }: { isOpen: boolean, onClose:
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
     const ownerName = formData.get("ownerName") as string;
-    
+    const quote = ((formData.get("quote") as string) || "").trim() || undefined;
+
     setLoading(true);
     try {
       if (editData) {
-        actions.updateShop(editData.id, { name, ownerName, ownerImage: fullImage, previewImage: previewImage });
+        actions.updateShop(editData.id, { name, ownerName, quote, ownerImage: fullImage, previewImage: previewImage });
       } else {
-        actions.addShop({ name, ownerName, ownerImage: fullImage, previewImage: previewImage });
+        actions.addShop({ name, ownerName, quote, ownerImage: fullImage, previewImage: previewImage });
       }
       onClose();
     } catch (e) {
@@ -658,7 +666,15 @@ function AddShopModal({ isOpen, onClose, editData }: { isOpen: boolean, onClose:
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input label="Nombre de la Tienda" name="name" required defaultValue={editData?.name} />
           <Input label="Nombre del Mercader" name="ownerName" required defaultValue={editData?.ownerName} />
-          
+          <Textarea
+            label="Frase del Mercader (opcional)"
+            name="quote"
+            rows={2}
+            className="min-h-[60px]"
+            placeholder="¡Si no lo forjo yo, no merece la pena empuñarlo!"
+            defaultValue={editData?.quote}
+          />
+
           <div className="flex flex-col gap-1 w-full">
             <label className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">Imagen (Tienda o Mercader)</label>
             <input 

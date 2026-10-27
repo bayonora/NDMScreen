@@ -162,6 +162,8 @@ export type Shop = {
   name: string;
   ownerName: string;
   ownerImage: string; // Base64
+  /** Featured line from the merchant, shown on the shop's card. */
+  quote?: string;
   imagePosition?: string;
   previewImage?: string; // Cropped base64 for preview // object-position e.g. "center", "top", "bottom"
   /** Kind of shop (see SHOP_KINDS in lib/shops): the fixed shops and their copies have one. */
