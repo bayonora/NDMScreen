@@ -2,6 +2,7 @@ import React from "react";
 import { Link2 } from "lucide-react";
 import { ColorPicker } from "./ui/ColorPicker";
 import { Chip, RarityDot } from "./ui/Chip";
+import { Select, type SelectOption } from "./ui/Select";
 import { cn } from "../lib/utils";
 import { ITEM_GROUPS, ITEM_TYPES, RARITIES, itemTypeInfo, homebrewTypeKey, homebrewRarityKey, rarityInfo } from "../data/itemLabels";
 import type { CustomItem } from "../types";
@@ -12,6 +13,11 @@ const fieldClass = "w-full bg-black/40 border border-dm-border p-2 text-dm-text-
 type Draft = Omit<CustomItem, "id"> & { id?: string };
 
 const ATTUNE = /^requiere sintonizaci[oó]n\s*/i;
+
+const TYPE_OPTIONS: SelectOption[] = [
+  { value: "", label: "Sin tipo" },
+  ...ITEM_GROUPS.flatMap((g) => ITEM_TYPES.filter((t) => t.group === g.key).map((t) => ({ value: t.key, label: t.label, group: g.label }))),
+];
 
 /**
  * Structured fields of a homebrew item: type, rarity, attunement and the stats that fit the type.
@@ -45,16 +51,7 @@ export function HomebrewItemFields({ item, onChange }: { item: Draft; onChange: 
       <div className="grid sm:grid-cols-2 gap-x-3 gap-y-1 mb-4">
         <div>
           <label className={labelClass} htmlFor="item-type">Tipo</label>
-          <select id="item-type" value={type} onChange={(e) => pickType(e.target.value)} className={cn(fieldClass, "text-sm")}>
-            <option value="">Sin tipo</option>
-            {ITEM_GROUPS.map((g) => (
-              <optgroup key={g.key} label={g.label}>
-                {ITEM_TYPES.filter((t) => t.group === g.key).map((t) => (
-                  <option key={t.key} value={t.key}>{t.label}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+          <Select id="item-type" value={type} onChange={pickType} options={TYPE_OPTIONS} dimEmpty className="h-auto py-2 bg-black/40" />
         </div>
         <div>
           <label className={labelClass} htmlFor="item-category">Texto del tipo <span className="normal-case tracking-normal text-dm-muted-alt">(opcional)</span></label>
@@ -62,7 +59,7 @@ export function HomebrewItemFields({ item, onChange }: { item: Draft; onChange: 
             id="item-category"
             value={customLabel}
             onChange={(e) => set({ category: e.target.value || typeInfo?.label || "" })}
-            placeholder={typeInfo ? `${typeInfo.label} (cualquier espada)…` : "Ej. Arma (cualquier espada)"}
+            placeholder="Ej. Arma (cualquier espada)"
             className={cn(fieldClass, "text-sm")}
           />
         </div>

@@ -7,13 +7,15 @@ import { useStore, actions, store } from "../store/useStore";
 import { cn, formatMod, normalizeSearchText } from "../lib/utils";
 import { Modal } from "../components/ui/Modal";
 import { ViewHeader } from "../components/ui/ViewHeader";
+import { Select } from "../components/ui/Select";
 import { MonsterStatBlock } from "../components/MonsterStatBlock";
 import { Monster } from "../types/monster";
 import { MONSTER_TYPE_NAMES, MONSTER_SIZES, CHALLENGE_RATINGS, abilityModifier, monsterKind, monsterToCreature } from "../data/monsterLabels";
 
 type SortOrder = "name_asc" | "cr_asc" | "cr_desc" | "favorites";
 
-const selectClass = "w-full px-3 py-2 bg-dm-bg border border-dm-border rounded-sm text-sm text-dm-text focus:outline-none focus:border-dm-accent";
+/** Filter dropdowns: as tall as the search box next to them. */
+const selectClass = "h-auto py-2 rounded-sm";
 
 export function ViewBestiary() {
   const monsters = useMonsterStore((s) => s.monsters);
@@ -135,35 +137,47 @@ export function ViewBestiary() {
               </div>
 
               <div className={cn("col-span-2 md:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4", !showFilters && "hidden md:grid")}>
-                <select aria-label="Desafío" value={crFilter} onChange={(e) => setCrFilter(e.target.value)} className={selectClass}>
-                  <option value="">Desafío</option>
-                  {crOptions.map((cr) => (
-                    <option key={cr} value={cr}>Desafío {cr}</option>
-                  ))}
-                </select>
-
-                <select aria-label="Tipo" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className={selectClass}>
-                  <option value="">Tipo</option>
-                  {Object.entries(MONSTER_TYPE_NAMES)
-                    .sort((a, b) => a[1].localeCompare(b[1], "es"))
-                    .map(([key, name]) => (
-                      <option key={key} value={key}>{name}</option>
-                    ))}
-                </select>
-
-                <select aria-label="Tamaño" value={sizeFilter} onChange={(e) => setSizeFilter(e.target.value)} className={selectClass}>
-                  <option value="">Tamaño</option>
-                  {MONSTER_SIZES.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-
-                <select aria-label="Orden" value={sortOrder} onChange={(e) => setSortOrder(e.target.value as SortOrder)} className={selectClass}>
-                  <option value="name_asc">Por nombre</option>
-                  <option value="cr_asc">Desafío ↑</option>
-                  <option value="cr_desc">Desafío ↓</option>
-                  <option value="favorites">Solo guardados</option>
-                </select>
+                <Select
+                  aria-label="Desafío"
+                  value={crFilter}
+                  onChange={setCrFilter}
+                  dimEmpty
+                  className={selectClass}
+                  options={[{ value: "", label: "Desafío" }, ...crOptions.map((cr) => ({ value: cr, label: `Desafío ${cr}` }))]}
+                />
+                <Select
+                  aria-label="Tipo"
+                  value={typeFilter}
+                  onChange={setTypeFilter}
+                  dimEmpty
+                  className={selectClass}
+                  options={[
+                    { value: "", label: "Tipo" },
+                    ...Object.entries(MONSTER_TYPE_NAMES)
+                      .sort((a, b) => a[1].localeCompare(b[1], "es"))
+                      .map(([key, name]) => ({ value: key, label: name })),
+                  ]}
+                />
+                <Select
+                  aria-label="Tamaño"
+                  value={sizeFilter}
+                  onChange={setSizeFilter}
+                  dimEmpty
+                  className={selectClass}
+                  options={[{ value: "", label: "Tamaño" }, ...MONSTER_SIZES.map((s) => ({ value: s, label: s }))]}
+                />
+                <Select<SortOrder>
+                  aria-label="Orden"
+                  value={sortOrder}
+                  onChange={setSortOrder}
+                  className={selectClass}
+                  options={[
+                    { value: "name_asc", label: "Por nombre" },
+                    { value: "cr_asc", label: "Desafío ↑" },
+                    { value: "cr_desc", label: "Desafío ↓" },
+                    { value: "favorites", label: "Solo guardados" },
+                  ]}
+                />
                 {activeFilterCount > 0 && (
                   <button
                     type="button"

@@ -12,8 +12,11 @@ import {
   NOTE_CATEGORIES, NOTE_COLORS, DEFAULT_NOTE_COLOR, noteCategory, noteTint, noteBackground, noteLabel,
   taskProgress, toggleTaskAt, extractTags, relativeTime, fullDate, isTemplateText,
 } from "../lib/notes";
-import { Overlay, Modal } from "../components/ui/Modal";
+import { Overlay, Modal, useModalLayer } from "../components/ui/Modal";
+import { LIST_MAX_HEIGHT, listClass, optionClass, useListPosition, useOutsidePress } from "../components/ui/popupList";
+import { createPortal } from "react-dom";
 import { ViewHeader, ToolbarButton } from "../components/ui/ViewHeader";
+import { Select } from "../components/ui/Select";
 import { ImportExportActions, arrayOrKey } from "../components/ImportExportActions";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { SortableGrid } from "../components/SortableGrid";
@@ -198,16 +201,17 @@ export function ViewNotes() {
                   <kbd className="hidden sm:block absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-dm-muted border border-dm-border rounded px-1.5 pointer-events-none">/</kbd>
                 )}
               </div>
-              <select
+              <Select<Sort>
                 value={sort}
-                onChange={(e) => setSort(e.target.value as Sort)}
+                onChange={setSort}
                 aria-label="Orden de las notas"
-                className="h-10 sm:h-9 bg-dm-bg-darker border border-dm-border text-xs text-dm-text px-2 focus:border-dm-accent outline-none cursor-pointer"
-              >
-                <option value="manual">Manual</option>
-                <option value="recent">Recientes</option>
-                <option value="alpha">A – Z</option>
-              </select>
+                className="w-auto shrink-0 h-10 sm:h-9 pr-8 bg-dm-bg-darker text-xs"
+                options={[
+                  { value: "manual", label: "Manual" },
+                  { value: "recent", label: "Recientes" },
+                  { value: "alpha", label: "A – Z" },
+                ]}
+              />
             </div>
             {presentCategories.length > 1 && (
               <div className="flex gap-1.5 overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="toolbar" aria-label="Filtrar por tipo">
@@ -891,17 +895,31 @@ function NoteEditor({ draft, setDraft, allTags, onClose, onSave, onRoll }: {
 
 function TagInput({ tags, onChange, suggestions }: { tags: string[]; onChange: (tags: string[]) => void; suggestions: string[] }) {
   const [text, setText] = useState("");
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(-1);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const add = (raw: string) => {
     const tag = raw.trim().replace(/^#+/, "").replace(/\s+/g, "-").toLowerCase();
     if (tag && !tags.includes(tag)) onChange([...tags, tag]);
     setText("");
+    setActive(-1);
   };
-  const remaining = suggestions.filter((s) => !tags.includes(s));
+  // Themed suggestion list (the native <datalist> popup can't follow the theme).
+  const q = text.trim().replace(/^#+/, "").toLowerCase();
+  const shown = suggestions.filter((s) => !tags.includes(s) && s.includes(q));
+  const listOpen = open && shown.length > 0;
+  const pos = useListPosition(listOpen, boxRef, shown.length * 36);
+  useModalLayer(listOpen, () => setOpen(false));
+  useOutsidePress(listOpen, [boxRef, listRef], () => setOpen(false));
+  useEffect(() => {
+    if (listOpen && active >= 0) listRef.current?.children[active]?.scrollIntoView({ block: "nearest" });
+  }, [active, listOpen]);
 
   return (
     <div>
       <label htmlFor="note-tags" className={cn(labelClass, "flex items-center gap-1.5")}><Tag size={11} /> Etiquetas</label>
-      <div className="flex flex-wrap items-center gap-1.5 min-h-10 px-2 py-1.5 bg-black/30 border border-dm-border focus-within:border-dm-accent transition-colors">
+      <div ref={boxRef} className="flex flex-wrap items-center gap-1.5 min-h-10 px-2 py-1.5 bg-black/30 border border-dm-border focus-within:border-dm-accent transition-colors">
         {tags.map((t) => (
           <span key={t} className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full bg-dm-accent/15 text-dm-accent text-xs">
             #{t}
@@ -910,25 +928,69 @@ function TagInput({ tags, onChange, suggestions }: { tags: string[]; onChange: (
         ))}
         <input
           id="note-tags"
-          list="note-tag-suggestions"
+          role="combobox"
+          aria-expanded={listOpen}
+          aria-autocomplete="list"
+          aria-controls="note-tags-list"
+          autoComplete="off"
           value={text}
           onChange={(e) => {
             const v = e.target.value;
             if (/[,\s]$/.test(v) && v.trim()) add(v.slice(0, -1));
-            else setText(v);
+            else {
+              setText(v);
+              setActive(-1);
+            }
+            setOpen(true);
           }}
+          onFocus={() => setOpen(true)}
+          onClick={() => setOpen(true)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && text.trim()) { e.preventDefault(); add(text); }
-            else if (e.key === "Backspace" && !text && tags.length) onChange(tags.slice(0, -1));
+            if ((e.key === "ArrowDown" || e.key === "ArrowUp") && shown.length) {
+              e.preventDefault();
+              setOpen(true);
+              const d = e.key === "ArrowDown" ? 1 : -1;
+              setActive((a) => (a + d + shown.length) % shown.length);
+            } else if (e.key === "Enter" && listOpen && active >= 0 && shown[active]) {
+              e.preventDefault();
+              add(shown[active]);
+            } else if (e.key === "Enter" && text.trim()) {
+              e.preventDefault();
+              add(text);
+            } else if (e.key === "Backspace" && !text && tags.length) onChange(tags.slice(0, -1));
+            else if (e.key === "Tab") setOpen(false);
           }}
           onBlur={() => text.trim() && add(text)}
           placeholder={tags.length ? "" : "villano, ciudad, sesión-3…"}
           className="flex-1 min-w-24 bg-transparent text-sm text-dm-text-bright placeholder:text-dm-muted outline-none"
         />
-        <datalist id="note-tag-suggestions">
-          {remaining.map((s) => <option key={s} value={s} />)}
-        </datalist>
       </div>
+      {listOpen && pos &&
+        createPortal(
+          <ul
+            ref={listRef}
+            id="note-tags-list"
+            role="listbox"
+            style={{ left: pos.left, top: pos.top, bottom: pos.bottom, minWidth: Math.min(pos.minWidth, 320), maxWidth: pos.maxWidth, maxHeight: LIST_MAX_HEIGHT }}
+            className={listClass}
+          >
+            {shown.map((s, i) => (
+              <li
+                key={s}
+                role="option"
+                aria-selected={false}
+                onPointerDown={(e) => e.preventDefault()} // keep focus in the input
+                onClick={() => add(s)}
+                onPointerEnter={() => setActive(i)}
+                className={optionClass(i === active, false)}
+              >
+                <Tag size={12} className="text-dm-muted shrink-0" />
+                <span className="flex-1 truncate">#{s}</span>
+              </li>
+            ))}
+          </ul>,
+          document.body
+        )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Plus, Target, CheckCircle2, Circle, XCircle, MapPin, Trash2, Edit2, Che
 import { Modal } from "../components/ui/Modal";
 import { Input, Button } from "../components/ui/Input";
 import { ViewHeader, ToolbarButton } from "../components/ui/ViewHeader";
+import { Select } from "../components/ui/Select";
 import { ImportExportActions, arrayOrKey } from "../components/ImportExportActions";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { Quest, QuestStatus, QuestDetail } from "../types";
@@ -492,17 +493,14 @@ function QuestModal({ isOpen, onClose, initialData, defaultParentId, allQuests }
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input label="Lugar (Opcional)" value={location} onChange={e => setLocation(e.target.value)} />
           <div className="flex flex-col gap-1 w-full">
-            <label className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">Misión Anterior (Rama)</label>
-            <select 
-              value={parentId} 
-              onChange={(e) => setParentId(e.target.value)}
-              className="flex h-10 w-full bg-dm-bg border border-dm-border px-3 py-2 text-sm text-dm-text-bright focus:outline-none focus:border-dm-accent"
-            >
-              <option value="">(Ninguna - Nueva Misión)</option>
-              {availableParents.map(q => (
-                <option key={q.id} value={q.id}>{q.title}</option>
-              ))}
-            </select>
+            <label htmlFor="quest-parent" className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">Misión Anterior (Rama)</label>
+            <Select
+              id="quest-parent"
+              value={parentId}
+              onChange={setParentId}
+              dimEmpty
+              options={[{ value: "", label: "Ninguna (misión nueva)" }, ...availableParents.map((q) => ({ value: q.id, label: q.title }))]}
+            />
           </div>
         </div>
 

@@ -4,6 +4,7 @@ import { Character, StatusEffect } from "../types";
 import { Input, Button, Textarea } from "../components/ui/Input";
 import { Modal, Overlay } from "../components/ui/Modal";
 import { ViewHeader, ToolbarButton } from "../components/ui/ViewHeader";
+import { Select } from "../components/ui/Select";
 import { Play, SkipForward, Square, Plus, Shield, Heart, Trash2, RotateCcw, Skull, UserCheck, User, Copy, Swords, Brain, Check, X } from "lucide-react";
 import { cn } from "../lib/utils";
 import { StatBlock } from "../components/StatBlock";
@@ -468,30 +469,18 @@ function AddCombatantModal({ isOpen, onClose }: { isOpen: boolean, onClose: () =
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {mode === "existing" ? (
           <div className="flex flex-col gap-1 w-full">
-            <label className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">Personaje</label>
-            <select 
-              value={selectedId} 
-              onChange={(e) => setSelectedId(e.target.value)}
-              className="flex h-10 w-full bg-dm-bg border border-dm-border px-3 py-2 text-sm text-dm-text-bright focus:outline-none focus:border-dm-accent"
-              required={mode === "existing"}
-            >
-              <option value="">Selecciona...</option>
-              {availablePlayers.length > 0 && (
-                <optgroup label="Jugadores">
-                  {availablePlayers.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </optgroup>
-              )}
-              {availableNpcs.length > 0 && (
-                <optgroup label="NPCs">
-                  {availableNpcs.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
-                </optgroup>
-              )}
-              {availableCreatures.length > 0 && (
-                <optgroup label="Criaturas">
-                  {availableCreatures.map(cr => <option key={cr.id} value={cr.id}>{cr.name}</option>)}
-                </optgroup>
-              )}
-            </select>
+            <label htmlFor="initiative-character" className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">Personaje</label>
+            <Select
+              id="initiative-character"
+              value={selectedId}
+              onChange={setSelectedId}
+              placeholder="Selecciona…"
+              options={[
+                ...availablePlayers.map((p) => ({ value: p.id, label: p.name, group: "Jugadores" })),
+                ...availableNpcs.map((n) => ({ value: n.id, label: n.name, group: "NPCs" })),
+                ...availableCreatures.map((cr) => ({ value: cr.id, label: cr.name, group: "Criaturas" })),
+              ]}
+            />
             {availablePlayers.length === 0 && availableNpcs.length === 0 && availableCreatures.length === 0 && (
               <p className="text-xs text-dm-danger mt-1">Todos los personajes ya están en la iniciativa.</p>
             )}

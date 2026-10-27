@@ -7,12 +7,14 @@ import { Modal } from "./ui/Modal";
 import { Markdown } from "./ui/Markdown";
 import { Measured } from "./ui/Measured";
 import { SegmentedTabs } from "./ui/ViewHeader";
+import { Select } from "./ui/Select";
 import { CatalogItem } from "../types/item";
 import { MUNDANE_CATEGORIES, MAGIC_CATEGORIES, RARITIES, rarityInfo, rarityLabel, categoryLabel, itemStats, catalogToCustomItem } from "../data/itemLabels";
 
 type Kind = "mundane" | "magic";
 
-const selectClass = "w-full px-3 py-2 bg-dm-bg border border-dm-border rounded-sm text-sm text-dm-text focus:outline-none focus:border-dm-accent";
+/** Filter dropdowns: as tall as the search box next to them. */
+const selectClass = "h-auto py-2 rounded-sm";
 const proseClass =
   "prose prose-invert prose-sm max-w-none text-dm-text leading-relaxed prose-p:my-2 prose-strong:text-dm-text-bright prose-em:text-dm-text-muted " +
   "prose-table:my-3 prose-table:text-xs prose-th:text-dm-accent prose-th:px-2 prose-td:px-2 prose-td:py-1 [&_table]:block [&_table]:overflow-x-auto [&_table]:border [&_table]:border-dm-border";
@@ -164,25 +166,39 @@ export function ItemCatalog({ onOpenHomebrew }: { onOpenHomebrew: (id: string) =
           </div>
 
           <div className={cn("col-span-2 md:col-span-1 grid grid-cols-1 gap-2 sm:gap-3", kind === "magic" && "md:col-span-3 md:grid-cols-3", !showFilters && "hidden md:grid")}>
-            <select aria-label="Categoría" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className={selectClass}>
-              <option value="">Todas las categorías</option>
-              {categories.map((c) => (
-                <option key={c.key} value={c.key}>{c.label}</option>
-              ))}
-            </select>
+            <Select
+              aria-label="Categoría"
+              value={categoryFilter}
+              onChange={setCategoryFilter}
+              dimEmpty
+              className={selectClass}
+              options={[{ value: "", label: "Todas las categorías" }, ...categories.map((c) => ({ value: c.key, label: c.label }))]}
+            />
             {kind === "magic" && (
               <>
-                <select aria-label="Rareza" value={rarityFilter} onChange={(e) => setRarityFilter(e.target.value)} className={selectClass}>
-                  <option value="">Cualquier rareza</option>
-                  {RARITIES.filter((r) => r.key !== "varies").map((r) => (
-                    <option key={r.key} value={r.key}>{r.label}</option>
-                  ))}
-                </select>
-                <select aria-label="Sintonización" value={attunementFilter} onChange={(e) => setAttunementFilter(e.target.value as "" | "yes" | "no")} className={selectClass}>
-                  <option value="">Con o sin sintonización</option>
-                  <option value="yes">Requiere sintonización</option>
-                  <option value="no">Sin sintonización</option>
-                </select>
+                <Select
+                  aria-label="Rareza"
+                  value={rarityFilter}
+                  onChange={setRarityFilter}
+                  dimEmpty
+                  className={selectClass}
+                  options={[
+                    { value: "", label: "Cualquier rareza" },
+                    ...RARITIES.filter((r) => r.key !== "varies").map((r) => ({ value: r.key, label: r.label, color: r.color })),
+                  ]}
+                />
+                <Select<"" | "yes" | "no">
+                  aria-label="Sintonización"
+                  value={attunementFilter}
+                  onChange={setAttunementFilter}
+                  dimEmpty
+                  className={selectClass}
+                  options={[
+                    { value: "", label: "Con o sin sintonización" },
+                    { value: "yes", label: "Requiere sintonización" },
+                    { value: "no", label: "Sin sintonización" },
+                  ]}
+                />
               </>
             )}
           </div>

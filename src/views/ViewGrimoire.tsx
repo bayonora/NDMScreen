@@ -7,6 +7,7 @@ import { Measured } from "../components/ui/Measured";
 import { useStore, actions } from "../store/useStore";
 import { Modal } from "../components/ui/Modal";
 import { ViewHeader } from "../components/ui/ViewHeader";
+import { Select } from "../components/ui/Select";
 import { Spell } from "../types/spell";
 import { SCHOOL_NAMES, CLASS_NAMES } from "../data/spellLabels";
 
@@ -32,7 +33,8 @@ function schoolName(spell: Spell) {
   return spell.school?.index ? SCHOOL_NAMES[spell.school.index] || spell.school.name : "Sin escuela";
 }
 
-const selectClass = "w-full px-3 py-2 bg-dm-bg border border-dm-border rounded-sm text-sm text-dm-text focus:outline-none focus:border-dm-accent";
+/** Filter dropdowns: as tall as the search box next to them. */
+const selectClass = "h-auto py-2 rounded-sm";
 
 export function ViewGrimoire() {
   const spells = useSpellStore((s) => s.spells);
@@ -169,34 +171,42 @@ export function ViewGrimoire() {
               </div>
 
               <div className={cn("col-span-2 md:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4", !showFilters && "hidden md:grid")}>
-              <select aria-label="Nivel" value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} className={selectClass}>
-                <option value="">Nivel</option>
-                <option value="0">Trucos</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                  <option key={n} value={String(n)}>Nivel {n}</option>
-                ))}
-              </select>
-
-              <select aria-label="Escuela" value={schoolFilter} onChange={(e) => setSchoolFilter(e.target.value)} className={selectClass}>
-                <option value="">Escuela</option>
-                {Object.entries(SCHOOL_NAMES).map(([idx, name]) => (
-                  <option key={idx} value={idx}>{name}</option>
-                ))}
-              </select>
-
-              <select aria-label="Clase" value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className={selectClass}>
-                <option value="">Clase</option>
-                {Object.entries(CLASS_NAMES).map(([idx, name]) => (
-                  <option key={idx} value={idx}>{name}</option>
-                ))}
-              </select>
-
-              <select aria-label="Orden" value={sortOrder} onChange={(e) => setSortOrder(e.target.value as SortOrder)} className={selectClass}>
-                <option value="level_asc">Por nivel ↑</option>
-                <option value="level_desc">Por nivel ↓</option>
-                <option value="name_asc">Por nombre</option>
-                <option value="favorites">Solo guardados</option>
-              </select>
+              <Select
+                aria-label="Nivel"
+                value={levelFilter}
+                onChange={setLevelFilter}
+                dimEmpty
+                className={selectClass}
+                options={[{ value: "", label: "Nivel" }, { value: "0", label: "Trucos" }, ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({ value: String(n), label: `Nivel ${n}` }))]}
+              />
+              <Select
+                aria-label="Escuela"
+                value={schoolFilter}
+                onChange={setSchoolFilter}
+                dimEmpty
+                className={selectClass}
+                options={[{ value: "", label: "Escuela" }, ...Object.entries(SCHOOL_NAMES).map(([idx, name]) => ({ value: idx, label: name }))]}
+              />
+              <Select
+                aria-label="Clase"
+                value={classFilter}
+                onChange={setClassFilter}
+                dimEmpty
+                className={selectClass}
+                options={[{ value: "", label: "Clase" }, ...Object.entries(CLASS_NAMES).map(([idx, name]) => ({ value: idx, label: name }))]}
+              />
+              <Select<SortOrder>
+                aria-label="Orden"
+                value={sortOrder}
+                onChange={setSortOrder}
+                className={selectClass}
+                options={[
+                  { value: "level_asc", label: "Por nivel ↑" },
+                  { value: "level_desc", label: "Por nivel ↓" },
+                  { value: "name_asc", label: "Por nombre" },
+                  { value: "favorites", label: "Solo guardados" },
+                ]}
+              />
               {activeFilterCount > 0 && (
                 <button
                   type="button"

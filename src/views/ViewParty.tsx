@@ -8,6 +8,7 @@ import { Modal, Overlay } from "../components/ui/Modal";
 import { Input, Button, Textarea } from "../components/ui/Input";
 import { ViewHeader, ToolbarButton, SegmentedTabs } from "../components/ui/ViewHeader";
 import { ImportExportActions, arrayOrKey } from "../components/ImportExportActions";
+import { Combobox } from "../components/ui/Combobox";
 import { Character, Player, NPC, Creature } from "../types";
 import { Plus, ImageIcon, Users, X, ChevronsDownUp, ChevronsUpDown, Search, LayoutGrid, List, Tag } from "lucide-react";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
@@ -307,11 +308,15 @@ export function ViewParty() {
   );
 }
 
+/** Challenge ratings offered as suggestions (any other text is still allowed). */
+const CR_OPTIONS = ["0", "1/8", "1/4", "1/2", ...Array.from({ length: 30 }, (_, i) => String(i + 1))].map((value) => ({ value }));
+
 function CharacterModal({ isOpen, onClose, initialData, defaultType }: { isOpen: boolean, onClose: () => void, initialData: Character | null, defaultType: PartyTab }) {
   const isEditing = !!initialData;
   const typeFor = (t: PartyTab) => (t === "players" ? "player" : t === "npcs" ? "npc" : "creature");
   const [type, setType] = useState<Character["type"]>(initialData?.type || typeFor(defaultType));
   const [image, setImage] = useState<string | undefined>(initialData?.image);
+  const [cr, setCr] = useState(String((initialData as NPC | undefined)?.cr ?? ""));
   const [rawImageSrc, setRawImageSrc] = useState<string | null>(null);
 
   // Older cards keep "Velocidad: …" lines in their traits: the form moves them to their own fields.
@@ -323,6 +328,7 @@ function CharacterModal({ isOpen, onClose, initialData, defaultType }: { isOpen:
     if (isOpen) {
       setType(initialData?.type || typeFor(defaultType));
       setImage(initialData?.image);
+      setCr(String((initialData as NPC | null)?.cr ?? ""));
       setRawImageSrc(null);
     }
   }, [isOpen, initialData, defaultType]);
@@ -417,15 +423,20 @@ function CharacterModal({ isOpen, onClose, initialData, defaultType }: { isOpen:
           <Input label="Detalle de la CA" name="acDesc" defaultValue={f?.acDesc} placeholder="ej. armadura natural, cota de malla" />
           <Input label="PV Máximo" name="hpMax" type="number" required defaultValue={initialData?.hpMax} />
           <Input label="Dados de golpe" name="hitDice" defaultValue={f?.hitDice} placeholder="ej. 7d10+21" />
-          {(type === "npc" || type === "creature") && ( <> <Input label="Desafío (CR)" name="cr" defaultValue={(initialData as NPC)?.cr} list="cr-options" pattern="^\d+(\/\d+)?(\s*\(.*\))?$" title="Un número o una fracción (ej. 1/4, 2), con los PX entre paréntesis si quieres" />
-            <datalist id="cr-options">
-              <option value="0" />
-              <option value="1/8" />
-              <option value="1/4" />
-              <option value="1/2" />
-              {[...Array(30)].map((_, i) => <option key={i} value={String(i + 1)} />)}
-            </datalist>
-            </>
+          {(type === "npc" || type === "creature") && (
+            <div className="flex flex-col gap-1 w-full">
+              <label htmlFor="character-cr" className="text-[10px] font-bold text-dm-accent uppercase tracking-widest">Desafío (CR)</label>
+              <Combobox
+                id="character-cr"
+                name="cr"
+                value={cr}
+                onChange={setCr}
+                options={CR_OPTIONS}
+                pattern={"^\\d+(\\/\\d+)?(\\s*\\(.*\\))?$"}
+                title="Un número o una fracción (ej. 1/4, 2), con los PX entre paréntesis si quieres"
+                inputClassName="flex h-10 w-full bg-dm-bg border border-dm-border px-3 py-2 text-sm text-dm-text-bright placeholder:text-dm-muted placeholder:italic focus:outline-none focus:border-dm-accent"
+              />
+            </div>
           )}
           <div className={cn(type === "player" && "sm:col-span-2")}>
             <Input label="Velocidad" name="speed" defaultValue={f?.speed} placeholder="ej. 30 pies, trepar 30 pies" />
