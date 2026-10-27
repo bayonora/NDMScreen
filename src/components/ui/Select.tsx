@@ -12,6 +12,8 @@ export interface SelectOption<T extends string = string> {
   group?: string;
   /** Color dot before the label (rarities...). */
   color?: string;
+  /** Nesting level, shown as left padding in the list only (tree pickers). */
+  indent?: number;
   disabled?: boolean;
 }
 
@@ -163,7 +165,9 @@ export function Select<T extends string>({ value, onChange, options, id, placeho
                     onClick={() => choose(i)}
                     onPointerEnter={() => !o.disabled && setActive(i)}
                     className={cn(optionClass(i === active, i === selectedIndex, o.disabled), o.group && "pl-5")}
+                    style={o.indent ? { paddingLeft: `calc(${o.group ? "1.25rem" : "0.75rem"} + ${Math.min(o.indent, 8) * 0.9}rem)` } : undefined}
                   >
+                    {!!o.indent && <span className="text-dm-muted-alt shrink-0" aria-hidden>↳</span>}
                     {o.color && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: o.color }} aria-hidden />}
                     <span className="flex-1 truncate">{o.label}</span>
                     {i === selectedIndex && <Check size={14} className="shrink-0" />}

@@ -267,16 +267,18 @@ const TUTORIAL_SECTIONS = [
       <Page intro="Las tramas de tu campaña en forma de árbol: cada misión puede abrir ramas con sus submisiones, para ver de un vistazo qué camino ha seguido el grupo.">
         <Block title="Organizar las tramas">
           <Features>
-            <F name="Nueva Misión">ponle título, lugar, descripción, recompensa e imagen. En <strong>Misión Anterior (Rama)</strong> eliges de qué misión cuelga; déjalo vacío para una trama principal.</F>
-            <F name="Submisiones">el botón <strong>+</strong> de la parte inferior de una misión crea una submisión enlazada a ella.</F>
-            <F name="Plegar ramas">la flecha lateral oculta o muestra las submisiones para centrarte en lo que importa.</F>
+            <F name="Nueva Misión">ponle título, lugar, descripción (admite Markdown), recompensa e imagen. En <strong>Viene de (rama)</strong> eliges de qué misión cuelga; déjalo vacío para una trama nueva.</F>
+            <F name="Ramificar">el icono de rama de cada tarjeta (o <strong>Ramificar</strong> dentro de la misión) crea una submisión enlazada a ella.</F>
+            <F name="Plegar ramas">el botón redondo junto a la tarjeta oculta sus submisiones y muestra cuántas hay; <strong>Plegar todo</strong> recoge el árbol entero.</F>
+            <F name="Moverte por el árbol">arrastra el fondo con el ratón para desplazarte y usa el zoom (− / +) para ver las tramas largas de un vistazo.</F>
           </Features>
         </Block>
         <Block title="Durante la partida">
           <Features>
-            <F name="Estado">pulsa el círculo junto al título para cambiarlo: <span className="text-dm-text">Activa</span> → <span className="text-green-500">Completada</span> → <span className="text-dm-danger">Fallida</span>.</F>
-            <F name="Detalles y notas">con <strong>+ Añadir</strong> guardas pistas, notas o recompensas extra dentro de cada misión, sin ensuciar la descripción.</F>
-            <F name="Vista completa">pulsa la misión para abrirla en grande, ideal para leer en voz alta el encargo a tus jugadores.</F>
+            <F name="Estado">pulsa el círculo junto al título para cambiarlo: <span className="text-dm-text">Activa</span> → <span className="text-green-500">Completada</span> → <span className="text-dm-danger">Fallida</span>. La barra inferior de cada tarjeta muestra el avance de su rama.</F>
+            <F name="Resaltar">los filtros <strong>Activas / Completadas / Fallidas</strong> atenúan el resto para ver al momento qué queda pendiente.</F>
+            <F name="Vista completa">pulsa la misión para abrirla en grande: cambia su estado, lee el encargo en voz alta y salta a la misión anterior o a sus ramas.</F>
+            <F name="Detalles y notas">dentro de la misión, <strong>+ Añadir</strong> guarda pistas, notas o recompensas extra sin ensuciar la descripción.</F>
           </Features>
         </Block>
         <Tip>

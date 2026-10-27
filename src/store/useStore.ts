@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { get, set } from "idb-keyval";
-import { Player, NPC, Creature, Character, Combatant, MapData, LocationData, Shop, ShopItem, Note, CustomItem, LootTable, Quest } from "../types";
+import { Player, NPC, Creature, Character, Combatant, MapData, LocationData, Shop, ShopItem, Note, CustomItem, LootTable, Quest, QuestStatus } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import { groupShopItems, placeInCategory, shopCategory } from "../lib/shopCategories";
 import { mergeDedupe, downloadJSON } from "../lib/utils";
@@ -21,7 +21,14 @@ type UIState = {
   partyTab?: "players" | "npcs" | "creatures";
   /** Cards (default) or the compact list in Grupo. */
   partyView?: "cards" | "list";
+  /** Quest to reveal (unfolding its branch) and highlight when the Misiones tab shows. */
   highlightedQuestId?: string;
+  /** Quests whose sub-quests are folded away in the tree. */
+  collapsedQuests?: string[];
+  /** Misiones: dims every quest without this status. */
+  questStatusFilter?: QuestStatus;
+  /** Misiones: tree zoom (1 = normal). */
+  questsZoom?: number;
   highlightedSpellId?: string;
   highlightedMonsterId?: string;
   /** Element (data-search-id) to scroll to and highlight once its view shows. See lib/searchFocus. */
@@ -350,17 +357,39 @@ export const actions = {
   
   // Quests
   addQuest: (q: Omit<Quest, "id" | "createdAt">) => {
-    store.setState({ quests: [...store.getState().quests, { ...q, id: uuidv4(), createdAt: Date.now() }] });
+    const id = uuidv4();
+    const { quests, uiState } = store.getState();
+    const collapsed = uiState.collapsedQuests;
+    store.setState({
+      quests: [...quests, { ...q, id, createdAt: Date.now() }],
+      // Unfold the parent so the new branch is visible right away.
+      ...(q.parentId && collapsed?.includes(q.parentId) && { uiState: { ...uiState, collapsedQuests: collapsed.filter((x) => x !== q.parentId) } }),
+    });
+    return id;
   },
   updateQuest: (id: string, q: Partial<Quest>) => {
     store.setState({
       quests: store.getState().quests.map((x) => (x.id === id ? { ...x, ...q } : x)),
     });
   },
+  /** Deletes a quest; its sub-quests move up to hang from its parent (or become roots). */
   deleteQuest: (id: string) => {
-    store.setState({ 
-      quests: store.getState().quests.map(q => q.parentId === id ? { ...q, parentId: null } : q).filter((x) => x.id !== id) 
+    const { quests, uiState } = store.getState();
+    const parentId = quests.find((q) => q.id === id)?.parentId ?? null;
+    const collapsed = uiState.collapsedQuests;
+    store.setState({
+      quests: quests.filter((q) => q.id !== id).map((q) => (q.parentId === id ? { ...q, parentId } : q)),
+      ...(collapsed?.includes(id) && { uiState: { ...uiState, collapsedQuests: collapsed.filter((x) => x !== id) } }),
     });
+  },
+  toggleQuestCollapse: (id: string) => {
+    const collapsed = store.getState().uiState.collapsedQuests || [];
+    actions.updateUI({ collapsedQuests: collapsed.includes(id) ? collapsed.filter((x) => x !== id) : [...collapsed, id] });
+  },
+  setQuestsCollapsed: (ids: string[], collapse: boolean) => {
+    const current = new Set(store.getState().uiState.collapsedQuests || []);
+    ids.forEach((id) => (collapse ? current.add(id) : current.delete(id)));
+    actions.updateUI({ collapsedQuests: [...current] });
   },
 
   // Party & NPCs

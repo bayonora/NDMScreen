@@ -220,7 +220,7 @@ export function GlobalSearch({ onNavigate }: { onNavigate: (tab: Tab) => void })
 
     quests.forEach((qu) => {
       push(
-        { kind: "quest", id: qu.id, type: "Misión", label: qu.title, subLabel: [qu.location, qu.status === "completed" ? "Completada" : qu.status === "failed" ? "Fallada" : "Activa"].filter(Boolean).join(" · "), icon: Target, tab: "quests" },
+        { kind: "quest", id: qu.id, type: "Misión", label: qu.title, subLabel: [qu.location, qu.status === "completed" ? "Completada" : qu.status === "failed" ? "Fallida" : "Activa"].filter(Boolean).join(" · "), icon: Target, tab: "quests" },
         match(q, terms, [qu.title, qu.location], [qu.description, qu.reward])
       );
       (qu.details || []).forEach((d) => push(
@@ -674,7 +674,7 @@ function useQuickLookContent(res: SearchResult, onDrill: (r: SearchResult) => vo
       const status = qu.status === "completed"
         ? <span className="text-green-500 flex items-center gap-1"><CheckCircle2 size={15} /> Completada</span>
         : qu.status === "failed"
-          ? <span className="text-dm-danger flex items-center gap-1"><XCircle size={15} /> Fallada</span>
+          ? <span className="text-dm-danger flex items-center gap-1"><XCircle size={15} /> Fallida</span>
           : <span className="text-dm-muted flex items-center gap-1"><Circle size={15} /> Activa</span>;
       return {
         title: qu.title,

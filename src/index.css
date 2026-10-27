@@ -250,6 +250,124 @@ body {
   animation: search-flash 2.4s ease-out;
 }
 
+/*
+ * Misiones: connector lines of the quest tree. On phones sub-quests hang below their parent from
+ * a vertical spine; from md up they branch to the right. Each .qt-child draws its own piece of
+ * the spine (::before) and its branch (::after); the first and last child round the corner.
+ */
+.qt-tree {
+  --qt-line: color-mix(in srgb, var(--theme-accent) 30%, var(--theme-border));
+  --qt-branch-y: 1.4rem; /* phones: where the branch meets the card (title height) */
+}
+.qt-children {
+  position: relative;
+  margin-left: 0.75rem;
+  padding-top: 0.75rem;
+}
+.qt-children::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 0.75rem;
+  border-left: 2px solid var(--qt-line);
+}
+.qt-child {
+  position: relative;
+  padding: 0 0 0.6rem 1rem;
+}
+.qt-child:last-child {
+  padding-bottom: 0;
+}
+.qt-child::before,
+.qt-child::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  pointer-events: none;
+}
+.qt-child::before {
+  top: 0;
+  bottom: 0;
+  border-left: 2px solid var(--qt-line);
+}
+.qt-child::after {
+  top: calc(var(--qt-branch-y) - 1px);
+  width: 1rem;
+  border-top: 2px solid var(--qt-line);
+}
+.qt-child:last-child::before {
+  bottom: auto;
+  height: calc(var(--qt-branch-y) + 1px);
+  width: 1rem;
+  border-bottom: 2px solid var(--qt-line);
+  border-bottom-left-radius: 0.6rem;
+}
+.qt-child:last-child::after {
+  display: none;
+}
+/* Fold/unfold button: on the spine under the card (phones), on the card's right edge (md+). */
+.qt-toggle {
+  position: absolute;
+  left: calc(0.75rem + 1px);
+  bottom: 0;
+  transform: translate(-50%, 50%);
+}
+
+@media (width >= 48rem) {
+  .qt-children {
+    margin-left: 0;
+    padding: 0 0 0 1.75rem;
+  }
+  .qt-children::before {
+    top: calc(50% - 1px);
+    height: 0;
+    width: 1.75rem;
+    border-left: 0;
+    border-top: 2px solid var(--qt-line);
+  }
+  .qt-child,
+  .qt-child:last-child {
+    padding: 0.4rem 0 0.4rem 1.75rem;
+  }
+  .qt-child::after {
+    display: block;
+    top: calc(50% - 1px);
+    width: 1.75rem;
+  }
+  .qt-child:first-child::before {
+    top: calc(50% - 1px);
+    bottom: 0;
+    width: 1.75rem;
+    border-top: 2px solid var(--qt-line);
+    border-top-left-radius: 0.9rem;
+  }
+  .qt-child:last-child::before {
+    top: 0;
+    bottom: calc(50% - 1px);
+    height: auto;
+    width: 1.75rem;
+    border-bottom: 2px solid var(--qt-line);
+    border-bottom-left-radius: 0.9rem;
+  }
+  .qt-child:first-child::after,
+  .qt-child:last-child::after {
+    display: none;
+  }
+  .qt-child:only-child::before {
+    display: none;
+  }
+  .qt-child:only-child::after {
+    display: block;
+  }
+  .qt-toggle {
+    left: 100%;
+    top: 50%;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+  }
+}
+
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
