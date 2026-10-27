@@ -17,7 +17,7 @@
  * (bg-dm-accent, text-dm-muted, border-dm-danger/40, hover:bg-dm-bg-card, ring-dm-accent...).
  */
 :root {
-  /* NELLIE (clásico) */
+  /* CLÁSICO */
   --theme-bg: #1e1a17;
   --theme-bg-alt: #14110f;
   --theme-bg-hover: #1a1614;
@@ -94,6 +94,28 @@
   --theme-text-muted: #d9b8b8;
   --theme-danger: #c92a2a;
   --theme-danger-hover: #e03131;
+}
+
+:root[data-theme="nellie"] {
+  /* NELLIE (from Nellie Vivaldi's portrait): wine backgrounds and borders from her hair and
+     jacket (bg-hover also tints the page's radial gradient), dusty rose accent, cream text
+     from her skirt and red danger from her sigil. */
+  --theme-bg: #260c17;
+  --theme-bg-alt: #1e0912;
+  --theme-bg-hover: #4a1528;
+  --theme-bg-darker: #150609;
+  --theme-bg-card: #34111f;
+  --theme-accent: #e3a9b4;
+  --theme-accent-hover: #efc2ca;
+  --theme-muted: #c9939f;
+  --theme-muted-alt: #9c6472;
+  --theme-border: #5c1f33;
+  --theme-border-focus: #86304b;
+  --theme-text: #f2e6e8;
+  --theme-text-bright: #fff9f9;
+  --theme-text-muted: #dcc2c7;
+  --theme-danger: #e8343c;
+  --theme-danger-hover: #ff5a5f;
 }
 
 :root {
