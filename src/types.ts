@@ -191,9 +191,13 @@ export type CustomItem = {
   value?: string;
   image?: string;
   color?: string;
-  /** Free text: "Poción", "Arma (cualquier espada)", "Equipo de aventuras"... */
+  /** Item type key from ITEM_TYPES (itemLabels.ts): "weapon-martial-melee", "potion", "gem"... */
+  type?: string;
+  /** Display text of the type, kept in sync with `type`: "Poción", "Arma (cualquier espada)"... */
   category?: string;
-  /** Free text: "Común", "Rara", "Infrecuente – muy rara"... */
+  /** Rarity key from RARITIES ("rare"...); missing = mundane (no rarity). */
+  rarityKey?: string;
+  /** Display text of the rarity, kept in sync with `rarityKey`: "Rara", "Infrecuente – muy rara"... */
   rarity?: string;
   /** e.g. "requiere sintonización por un mago"; empty when not needed. */
   attunement?: string;

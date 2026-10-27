@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { Package, Plus, X, Image as ImageIcon, Trash2, Coins, Dices, Link2 } from "lucide-react";
+import { Package, Plus, X, Image as ImageIcon, Trash2, Coins, Dices, Link2, Search, Maximize2 } from "lucide-react";
+import { Lightbox } from "../components/ui/Lightbox";
 import { useStore, actions, store } from "../store/useStore";
 import { ItemCatalog, CatalogDetail } from "../components/ItemCatalog";
-import { LootTableEditor, LootTableViewer } from "../components/LootTables";
+import { GROUP_ICONS, LootTableCard, LootTableEditor, LootTableViewer } from "../components/LootTables";
 import { useItemCatalogStore } from "../store/useItemCatalogStore";
-import { tableEntries, totalWeight } from "../lib/loot";
 import type { CatalogItem } from "../types/item";
-import { RARITIES } from "../data/itemLabels";
+import { ITEM_GROUPS, RARITIES, homebrewRarityKey, homebrewTypeKey, itemPlace, itemTypeInfo, rarityInfo, type ItemGroup } from "../data/itemLabels";
+import { HomebrewItemFields, withStructuredFields } from "../components/HomebrewItemFields";
+import { Chip, RarityDot } from "../components/ui/Chip";
 import { CustomItem, LootEntry, LootTable } from "../types";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { SortableGrid } from "../components/SortableGrid";
 import { Markdown } from "../components/ui/Markdown";
 import { Measured } from "../components/ui/Measured";
-import { Combobox } from "../components/ui/Combobox";
 import { DescriptionEditor } from "../components/DescriptionEditor";
 import { ColorPicker, DEFAULT_COLOR } from "../components/ui/ColorPicker";
 import { Overlay } from "../components/ui/Modal";
@@ -42,12 +43,30 @@ export function ViewItems() {
     actions.updateUI({ editCustomItemId: undefined });
   }, [editCustomItemId]);
   const [viewingItem, setViewingItem] = useState<CustomItem | null>(null);
+  // Full-screen view of the open item's image.
+  const [imageOpen, setImageOpen] = useState(false);
+  useEffect(() => setImageOpen(false), [viewingItem?.id]);
+  const wideImage = useIsWideImage(viewingItem?.image);
+  const [hbFilter, setHbFilter] = useState<HomebrewFilter>(EMPTY_FILTER);
+  const shownItems = customItems.filter((i) => matchesFilter(i, hbFilter));
   // undefined = editor closed, null = new table
   const [editingTable, setEditingTable] = useState<LootTable | null | undefined>(undefined);
   const [viewingTable, setViewingTable] = useState<LootTable | null>(null);
+  // The card's "Tirar" opens the table and rolls it right away.
+  const [rollOnOpen, setRollOnOpen] = useState(false);
+  const openTable = (table: LootTable, roll: boolean) => {
+    setRollOnOpen(roll);
+    setViewingTable(table);
+  };
   const [catalogPreview, setCatalogPreview] = useState<CatalogItem | null>(null);
   const catalogItems = useItemCatalogStore((s) => s.items);
   const [deleteData, setDeleteData] = useState<{ type: "item" | "table"; id: string } | null>(null);
+  const fetchCatalog = useItemCatalogStore((s) => s.fetchItems);
+
+  // Loot cards color their results by rarity, which needs the catalog when a table links to it.
+  useEffect(() => {
+    if (activeTab === "loot" && lootTables.some((t) => t.entries?.some((e) => e.ref?.kind === "srd"))) fetchCatalog();
+  }, [activeTab, lootTables, fetchCatalog]);
 
   // A loot result linked to an item opens that item's sheet.
   const openLootItem = (entry: LootEntry) => {
@@ -63,7 +82,7 @@ export function ViewItems() {
   const handleSaveItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingItem || !editingItem.name.trim() || !editingItem.shortDescription?.trim()) return;
-    const { id, ...data } = editingItem;
+    const { id, ...data } = withStructuredFields(editingItem);
     if (id) actions.updateCustomItem(id, data);
     else actions.addCustomItem(data);
     setEditingItem(null);
@@ -155,43 +174,21 @@ export function ViewItems() {
           <ItemCatalog onOpenHomebrew={openHomebrew} />
         ) : isItems ? (
           <>
+            {customItems.length > 0 && (
+              <HomebrewFilters items={customItems} value={hbFilter} onChange={setHbFilter} shown={shownItems.length} />
+            )}
             <SortableGrid
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
-              items={customItems}
-              onReorder={actions.reorderCustomItems}
-              renderItem={(item) => {
-                const color = item.color || DEFAULT_COLOR;
-                return (
-                  <div data-search-id={item.id} className="bg-dm-bg-darker active:scale-[0.98] border border-dm-border flex flex-col h-full shadow-lg hover:border-dm-accent transition-colors group relative cursor-pointer" onClick={() => setViewingItem(item)}>
-                    {item.image ? (
-                      <div className="h-40 w-full overflow-hidden border-b border-dm-accent/10 relative">
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                        <div className="absolute bottom-3 left-4 flex gap-2">
-                          {item.category && <span className="bg-dm-bg-darker/90 border border-dm-accent/30 text-dm-accent text-xs font-bold px-2 py-1 rounded-sm uppercase tracking-widest">{item.category}</span>}
-                          {item.rarity && <span className="bg-dm-bg-darker/90 border border-dm-accent/30 text-dm-text-bright text-xs font-bold px-2 py-1 rounded-sm uppercase tracking-widest">{item.rarity}</span>}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="h-2" style={{ backgroundColor: color }} />
-                    )}
-                    <div className="p-4 flex-1 flex flex-col">
-                      <h3 className="text-lg font-bold mb-1 break-words" style={{ color }}>{item.name}</h3>
-                      {!item.image && (item.category || item.rarity) && (
-                        <p className="text-[11px] uppercase tracking-wider text-dm-muted mb-2 truncate">{[item.category, item.rarity].filter(Boolean).join(" · ")}</p>
-                      )}
-                      <p className="text-sm text-dm-text-muted mb-4 line-clamp-3 flex-1 break-words">{item.shortDescription || item.description}</p>
-                      {item.value && (
-                        <div className="flex items-center gap-1.5 mt-auto pt-4 border-t border-dm-border w-full justify-end opacity-80 group-hover:opacity-100 transition-opacity">
-                          <Coins size={14} style={{ color }} />
-                          <span className="font-mono text-sm font-bold" style={{ color }}>{item.value}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full [&>*>*]:h-full"
+              items={shownItems}
+              onReorder={(subset) => actions.reorderCustomItems(mergeOrder(customItems, subset))}
+              renderItem={(item) => <HomebrewCard item={item} onOpen={() => setViewingItem(item)} />}
             />
+            {customItems.length > 0 && shownItems.length === 0 && (
+              <div className="flex flex-col items-center justify-center gap-2 h-40 text-dm-muted border-2 border-dashed border-dm-border text-center px-4">
+                <p>Ningún objeto coincide con los filtros.</p>
+                <button type="button" onClick={() => setHbFilter(EMPTY_FILTER)} className="text-sm text-dm-accent hover:underline">Quitar filtros</button>
+              </div>
+            )}
             {customItems.length === 0 && (
               <div className="flex flex-col items-center justify-center h-64 text-dm-muted border-2 border-dashed border-dm-border text-center px-4">
                 <p>No hay objetos homebrew guardados.</p>
@@ -202,33 +199,27 @@ export function ViewItems() {
         ) : (
           <>
             <SortableGrid
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full"
+              // `[&>*>*]:h-full`: the drag wrapper stretches too, so cards in a row share their height.
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full [&>*>*]:h-full"
               items={lootTables}
               onReorder={actions.reorderLootTables}
-              renderItem={(table) => {
-                const color = table.color || DEFAULT_COLOR;
-                return (
-                  <div data-search-id={table.id} className="bg-dm-bg-darker active:scale-[0.98] border border-dm-border flex flex-col shadow-lg hover:border-dm-accent transition-colors group relative cursor-pointer min-h-48 h-full" onClick={() => setViewingTable(table)}>
-                    <div className="h-2" style={{ backgroundColor: color }} />
-                    <div className="p-4 flex-1 flex flex-col">
-                      <h3 className="text-lg font-bold mb-2 break-words" style={{ color }}>{table.name}</h3>
-                      <p className="text-sm text-dm-text-muted mb-4 line-clamp-3 break-words">{table.description}</p>
-                      <div className="mt-auto pt-4 border-t border-dm-border flex items-center gap-2 text-xs text-dm-muted uppercase tracking-widest font-bold group-hover:text-dm-accent transition-colors">
-                        <Dices size={14} />
-                        <span>{(() => {
-                          const entries = tableEntries(table);
-                          const total = totalWeight(entries);
-                          return `${entries.length} ${entries.length === 1 ? "resultado" : "resultados"}${total ? ` · d${total}` : ""}`;
-                        })()}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }}
+              renderItem={(table) => (
+                <LootTableCard
+                  table={table}
+                  onOpen={() => openTable(table, false)}
+                  onRoll={() => openTable(table, true)}
+                  onEdit={() => setEditingTable(table)}
+                  onDelete={() => setDeleteData({ type: "table", id: table.id })}
+                />
+              )}
             />
             {lootTables.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-64 text-dm-muted border-2 border-dashed border-dm-border text-center px-4">
+              <div className="flex flex-col items-center justify-center gap-3 h-64 text-dm-muted border-2 border-dashed border-dm-border text-center px-4">
+                <Dices size={36} className="text-dm-border-focus" />
                 <p>No hay tablas de botín guardadas.</p>
+                <button type="button" onClick={() => setEditingTable(null)} className="flex items-center gap-1.5 px-3 py-2 border border-dm-accent/50 text-dm-accent text-xs uppercase tracking-wider font-bold hover:bg-dm-accent/10 transition-colors">
+                  <Plus size={14} /> Crear la primera
+                </button>
               </div>
             )}
           </>
@@ -238,32 +229,38 @@ export function ViewItems() {
       {/* View item */}
       <Overlay isOpen={!!viewingItem} onClose={() => setViewingItem(null)}>
         {viewingItem && (
-          <div role="dialog" aria-modal="true" className={cn(panelClass, "max-w-xl")}>
+          <div role="dialog" aria-modal="true" className={cn(panelClass, viewingItem.image && !wideImage ? "max-w-4xl sm:flex-row" : "max-w-xl")}>
             <div className="h-1 w-full absolute top-0 left-0 z-20" style={{ backgroundColor: viewingItem.color || DEFAULT_COLOR }} />
             <button type="button" onClick={() => setViewingItem(null)} aria-label="Cerrar" className="absolute top-4 right-4 text-dm-muted hover:text-dm-text-bright z-20 bg-black/60 rounded-full p-1">
               <X size={20} />
             </button>
 
             {viewingItem.image && (
-              <div className="w-full h-48 sm:h-64 shrink-0 border-b border-dm-accent/10 relative">
-                <img src={viewingItem.image} alt={viewingItem.name} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-dm-bg-darker to-transparent pointer-events-none" />
-              </div>
+              <ItemSheetImage src={viewingItem.image} alt={viewingItem.name} color={viewingItem.color || DEFAULT_COLOR} wide={wideImage} onOpen={() => setImageOpen(true)} />
             )}
 
-            <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1 flex flex-col">
+            <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1 min-w-0 min-h-0 flex flex-col">
               <h2 className="text-2xl sm:text-3xl font-bold mb-2 pr-8 font-serif break-words" style={{ color: viewingItem.color || DEFAULT_COLOR }}>{viewingItem.name}</h2>
               {viewingItem.shortDescription && (
                 <p className="text-dm-muted italic text-sm mb-4 border-b break-words border-dm-border pb-4">{viewingItem.shortDescription}</p>
               )}
 
-              {(viewingItem.category || viewingItem.rarity || viewingItem.attunement) && (
+              {(() => {
+                const info = homebrewInfo(viewingItem);
+                const Icon = info.group ? GROUP_ICONS[info.group] : Package;
+                const rarityColor = info.rarityColor ?? viewingItem.color ?? DEFAULT_COLOR;
+                return (info.typeText || info.rarityText || viewingItem.attunement) && (
                 <div className="flex flex-wrap gap-2 mb-4 text-xs">
-                  {viewingItem.category && <span className="px-2 py-1 rounded-sm bg-dm-bg-hover border border-dm-border text-dm-muted uppercase tracking-wider">{viewingItem.category}</span>}
-                  {viewingItem.rarity && <span className="px-2 py-1 rounded-sm border border-dm-border font-semibold" style={{ color: viewingItem.color || DEFAULT_COLOR }}>{viewingItem.rarity}</span>}
+                  {info.typeText && <span className="px-2 py-1 rounded-sm bg-dm-bg-hover border border-dm-border text-dm-muted uppercase tracking-wider flex items-center gap-1.5"><Icon size={12} />{info.typeText}</span>}
+                  {info.rarityText && (
+                    <span className="px-2 py-1 rounded-sm border font-semibold flex items-center gap-1.5" style={{ color: rarityColor, borderColor: `color-mix(in srgb, ${rarityColor} 45%, transparent)` }}>
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: rarityColor }} />{info.rarityText}
+                    </span>
+                  )}
                   {viewingItem.attunement && <span className="px-2 py-1 rounded-sm border border-dm-border text-dm-text-muted flex items-center gap-1"><Link2 size={12} />{viewingItem.attunement[0].toUpperCase() + viewingItem.attunement.slice(1)}</span>}
                 </div>
-              )}
+                );
+              })()}
 
               {viewingItem.value && (
                 <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full border border-dm-border bg-dm-bg-darker shadow-inner self-start">
@@ -293,6 +290,10 @@ export function ViewItems() {
         )}
       </Overlay>
 
+      {viewingItem?.image && (
+        <Lightbox isOpen={imageOpen} onClose={() => setImageOpen(false)} src={viewingItem.image} title={viewingItem.name} />
+      )}
+
       {/* Edit item */}
       <Overlay isOpen={!!editingItem} onClose={() => setEditingItem(null)} closeOnBackdrop={false}>
         {editingItem && (
@@ -312,66 +313,7 @@ export function ViewItems() {
               </label>
               <input id="item-short" type="text" maxLength={100} required value={editingItem.shortDescription || ""} onChange={(e) => setEditingItem({ ...editingItem, shortDescription: e.target.value })} className={fieldClass} placeholder="Una espada forjada en el fuego de..." />
 
-              <span className={labelClass}>Color / Rareza</span>
-              <ColorPicker value={editingItem.color} onChange={(color) => setEditingItem({ ...editingItem, color })} />
-
-              <fieldset className="border border-dm-border p-3 pb-0 mb-4">
-                <legend className="px-1 text-xs uppercase tracking-widest text-dm-muted">Detalles (opcionales)</legend>
-                <div className="grid grid-cols-2 gap-x-3">
-                  <div>
-                    <label className={labelClass} htmlFor="item-category">Categoría</label>
-                    <Combobox
-                      id="item-category"
-                      value={editingItem.category || ""}
-                      onChange={(category) => setEditingItem({ ...editingItem, category })}
-                      options={CATEGORY_OPTIONS}
-                      placeholder="Ej. Poción"
-                      className="mb-4"
-                      inputClassName={cn(fieldClass, "mb-0")}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass} htmlFor="item-rarity">Rareza</label>
-                    <Combobox
-                      id="item-rarity"
-                      value={editingItem.rarity || ""}
-                      onChange={(rarity) => {
-                        // Picking a standard rarity also paints the card with its color.
-                        const match = RARITIES.find((r) => r.label.toLowerCase() === rarity.trim().toLowerCase());
-                        setEditingItem({ ...editingItem, rarity, color: match ? match.color : editingItem.color });
-                      }}
-                      options={RARITY_OPTIONS}
-                      placeholder="Ej. Rara"
-                      className="mb-4"
-                      inputClassName={cn(fieldClass, "mb-0")}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass} htmlFor="item-value">Valor</label>
-                    <input id="item-value" type="text" value={editingItem.value || ""} onChange={(e) => setEditingItem({ ...editingItem, value: e.target.value })} className={fieldClass} placeholder="Ej. 500 po" />
-                  </div>
-                  <div>
-                    <label className={labelClass} htmlFor="item-weight">Peso</label>
-                    <input id="item-weight" type="text" value={editingItem.weight || ""} onChange={(e) => setEditingItem({ ...editingItem, weight: e.target.value })} className={fieldClass} placeholder="Ej. 3 lb" />
-                  </div>
-                  <div className="col-span-2">
-                    <label className={labelClass} htmlFor="item-attunement">Sintonización</label>
-                    <input id="item-attunement" type="text" value={editingItem.attunement || ""} onChange={(e) => setEditingItem({ ...editingItem, attunement: e.target.value })} className={fieldClass} placeholder="Ej. requiere sintonización (vacío si no la necesita)" />
-                  </div>
-                  <div>
-                    <label className={labelClass} htmlFor="item-damage">Daño</label>
-                    <input id="item-damage" type="text" value={editingItem.damage || ""} onChange={(e) => setEditingItem({ ...editingItem, damage: e.target.value })} className={fieldClass} placeholder="Ej. 1d8 cortante" />
-                  </div>
-                  <div>
-                    <label className={labelClass} htmlFor="item-ac">Clase de Armadura</label>
-                    <input id="item-ac" type="text" value={editingItem.armorClass || ""} onChange={(e) => setEditingItem({ ...editingItem, armorClass: e.target.value })} className={fieldClass} placeholder="Ej. +2" />
-                  </div>
-                  <div className="col-span-2">
-                    <label className={labelClass} htmlFor="item-properties">Propiedades</label>
-                    <input id="item-properties" type="text" value={editingItem.properties || ""} onChange={(e) => setEditingItem({ ...editingItem, properties: e.target.value })} className={fieldClass} placeholder="Ej. Sutil, ligera" />
-                  </div>
-                </div>
-              </fieldset>
+              <HomebrewItemFields item={editingItem} onChange={(item) => setEditingItem(item as CustomItem)} />
 
               <DescriptionEditor
                 id="item-desc"
@@ -413,6 +355,7 @@ export function ViewItems() {
 
       <LootTableViewer
         table={viewingTable}
+        autoRoll={rollOnOpen}
         onClose={() => setViewingTable(null)}
         onEdit={(table) => setEditingTable(table)}
         onDelete={(table) => setDeleteData({ type: "table", id: table.id })}
@@ -456,11 +399,235 @@ export function ViewItems() {
   );
 }
 
-const CATEGORY_OPTIONS = [
-  "Arma", "Armadura", "Escudo", "Poción", "Anillo", "Vara", "Pergamino", "Bastón", "Varita", "Objeto maravilloso", "Artefacto",
-  "Equipo de aventuras", "Herramienta", "Montura", "Vehículo", "Tesoro",
-].map((value) => ({ value }));
-const RARITY_OPTIONS = RARITIES.filter((r) => r.key !== "varies").map((r) => ({ value: r.label, color: r.color }));
+// ------------------------------------------------------------------------------- homebrew list
+
+interface HomebrewFilter {
+  q: string;
+  group: ItemGroup | null;
+  /** Rarity key, "none" for items without rarity, or null for any. */
+  rarity: string | null;
+}
+const EMPTY_FILTER: HomebrewFilter = { q: "", group: null, rarity: null };
+const NO_RARITY = "none";
+
+const norm = (s: string | undefined) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+/** Group, rarity and display texts of a homebrew item, from its structured fields (or guessed ones). */
+function homebrewInfo(item: CustomItem) {
+  const type = homebrewTypeKey(item);
+  const rarityKey = homebrewRarityKey(item);
+  const rarity = rarityInfo(rarityKey);
+  return {
+    type,
+    group: type ? itemPlace(type, rarityKey).group : null,
+    rarityKey,
+    rarityColor: rarity?.color,
+    typeText: item.category || itemTypeInfo(type)?.label || "",
+    rarityText: rarityKey ? item.rarity || rarity?.label || "" : "",
+  };
+}
+
+function matchesFilter(item: CustomItem, f: HomebrewFilter) {
+  const info = homebrewInfo(item);
+  if (f.group && info.group !== f.group) return false;
+  if (f.rarity && (f.rarity === NO_RARITY ? !!info.rarityKey : info.rarityKey !== f.rarity)) return false;
+  const words = norm(f.q).split(/\s+/).filter(Boolean);
+  const hay = norm([item.name, item.shortDescription, info.typeText, info.rarityText].join(" "));
+  return words.every((w) => hay.includes(w));
+}
+
+/** Puts a reordered subset back into the slots it occupied in the full list. */
+function mergeOrder(all: CustomItem[], subset: CustomItem[]) {
+  const ids = new Set(subset.map((i) => i.id));
+  let n = 0;
+  return all.map((i) => (ids.has(i.id) ? subset[n++] : i));
+}
+
+/** Search, type and rarity filters of the homebrew list (only the groups and rarities in use). */
+function HomebrewFilters({ items, value, onChange, shown }: { items: CustomItem[]; value: HomebrewFilter; onChange: (f: HomebrewFilter) => void; shown: number }) {
+  const infos = items.map(homebrewInfo);
+  const groups = ITEM_GROUPS.map((g) => ({ ...g, n: infos.filter((i) => i.group === g.key).length })).filter((g) => g.n > 0);
+  const untyped = infos.filter((i) => !i.group).length;
+  const rarities = RARITIES.filter((r) => infos.some((i) => i.rarityKey === r.key));
+  const hasMundane = infos.some((i) => !i.rarityKey);
+  const set = (patch: Partial<HomebrewFilter>) => onChange({ ...value, ...patch });
+  const filtered = value.q || value.group || value.rarity;
+
+  return (
+    <div className="mb-4 sm:mb-6 space-y-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-48 max-w-sm">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-dm-muted" />
+          <input
+            type="search"
+            value={value.q}
+            onChange={(e) => set({ q: e.target.value })}
+            placeholder="Buscar objeto homebrew..."
+            aria-label="Buscar objeto homebrew"
+            className="w-full bg-black/40 border border-dm-border py-1.5 pl-9 pr-2 text-sm text-dm-text-bright placeholder:text-dm-muted focus:border-dm-accent outline-none"
+          />
+        </div>
+        <span className="text-xs text-dm-muted tabular-nums">
+          {filtered ? `${shown} de ${items.length}` : `${items.length} ${items.length === 1 ? "objeto" : "objetos"}`}
+        </span>
+        {filtered && (
+          <button type="button" onClick={() => onChange(EMPTY_FILTER)} className="text-xs text-dm-accent hover:underline">Quitar filtros</button>
+        )}
+      </div>
+      {groups.length > 1 && (
+        <div className="flex flex-wrap gap-1.5" aria-label="Tipo de objeto">
+          <Chip active={!value.group} onClick={() => set({ group: null })}>Todos</Chip>
+          {groups.map((g) => {
+            const Icon = GROUP_ICONS[g.key];
+            return (
+              <Chip key={g.key} active={value.group === g.key} onClick={() => set({ group: value.group === g.key ? null : g.key })}>
+                <Icon size={12} /> {g.label} <span className="opacity-60 tabular-nums">{g.n}</span>
+              </Chip>
+            );
+          })}
+          {untyped > 0 && <span className="self-center text-[11px] text-dm-muted-alt ml-1" title="Edítalos y elige un tipo para que se filtren bien">{untyped} sin tipo</span>}
+        </div>
+      )}
+      {rarities.length + (hasMundane ? 1 : 0) > 1 && (
+        <div className="flex flex-wrap items-center gap-1.5" aria-label="Rareza">
+          <span className="text-[10px] uppercase tracking-widest text-dm-muted mr-1">Rareza</span>
+          {hasMundane && (
+            <Chip active={value.rarity === NO_RARITY} onClick={() => set({ rarity: value.rarity === NO_RARITY ? null : NO_RARITY })} className="py-0.5 text-[11px]">
+              <RarityDot /> Sin rareza
+            </Chip>
+          )}
+          {rarities.map((r) => (
+            <Chip key={r.key} active={value.rarity === r.key} color={r.color} onClick={() => set({ rarity: value.rarity === r.key ? null : r.key })} className="py-0.5 text-[11px]">
+              <RarityDot color={r.color} active={value.rarity === r.key} /> {r.label}
+            </Chip>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Landscape images (wider than 1.4:1) go on top of the sheet; the rest get a side column. */
+function useIsWideImage(src: string | undefined) {
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    setWide(false);
+    if (!src) return;
+    const img = new Image();
+    img.onload = () => setWide(img.naturalWidth / (img.naturalHeight || 1) >= 1.4);
+    img.src = src;
+    return () => {
+      img.onload = null;
+    };
+  }, [src]);
+  return wide;
+}
+
+/**
+ * The whole image of an item in its sheet, never cropped. Portrait and square art sits framed in
+ * a side column (on top on phones), like a card; landscape art spans the top at its own size.
+ * Clicking it opens it full screen.
+ */
+function ItemSheetImage({ src, alt, color, wide, onOpen }: { src: string; alt: string; color: string; wide: boolean; onOpen: () => void }) {
+  const zoomHint = (
+    <span className="absolute bottom-2 right-2 p-1.5 bg-dm-bg-darker/85 border border-dm-border text-dm-muted can-hover:opacity-0 group-hover/img:opacity-100 transition-opacity">
+      <Maximize2 size={14} />
+    </span>
+  );
+  if (wide) {
+    return (
+      <button type="button" onClick={onOpen} className="group/img relative block w-full shrink-0 border-b border-dm-accent/10 cursor-zoom-in" title="Ver imagen completa" aria-label={`Ver imagen completa de ${alt}`}>
+        <img src={src} alt={alt} className="block w-full h-auto max-h-[45vh] object-contain bg-dm-bg-darker" />
+        <span className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-dm-bg/90 to-transparent pointer-events-none" />
+        {zoomHint}
+      </button>
+    );
+  }
+  return (
+    <aside
+      className="shrink-0 sm:w-[44%] flex items-center justify-center px-6 pt-8 pb-5 sm:p-8 border-b sm:border-b-0 sm:border-r border-dm-accent/10"
+      style={{ background: `radial-gradient(ellipse at 50% 40%, color-mix(in srgb, ${color} 16%, transparent), transparent 70%), var(--theme-bg-darker)` }}
+    >
+      <button type="button" onClick={onOpen} className="group/img relative cursor-zoom-in" title="Ver imagen completa" aria-label={`Ver imagen completa de ${alt}`}>
+        <img
+          src={src}
+          alt={alt}
+          className="block max-w-full w-auto max-h-[34vh] sm:max-h-[70vh] object-contain border-2 transition-transform duration-300 group-hover/img:scale-[1.015]"
+          style={{
+            borderColor: `color-mix(in srgb, ${color} 55%, transparent)`,
+            boxShadow: `0 12px 32px rgba(0,0,0,0.6), 0 0 28px color-mix(in srgb, ${color} 22%, transparent)`,
+          }}
+        />
+        {zoomHint}
+      </button>
+    </aside>
+  );
+}
+
+/** A homebrew item in the grid: type and rarity up front, value and attunement at the bottom. */
+function HomebrewCard({ item, onOpen }: { item: CustomItem; onOpen: () => void }) {
+  const color = item.color || DEFAULT_COLOR;
+  const info = homebrewInfo(item);
+  const Icon = info.group ? GROUP_ICONS[info.group] : Package;
+  const meta = (
+    <div className="flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold">
+      {info.typeText && (
+        <span className="flex items-center gap-1 px-1.5 py-0.5 bg-dm-bg-darker/90 border border-dm-border text-dm-muted">
+          <Icon size={11} /> {info.typeText}
+        </span>
+      )}
+      {info.rarityText && (
+        <span
+          className="flex items-center gap-1 px-1.5 py-0.5 bg-dm-bg-darker/90 border"
+          style={{ color: info.rarityColor ?? color, borderColor: `color-mix(in srgb, ${info.rarityColor ?? color} 45%, transparent)` }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: info.rarityColor ?? color }} /> {info.rarityText}
+        </span>
+      )}
+    </div>
+  );
+
+  return (
+    <div
+      data-search-id={item.id}
+      onClick={onOpen}
+      className="group relative h-full flex flex-col bg-dm-bg-darker border border-dm-border overflow-hidden cursor-pointer shadow-lg active:scale-[0.98] hover:border-dm-accent hover:shadow-[0_0_15px_var(--theme-glow)] transition-[border-color,box-shadow,scale] duration-300"
+    >
+      {item.image ? (
+        <div className="h-44 w-full overflow-hidden border-b border-dm-accent/10 relative shrink-0">
+          {/* Cropped thumbnail, kept toward the top where faces and blades usually are; the sheet shows it whole. */}
+          <img src={item.image} alt={item.name} className="w-full h-full object-cover object-[center_25%] group-hover:scale-105 transition-transform duration-500" />
+          <div className="absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-black/85 to-transparent pointer-events-none" />
+          <div className="absolute bottom-2.5 left-3 right-3">{meta}</div>
+        </div>
+      ) : (
+        <>
+          <div className="h-1 shrink-0" style={{ backgroundColor: color }} />
+          <div aria-hidden className="absolute inset-x-0 top-0 h-20 pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity duration-500" style={{ background: `linear-gradient(to bottom, color-mix(in srgb, ${color} 12%, transparent), transparent)` }} />
+        </>
+      )}
+      <div className="relative p-4 flex-1 flex flex-col gap-2">
+        <h3 className="font-display text-lg leading-snug tracking-wide break-words" style={{ color }}>{item.name}</h3>
+        {!item.image && (info.typeText || info.rarityText) && meta}
+        <p className="text-sm text-dm-text-muted line-clamp-3 flex-1 break-words">{item.shortDescription || item.description}</p>
+        {(item.value || item.attunement) && (
+          <div className="flex items-center gap-3 mt-auto pt-3 border-t border-dm-border/60 text-xs">
+            {item.attunement && (
+              <span className="flex items-center gap-1 text-dm-muted" title={item.attunement}>
+                <Link2 size={12} /> Sintonización
+              </span>
+            )}
+            {item.value && (
+              <span className="ml-auto flex items-center gap-1.5 font-mono font-bold" style={{ color }}>
+                <Coins size={13} /> {item.value}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 /** Weight, damage, properties and AC of a homebrew item, when it has any. */
 function ItemStats({ item }: { item: CustomItem }) {
