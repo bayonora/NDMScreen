@@ -5,6 +5,10 @@ import { v4 as uuidv4 } from "uuid";
 import { groupShopItems, placeInCategory, shopCategory } from "../lib/shopCategories";
 import { mergeDedupe, downloadJSON } from "../lib/utils";
 import { isConcentrating, isConcentrationStatus, withConcentrationCheck } from "../lib/concentration";
+import {
+  fixCharacterLists, fixCustomItems, fixData, fixLocations, fixLootTables, fixMaps, fixNotes, fixQuests,
+  fixShops, fixUIState, repairLocations, strArr,
+} from "../lib/sanitize";
 
 export type Tab = "party" | "initiative" | "quests" | "maps" | "shops" | "notes" | "items" | "spells" | "bestiary";
 
@@ -102,6 +106,63 @@ const DEFAULT_STATE: StoreState = {
 
 const STORE_KEY = "dnd_dm_screen_data";
 
+/** Character collections and the `type` their entries must have. */
+const CHARACTER_TYPES = { players: "player", npcs: "npc", creatures: "creature" } as const;
+
+/**
+ * One-shot UI fields (set by the global search right before switching tabs). They are never
+ * exported or imported, or a view would jump to some item when the file is loaded.
+ */
+const ONE_SHOT_UI: (keyof UIState)[] = [
+  "highlightedQuestId", "highlightedSpellId", "highlightedMonsterId", "searchFocusId", "openShopId",
+  "mapsFocusId", "highlightedNoteId", "highlightedItemId", "editCustomItemId",
+];
+
+function withoutOneShotUI(ui: UIState): UIState {
+  const clean = { ...ui };
+  ONE_SHOT_UI.forEach((k) => delete clean[k]);
+  return clean;
+}
+
+type DataState = Omit<StoreState, "uiState" | "isHydrated">;
+
+/**
+ * Fixes the links between collections: initiative entries whose character no longer exists are
+ * dropped (temp combatants carry their own data), and places whose parent is gone or that form a
+ * parent cycle move to the top level.
+ */
+function repairLinks<T extends Pick<DataState, "players" | "npcs" | "creatures" | "combatants" | "graveyard" | "maps" | "locations">>(state: T): T {
+  const ids = new Set([...state.players, ...state.npcs, ...state.creatures].map((c) => c.id));
+  const alive = (c: Combatant) => (c.isTemp && !!c.tempData) || ids.has(c.characterId);
+  return {
+    ...state,
+    combatants: state.combatants.filter(alive),
+    graveyard: state.graveyard.filter(alive),
+    locations: repairLocations(state.maps, state.locations),
+  };
+}
+
+/** The part of the state `repairLinks` can change. */
+const linkFields = (s: DataState) => ({ combatants: s.combatants, graveyard: s.graveyard, locations: s.locations });
+
+/** Normalises one section's imported list (see lib/sanitize). */
+const FIX_COLLECTION: Record<CollectionKey, (list: unknown) => { id: string }[]> = {
+  players: (l) => fixCharacterLists({ players: l }).players,
+  npcs: (l) => fixCharacterLists({ npcs: l }).npcs,
+  creatures: (l) => fixCharacterLists({ creatures: l }).creatures,
+  maps: fixMaps,
+  locations: fixLocations,
+  shops: fixShops,
+  notes: fixNotes,
+  customItems: fixCustomItems,
+  lootTables: fixLootTables,
+  quests: fixQuests,
+};
+
+/** True when an imported character fits the collection (used to reject files of another tab). */
+export const isCharacterOf = (key: keyof typeof CHARACTER_TYPES) => (c: any) =>
+  !!c && typeof c === "object" && ("stats" in c || "hpMax" in c) && (!c.type || c.type === CHARACTER_TYPES[key]);
+
 class Store {
   state: StoreState;
   listeners: Set<() => void> = new Set();
@@ -130,39 +191,17 @@ class Store {
       }
 
       if (saved) {
-        this.state = { ...DEFAULT_STATE, ...saved, isHydrated: true };
-        if (!this.state.uiState) {
-          this.state.uiState = DEFAULT_STATE.uiState;
-        }
-        
-        // Ensure all arrays exist
-        this.state.players = this.state.players || [];
-        this.state.npcs = this.state.npcs || [];
-        this.state.creatures = this.state.creatures || [];
-        this.state.combatants = this.state.combatants || [];
-        this.state.graveyard = this.state.graveyard || [];
-        this.state.maps = this.state.maps || [];
-        this.state.locations = this.state.locations || [];
-        this.state.shops = this.state.shops || [];
-        this.state.notes = this.state.notes || [];
-        this.state.customItems = this.state.customItems || [];
-        this.state.lootTables = this.state.lootTables || [];
-        this.state.quests = this.state.quests || [];
-        this.state.favoriteSpells = this.state.favoriteSpells || [];
-        this.state.favoriteMonsters = this.state.favoriteMonsters || [];
-
-        // Heal ghosts
-        const isGhost = (c: any) => {
-           if (c.isTemp && c.tempData) return false;
-           return !this.state.players.some((p) => p.id === c.characterId) && 
-                  !this.state.npcs.some((n) => n.id === c.characterId) &&
-                  !(this.state.creatures || []).some((cr) => cr.id === c.characterId);
-        };
-        if (this.state.combatants) {
-           this.state.combatants = this.state.combatants.filter((c) => !isGhost(c));
-        }
-        if (this.state.graveyard) {
-           this.state.graveyard = this.state.graveyard.filter((c) => !isGhost(c));
+        try {
+          // Brings data saved by older versions (or damaged) to the shape the views expect.
+          this.state = {
+            ...repairLinks(fixData(saved)),
+            uiState: { ...DEFAULT_STATE.uiState, ...fixUIState<UIState>(saved.uiState) },
+            isHydrated: true,
+          };
+        } catch (e) {
+          // Never lose the saved data because of a bug in the repair: load it as it is.
+          console.error("Could not normalise the saved data.", e);
+          this.state = { ...DEFAULT_STATE, ...saved, uiState: { ...DEFAULT_STATE.uiState, ...saved.uiState }, isHydrated: true };
         }
       } else {
          this.state = { ...DEFAULT_STATE, isHydrated: true };
@@ -218,7 +257,12 @@ class Store {
   exportData() {
     const { isHydrated, ...rest } = this.state;
     downloadJSON(
-      { ...rest, npcs: rest.npcs.filter((n) => !n.isTemp), creatures: rest.creatures.filter((c) => !c.isTemp) },
+      {
+        ...rest,
+        uiState: withoutOneShotUI(rest.uiState),
+        npcs: rest.npcs.filter((n) => !n.isTemp),
+        creatures: rest.creatures.filter((c) => !c.isTemp),
+      },
       "ndms_datos_completos.json"
     );
   }
@@ -226,63 +270,46 @@ class Store {
   importData(jsonString: string, mode: "merge" | "overwrite" = "overwrite") {
     try {
       const parsed = JSON.parse(jsonString);
+      if (typeof parsed !== "object" || parsed === null) {
+        alert("Error al importar: Formato no válido.");
+        return;
+      }
       if (!parsed.uiState) {
         alert("Parece que estás intentando importar un archivo de una sección específica (como Notas o Grupo) en el Importador Global. Ve a la sección correspondiente para importarlo o usa un archivo de Exportación Total.");
         return;
       }
-      if (typeof parsed !== 'object' || parsed === null) {
-        alert("Error al importar: Formato no válido.");
-        return;
-      }
-      if (parsed.npcs) {
-        parsed.npcs = parsed.npcs.filter((n: any) => !n.isTemp);
-      }
-      if (parsed.creatures) {
-        parsed.creatures = parsed.creatures.filter((c: any) => !c.isTemp);
-      }
-
+      // Only the known collections are read (stray keys never reach the saved state), and every
+      // entry is brought to the shape the views expect (see lib/sanitize).
+      const data = fixData(parsed);
+      const importedUI = withoutOneShotUI(fixUIState<UIState>(parsed.uiState));
 
       if (mode === "overwrite") {
-        this.setState({
-          ...DEFAULT_STATE,
-          ...parsed,
-          isHydrated: true,
-          uiState: { ...DEFAULT_STATE.uiState, ...parsed.uiState },
-          players: Array.isArray(parsed.players) ? parsed.players : [],
-          npcs: Array.isArray(parsed.npcs) ? parsed.npcs : [],
-          creatures: Array.isArray(parsed.creatures) ? parsed.creatures : [],
-          combatants: Array.isArray(parsed.combatants) ? parsed.combatants : [],
-          graveyard: Array.isArray(parsed.graveyard) ? parsed.graveyard : [],
-          maps: Array.isArray(parsed.maps) ? parsed.maps : [],
-          locations: Array.isArray(parsed.locations) ? parsed.locations : [],
-          shops: Array.isArray(parsed.shops) ? parsed.shops : [],
-          notes: Array.isArray(parsed.notes) ? parsed.notes : [],
-          customItems: Array.isArray(parsed.customItems) ? parsed.customItems : [],
-          lootTables: Array.isArray(parsed.lootTables) ? parsed.lootTables : [],
-          quests: Array.isArray(parsed.quests) ? parsed.quests : [],
-          favoriteSpells: Array.isArray(parsed.favoriteSpells) ? parsed.favoriteSpells : [],
-          favoriteMonsters: Array.isArray(parsed.favoriteMonsters) ? parsed.favoriteMonsters : [],
-        });
-      }
- else {
+        this.setState({ ...repairLinks(data), uiState: { ...DEFAULT_STATE.uiState, ...importedUI } });
+      } else {
         const state = this.getState();
-        
-        // Only the data collections are merged; the current UI state (tabs, active combat...) is kept.
+        // Only the data collections are merged; the current UI state (tabs, active combat...) is
+        // kept, except the hidden items of the fixed shops, which are campaign data.
         this.setState({
-          players: mergeDedupe(state.players || [], parsed.players),
-          npcs: mergeDedupe(state.npcs || [], parsed.npcs),
-          creatures: mergeDedupe(state.creatures || [], parsed.creatures),
-          combatants: mergeDedupe(state.combatants || [], parsed.combatants),
-          graveyard: mergeDedupe(state.graveyard || [], parsed.graveyard),
-          maps: mergeDedupe(state.maps || [], parsed.maps),
-          locations: mergeDedupe(state.locations || [], parsed.locations),
-          shops: mergeDedupe(state.shops || [], parsed.shops),
-          notes: mergeDedupe(state.notes || [], parsed.notes),
-          customItems: mergeDedupe(state.customItems || [], parsed.customItems),
-          lootTables: mergeDedupe(state.lootTables || [], parsed.lootTables),
-          quests: mergeDedupe(state.quests || [], parsed.quests),
-          favoriteSpells: Array.from(new Set([...(state.favoriteSpells || []), ...(Array.isArray(parsed.favoriteSpells) ? parsed.favoriteSpells : [])])),
-          favoriteMonsters: Array.from(new Set([...(state.favoriteMonsters || []), ...(Array.isArray(parsed.favoriteMonsters) ? parsed.favoriteMonsters : [])])),
+          ...repairLinks({
+            players: mergeDedupe(state.players, data.players),
+            npcs: mergeDedupe(state.npcs, data.npcs),
+            creatures: mergeDedupe(state.creatures, data.creatures),
+            combatants: mergeDedupe(state.combatants, data.combatants),
+            graveyard: mergeDedupe(state.graveyard, data.graveyard),
+            maps: mergeDedupe(state.maps, data.maps),
+            locations: mergeDedupe(state.locations, data.locations),
+            shops: mergeDedupe(state.shops, data.shops),
+            notes: mergeDedupe(state.notes, data.notes),
+            customItems: mergeDedupe(state.customItems, data.customItems),
+            lootTables: mergeDedupe(state.lootTables, data.lootTables),
+            quests: mergeDedupe(state.quests, data.quests),
+            favoriteSpells: [...new Set([...state.favoriteSpells, ...data.favoriteSpells])],
+            favoriteMonsters: [...new Set([...state.favoriteMonsters, ...data.favoriteMonsters])],
+          }),
+          uiState: {
+            ...state.uiState,
+            hiddenBuiltinItems: [...new Set([...(state.uiState.hiddenBuiltinItems || []), ...(importedUI.hiddenBuiltinItems || [])])],
+          },
         });
       }
       alert("Datos importados correctamente.");
@@ -328,10 +355,34 @@ export const actions = {
   reorderLootTables: (lootTables: LootTable[]) => store.setState({ lootTables }),
 
   // Imports one section's data. Temp NPCs/creatures are never persisted, so they're dropped.
-  importCollection: (key: CollectionKey, items: any[], mode: "merge" | "overwrite") => {
-    const clean = key === "npcs" || key === "creatures" ? items.filter((i) => !i?.isTemp) : items;
-    const current = store.getState()[key] as { id: string }[];
-    store.setState({ [key]: mode === "overwrite" ? clean : mergeDedupe(current, clean) } as Partial<StoreState>);
+  importCollection: (key: CollectionKey, items: unknown[], mode: "merge" | "overwrite") => {
+    const state = store.getState();
+    // Every entry is brought to the shape the views expect (see lib/sanitize).
+    const clean = FIX_COLLECTION[key](items);
+    const current = state[key] as { id: string }[];
+    const next = { ...state, [key]: mode === "overwrite" ? clean : mergeDedupe(current, clean) };
+    // Replacing characters or maps can leave initiative entries or places pointing at nothing.
+    store.setState({ [key]: next[key], ...linkFields(repairLinks(next)) } as Partial<StoreState>);
+  },
+  /** Tiendas import: the user's shops plus which items of the fixed shops are hidden. */
+  importShops: (shops: unknown[], hiddenBuiltinItems: unknown, mode: "merge" | "overwrite") => {
+    actions.importCollection("shops", shops, mode);
+    if (!Array.isArray(hiddenBuiltinItems)) return;
+    const hidden = strArr(hiddenBuiltinItems);
+    const current = store.getState().uiState.hiddenBuiltinItems || [];
+    actions.updateUI({ hiddenBuiltinItems: mode === "overwrite" ? hidden : [...new Set([...current, ...hidden])] });
+  },
+  /**
+   * Loot tables import. The file also carries the homebrew items the tables link to; the missing
+   * ones are added so the links keep working, and the ones already here are left as they are.
+   */
+  importLootTables: (rawTables: unknown[], rawItems: unknown, mode: "merge" | "overwrite") => {
+    const tables = fixLootTables(rawTables);
+    actions.importCollection("lootTables", tables, mode);
+    const linked = new Set(tables.flatMap((t) => (t.entries || []).filter((e) => e.ref?.kind === "homebrew").map((e) => e.ref!.id)));
+    const { customItems } = store.getState();
+    const missing = fixCustomItems(rawItems).filter((i) => linked.has(i.id) && !customItems.some((c) => c.id === i.id));
+    if (missing.length) store.setState({ customItems: [...customItems, ...missing] });
   },
 
   updateUI: (updates: Partial<UIState>) => {

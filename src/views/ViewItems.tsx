@@ -18,7 +18,7 @@ import { DescriptionEditor } from "../components/DescriptionEditor";
 import { ColorPicker, DEFAULT_COLOR } from "../components/ui/ColorPicker";
 import { Overlay } from "../components/ui/Modal";
 import { ViewHeader, ToolbarButton, SegmentedTabs } from "../components/ui/ViewHeader";
-import { ImportExportActions, arrayOrKey } from "../components/ImportExportActions";
+import { ImportExportActions, arrayOrKey, looksLike } from "../components/ImportExportActions";
 import { cn, compressImage, downloadJSON } from "../lib/utils";
 
 
@@ -130,7 +130,7 @@ export function ViewItems() {
                 key="items"
                 noun="Objetos"
                 onExport={() => downloadJSON(customItems, "ndms_objetos.json")}
-                parse={arrayOrKey("customItems")}
+                parse={arrayOrKey("customItems", looksLike.customItem)}
                 onImport={(items, mode) => actions.importCollection("customItems", items, mode)}
                 invalidMessage="El archivo no parece contener objetos válidos."
               />
@@ -138,9 +138,18 @@ export function ViewItems() {
               <ImportExportActions
                 key="loot"
                 noun="Tablas"
-                onExport={() => downloadJSON(lootTables, "ndms_tablas.json")}
-                parse={arrayOrKey("lootTables")}
-                onImport={(items, mode) => actions.importCollection("lootTables", items, mode)}
+                onExport={() => {
+                  // The linked homebrew items go along so the links work in another browser.
+                  const linked = new Set(lootTables.flatMap((t) => (t.entries || []).filter((e) => e.ref?.kind === "homebrew").map((e) => e.ref!.id)));
+                  downloadJSON({ lootTables, customItems: customItems.filter((i) => linked.has(i.id)) }, "ndms_tablas.json");
+                }}
+                parse={(json) => {
+                  // Also accepts the older files, a bare list of tables.
+                  const tables = arrayOrKey("lootTables", looksLike.lootTable)(json);
+                  const items = Array.isArray(json?.customItems) ? json.customItems : [];
+                  return tables ? { tables: tables as LootTable[], items: items as CustomItem[] } : null;
+                }}
+                onImport={({ tables, items }, mode) => actions.importLootTables(tables, items, mode)}
                 invalidMessage="El archivo no parece contener tablas de botín válidas."
               />
             )}

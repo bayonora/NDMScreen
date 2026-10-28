@@ -17,7 +17,7 @@ import { LIST_MAX_HEIGHT, listClass, optionClass, useListPosition, useOutsidePre
 import { createPortal } from "react-dom";
 import { ViewHeader, ToolbarButton } from "../components/ui/ViewHeader";
 import { Select } from "../components/ui/Select";
-import { ImportExportActions, arrayOrKey } from "../components/ImportExportActions";
+import { ImportExportActions, arrayOrKey, looksLike } from "../components/ImportExportActions";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { SortableGrid } from "../components/SortableGrid";
 import { DescriptionEditor } from "../components/DescriptionEditor";
@@ -172,7 +172,7 @@ export function ViewNotes() {
             <ImportExportActions
               noun="Notas"
               onExport={() => downloadJSON(notes, "ndms_notas.json")}
-              parse={arrayOrKey("notes")}
+              parse={arrayOrKey("notes", looksLike.note)}
               onImport={(items, mode) => actions.importCollection("notes", items, mode)}
               invalidMessage="El archivo no parece contener notas válidas."
             />

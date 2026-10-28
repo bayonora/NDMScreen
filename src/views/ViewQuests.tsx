@@ -7,7 +7,7 @@ import { ancestorIds, buildQuestForest } from "../lib/quests";
 import { focusSearchResult } from "../lib/searchFocus";
 import { useTabReselect } from "../lib/tabReselect";
 import { ViewHeader, ToolbarButton } from "../components/ui/ViewHeader";
-import { ImportExportActions, arrayOrKey } from "../components/ImportExportActions";
+import { ImportExportActions, arrayOrKey, looksLike } from "../components/ImportExportActions";
 import { ConfirmDeleteModal } from "../components/ConfirmDeleteModal";
 import { QuestTree } from "../components/quests/QuestTree";
 import { QuestPanel } from "../components/quests/QuestPanel";
@@ -80,7 +80,7 @@ export function ViewQuests() {
             <ImportExportActions
               noun="Misiones"
               onExport={() => downloadJSON(quests, "ndms_misiones.json")}
-              parse={arrayOrKey("quests", (q) => !!q && typeof q === "object" && "id" in q && "title" in q)}
+              parse={arrayOrKey("quests", looksLike.quest)}
               onImport={(items, mode) => actions.importCollection("quests", items, mode)}
               invalidMessage="Archivo inválido o sin misiones."
             />

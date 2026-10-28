@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useStore, actions } from "../store/useStore";
 import { ViewHeader, ToolbarButton } from "../components/ui/ViewHeader";
-import { ImportExportActions, arrayOrKey } from "../components/ImportExportActions";
+import { ImportExportActions, arrayOrKey, looksLike } from "../components/ImportExportActions";
 import { downloadJSON, normalizeSearchText } from "../lib/utils";
 import { Modal } from "../components/ui/Modal";
 import { Button, Input, Textarea } from "../components/ui/Input";
@@ -21,6 +21,7 @@ import { useTabReselect } from "../lib/tabReselect";
 
 export function ViewShops() {
   const userShops = useStore((state) => state.shops);
+  const hiddenBuiltinItems = useStore((state) => state.uiState.hiddenBuiltinItems);
   const { all, visible, hideBuiltin } = useShops();
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   // Opened from the global search ("Ir a la tienda").
@@ -83,9 +84,14 @@ export function ViewShops() {
               />
               <ImportExportActions
                 noun="Tiendas"
-                onExport={() => downloadJSON(userShops, "ndms_tiendas.json")}
-                parse={arrayOrKey("shops")}
-                onImport={(items, mode) => actions.importCollection("shops", items, mode)}
+                onExport={() => downloadJSON({ shops: userShops, hiddenBuiltinItems: hiddenBuiltinItems || [] }, "ndms_tiendas.json")}
+                parse={(json) => {
+                  // Also accepts the older files, a bare list of shops.
+                  const shops = arrayOrKey("shops", looksLike.shop)(json);
+                  const hidden = Array.isArray(json?.hiddenBuiltinItems) ? json.hiddenBuiltinItems.filter((x: unknown) => typeof x === "string") : undefined;
+                  return shops ? { shops: shops as Shop[], hidden: hidden as string[] | undefined } : null;
+                }}
+                onImport={({ shops, hidden }, mode) => actions.importShops(shops, hidden, mode)}
                 invalidMessage="El archivo no parece contener tiendas válidas."
               />
               <ToolbarButton icon={Plus} label="Nueva Tienda" shortLabel="Nueva" variant="primary" showLabel="always" onClick={() => { setEditShopData(null); setIsAddOpen(true); }} />

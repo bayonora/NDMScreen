@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { useStore, actions } from "../store/useStore";
+import { useStore, actions, isCharacterOf } from "../store/useStore";
 import { StatBlock } from "../components/StatBlock";
 import { CharacterList } from "../components/CharacterList";
 import { downloadJSON, readFileAsDataURL, cn } from "../lib/utils";
@@ -182,7 +182,7 @@ export function ViewParty() {
             <ImportExportActions
               noun={info.noun}
               onExport={() => downloadJSON(current, info.file)}
-              parse={arrayOrKey(tab)}
+              parse={arrayOrKey(tab, isCharacterOf(tab))}
               onImport={(items, mode) => actions.importCollection(tab, items, mode)}
               invalidMessage={`El archivo no parece ser una exportación de ${info.noun} válida.`}
             />

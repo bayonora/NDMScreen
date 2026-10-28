@@ -156,8 +156,9 @@ export function ViewMaps() {
               onExport={() => downloadJSON({ maps, locations }, "ndms_mundo.json")}
               parse={(json) => (json && (Array.isArray(json.maps) || Array.isArray(json.locations)) ? json : null)}
               onImport={(data: { maps?: MapData[]; locations?: LocationData[] }, mode) => {
-                actions.importCollection("maps", data.maps || [], mode);
-                actions.importCollection("locations", data.locations || [], mode);
+                // A file with only one of the two lists leaves the other one as it is.
+                if (Array.isArray(data.maps)) actions.importCollection("maps", data.maps, mode);
+                if (Array.isArray(data.locations)) actions.importCollection("locations", data.locations, mode);
               }}
               invalidMessage="El archivo no parece contener datos de mundo válidos."
             />
