@@ -9,6 +9,11 @@ import '@fontsource-variable/lora/wght.css';
 import '@fontsource-variable/lora/wght-italic.css';
 import '@fontsource-variable/plus-jakarta-sans/wght.css';
 import './index.css';
+import { reloadForNewVersion } from './lib/staleBuild';
+
+// Vite fires this when a lazy file (view, data, markdown parser) can't be downloaded, which also
+// covers loads outside the views' ErrorBoundary.
+window.addEventListener('vite:preloadError', () => { reloadForNewVersion(); });
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

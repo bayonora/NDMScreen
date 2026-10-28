@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { AlertTriangle, RefreshCcw } from "lucide-react";
+import { isChunkLoadError, reloadForNewVersion } from "../lib/staleBuild";
 
 interface Props {
   children: ReactNode;
@@ -23,6 +24,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error in view:", error, errorInfo);
+    // Most likely a newer version was deployed while the page was open: reload on our own.
+    if (isChunkLoadError(error)) reloadForNewVersion();
   }
 
   public componentDidUpdate(prevProps: Props) {
@@ -42,7 +45,8 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       // The view's code could not be downloaded (server down, or a new version was published while
       // the app was open). Retrying the view doesn't help because the failed load is cached: reload.
-      const loadFailed = /dynamically imported module|Importing a module script failed|error loading dynamically imported module|ChunkLoadError/i.test(String(this.state.error));
+      // An automatic reload is tried first (componentDidCatch); this screen stays if it didn't help.
+      const loadFailed = isChunkLoadError(this.state.error);
       if (loadFailed) {
         return (
           <div className="flex flex-col items-center justify-center h-full w-full p-8 text-center bg-dm-bg-darker text-dm-text">
