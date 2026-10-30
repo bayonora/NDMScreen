@@ -67,14 +67,12 @@ export function ViewShops() {
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <ViewHeader
-        icon={StoreIcon}
+        icon={selectedShop ? undefined : StoreIcon}
         title={selectedShop ? selectedShop.name : "Tiendas"}
+        leading={selectedShop && <ToolbarButton icon={ArrowLeft} label="Volver a Tiendas" showLabel="never" onClick={() => setSelectedShopId(null)} />}
         actions={
           selectedShop ? (
-            <>
-              <ToolbarButton icon={Copy} label="Duplicar Tienda" onClick={() => duplicate(selectedShop, true)} />
-              <ToolbarButton icon={ArrowLeft} label="Volver a Tiendas" showLabel="always" onClick={() => setSelectedShopId(null)} />
-            </>
+            <ToolbarButton icon={Copy} label="Duplicar Tienda" onClick={() => duplicate(selectedShop, true)} />
           ) : (
             <>
               <ToolbarButton

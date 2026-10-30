@@ -6,6 +6,8 @@ interface ViewHeaderProps {
   title: React.ReactNode;
   /** Shorter title shown on phones. */
   shortTitle?: React.ReactNode;
+  /** Control before the title, e.g. a back button. */
+  leading?: React.ReactNode;
   /** Buttons on the right of the title row. */
   actions?: React.ReactNode;
   /** Optional second row (tabs, filters, combat controls...). */
@@ -13,10 +15,11 @@ interface ViewHeaderProps {
 }
 
 /** Shared top bar for every view: title + actions on one row, optional controls row below. */
-export function ViewHeader({ icon: Icon, title, shortTitle, actions, children }: ViewHeaderProps) {
+export function ViewHeader({ icon: Icon, title, shortTitle, leading, actions, children }: ViewHeaderProps) {
   return (
     <div className="shrink-0 bg-dm-bg border-b border-dm-border px-3 sm:px-6 py-3 flex flex-col gap-3 relative z-20">
       <div className="flex items-center gap-3 min-h-9">
+        {leading && <div className="flex items-center shrink-0">{leading}</div>}
         <h2 className="flex-1 min-w-0 text-base sm:text-lg uppercase tracking-widest text-dm-accent font-light flex items-center gap-2">
           {Icon && <Icon size={20} className="shrink-0" />}
           {shortTitle ? (
@@ -39,8 +42,8 @@ interface ToolbarButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   icon: React.ElementType;
   label: string;
   variant?: "primary" | "secondary" | "danger";
-  /** "always" keeps the text on every screen; "wide" hides it below 1024px (icon + tooltip only). */
-  showLabel?: "always" | "wide";
+  /** "always" keeps the text on every screen; "wide" hides it below 1024px; "never" is icon + tooltip only. */
+  showLabel?: "always" | "wide" | "never";
   /** Shorter text for phones when showLabel is "always" (e.g. "Nueva" for "Nueva Misión"). */
   shortLabel?: string;
 }
@@ -69,7 +72,7 @@ export const ToolbarButton = React.forwardRef<HTMLButtonElement, ToolbarButtonPr
           <span className="sm:hidden">{shortLabel}</span>
           <span className="hidden sm:inline">{label}</span>
         </>
-      ) : (
+      ) : showLabel === "never" ? null : (
         <span className={cn(showLabel === "wide" && "hidden lg:inline")}>{label}</span>
       )}
     </button>
